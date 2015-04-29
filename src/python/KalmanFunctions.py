@@ -24,7 +24,7 @@ def KalmanPredict(x_pred, P_pred, y, A, C, Q, R):
 
 def KalmanMeasurementUpdate(x_pred,P_pred,y,C,R):
     # [x_hat P_hat]=KalmanMeasurementUpdate(x_pred,P_pred,y,C,R)
-    # Measurement update for the Kalman filter. 
+    # Measurement update for the Kalman filter.
 
     # Inputs:
     # x_pred- Dx1 predicted state
@@ -48,7 +48,7 @@ def KalmanMeasurementUpdate(x_pred,P_pred,y,C,R):
 
 def KalmanTimeUpdate(x_hat, P_hat, A, Q):
     # [x_pred P_pred]=KalmanTimeUpdate(x_hat,P_hat,A,Q)
-    # Time update of the Kalman filter. 
+    # Time update of the Kalman filter.
     # Inputs:
     # x_hat- Dx1 current estimated state vector
     # P_hat- DxD covaraiance matrix of current state estimate
@@ -75,17 +75,17 @@ def KalmanBackwardStep(x_hat,P_hat,x_pred,P_pred,x_b_front,P_b_front,A):
 
 def EstimateVA_P(X, dt, Q, R, xi0, P0):
     # this function uses Forward-Backward Kalman smoothing for producing estimates of position, velocity and acceleration profiles using
-    # position measurements only. The result is consistent, in the sense that if the estimated acceleration is integrated, it results in the estimated 
+    # position measurements only. The result is consistent, in the sense that if the estimated acceleration is integrated, it results in the estimated
     # velocity and position. A constant acceleration model is assumed, with changes to the acceleration arrising from Gaussian process noise
     # with variance for each dimension given by Q.
 
     # Inputs:
     # X, a DXN matrix containing N samples of D-dimensional position measurements
     # dt, a scalar representing the sample time
-    # Q, a Dx1 Vector containing the process noise for each dimension. A high value 'allows' the acceleration to change more rapidly. 
+    # Q, a Dx1 Vector containing the process noise for each dimension. A high value 'allows' the acceleration to change more rapidly.
     # R, a DX1 Vector containing the measurement noise variance for each dimension
     # xi0, a 3DX1 Vector containing the guesstimated position, velocity and acceleration at time=0.Ex: xi0=[x0;y0;xd0;yd0;xdd0;ydd0]
-    # P0, a 3DX3D matrix containing the covariance of the initial guesstimate. 
+    # P0, a 3DX3D matrix containing the covariance of the initial guesstimate.
 
     # Outputs:
     # X_hat, a DxN matrix containing the position estimates.
@@ -155,13 +155,13 @@ def EstimateVA_P(X, dt, Q, R, xi0, P0):
         # Q
         Q[2*dim+i,2*dim+i] = Qvec[i]
 ##
-    
+
     # forward filtering
     xi_pred, P_pred, xi_hat, P_hat = KalmanPredict(xi0, P0, X[:,0], A, C, Q, R)
     Xi_pred = copy(xi_pred)
     Xi_hat = copy(xi_hat)
     P_pred_ = zeros((3*dim,3*dim,Ndata))
-        
+
     P_pred_[:,:,0] = copy(P_pred)
     P_hat_ = zeros((3*dim,3*dim,Ndata))
     P_hat_[:,:,0] = copy(P_hat)
@@ -190,9 +190,3 @@ def EstimateVA_P(X, dt, Q, R, xi0, P0):
     Xdd_hat = Xi_hat_2[2*dim:size(Xi_hat_2[:,0]),:]
 
     return X_hat, Xd_hat, Xdd_hat
-
-
-
-
-
-

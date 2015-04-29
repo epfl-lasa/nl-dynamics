@@ -28,7 +28,7 @@ class MultiGPR:
         self.l_scale = l
         self.sigma_f = f
         self.sigma_n = n
-    
+
     # Add new training data
     def addTrainingData(self, new_in, new_out):
         self.nData += 1
@@ -49,10 +49,10 @@ class MultiGPR:
             self.outputData.pop(i)
 
         return True
-       
+
         #indices_in = [i for i, x in enumerate(self.inputData) if (x == old_in).all()]
         #indices_out = [i for i, x in enumerate(self.outputData) if (x == old_out).all()]
-    
+
         #indices = indices_in#indices = list(set(indices_in).intersection(indices_out))
         #if size(indices) == 0:
         #    print 'Error, not found.'
@@ -113,13 +113,13 @@ class MultiGPR:
         C = -2*dot(transpose(a),b)
         C += transpose(array([sum(a*a,0)])) + array([sum(b*b,0)])
         return C
-    
+
 #    def covSEiso(self,a,b):
 #      # compute squared distance:
 #        C = self.sq_dist(transpose(a)/self.l_scale,transpose(b)/self.l_scale)
 #        K = self.sigma_f*exp(-C/2)
 #        return K
-    
+
     def covSEiso(self,a,b=None):
         a = transpose(a)
         if(b==None):
@@ -166,9 +166,3 @@ class MultiGPR:
         for i in range(0, outputData[:,0].size):
             outp[i] = dot(tmp, transpose(outputData[i]))
         return outp
-
-
-        
-
-
-
