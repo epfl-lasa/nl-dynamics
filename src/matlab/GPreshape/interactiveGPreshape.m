@@ -23,7 +23,16 @@ else
     originalDynamics = @(x) originalDynamicsGMR(x);
 end
 
-    
+% Check namespace for GP-ML and Kalman filter
+if(~exist('gp'))
+    disp 'Setting up GPML settings';
+    run('gpml-matlab-v3.4-2013-11-11/startup.m')
+end
+if(~exist('EstimateVA_P'))
+    disp 'Adding KalmanTools/ to path';
+    addpath('KalmanTools/')
+end
+   
 
 %close all
 figure(opt.figNb)
@@ -250,7 +259,7 @@ xd = 0;
 dt = s.drawingDt;
 t=0;
 breakSimulation = 0;
-hm=plot(0,0)
+hm=plot(0,0);
 while ~breakSimulation
    xd = reshapedDynamics(x);
    x = x+dt*xd;
