@@ -1,0 +1,8 @@
+
+
+P = randn(3,N);
+R = 1;
+Q = ones(3,1);
+dt=0.01;
+
+EstimateVA_P(P,R,Q,dt)
