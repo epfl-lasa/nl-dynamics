@@ -35,8 +35,9 @@ class GPMDS:
         self.mGPR.addTrainingData(position, theta)
 
     def addDataM(self, position, velocity):
-        for i in range(0,size(position[0])):
-            self.addData(array([position[0,i],position[1,i]]), array([velocity[0,i],velocity[1,i]]))
+        for i in range(0,np.size(position[0])):
+            self.addData(np.array([position[0,i],position[1,i]]),
+                         np.array([velocity[0,i],velocity[1,i]]))
 
         self.mGPR.prepareRegression()
 
@@ -64,10 +65,10 @@ class GPMDS:
         angle = math.atan2(normDesDir[1],normDesDir[0])-math.atan2(normOrgDir[1],normOrgDir[0])
 
         # put in a good range
-        if (angle > np.pi):
+        if angle > np.pi:
             angle = -1 * (2 * np.pi - angle)
-        elif (angle < -np.pi):
-            angle = 2 * np.pi + angle;
+        elif angle < -np.pi:
+            angle += 2 * np.pi
 
         # Create the datapoint, theta (the 2 number output of the GPR- angle, scaling)
         theta = np.zeros(2)
@@ -87,19 +88,19 @@ class GPMDS:
 
     def reshapedDynamics(self, position):
         # Get original dynamics at position
-        originalVelocity = self.originalDynamics(position)
+        original_velocity = self.originalDynamics(position)
         if self.mGPR.nData==0:
-            vel = originalVelocity
+            vel = original_velocity
         else:
             result = self.mGPR.doRegression(position)
             angle = result[0]
             kappa = result[1]
             kappa = max(kappa, -0.9)
 
-            # Calculate the rotation matrix
-            R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
-            # Rotate velocity by R and scale by kappa
-            vel = (1.0 + kappa)*np.dot(R, originalVelocity)
+            rotation_matrix = np.array([[np.cos(angle), -np.sin(angle)],
+                                        [np.sin(angle), np.cos(angle)]])
+            # Rotate velocity by rotation_matrix and scale by kappa
+            vel = (1.0 + kappa)*np.dot(rotation_matrix, original_velocity)
 
         # Put velocity limits
         if np.linalg.norm(vel) > self.v_capHigh:
