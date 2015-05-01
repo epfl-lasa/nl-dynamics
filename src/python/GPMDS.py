@@ -1,23 +1,29 @@
 #!/usr/bin/env python
 from numpy import *
+import numpy as np
 from MultiGPR import MultiGPR
 import math
 import time
-import rospy
+
 
 class GPMDS:
-    def __init__(self, ell, sigmaF, sigmaN):
+    def __init__(self, ell, sigmaF, sigmaN, velocity_cap=None):
         self.ell = ell
         self.sigmaF = sigmaF
         self.sigmaN = sigmaN
 
+        self.mGPR = MultiGPR(2,2)
+
         self.set_gp_parameters(ell, sigmaF, sigmaN)
-        velocity_cap = rospy.get_param("velocity_cap")#0.1
+        if not velocity_cap:
+            velocity_cap = (0.1, 1.0)
+
         self.v_capLow = velocity_cap[0]
         self.v_capHigh = velocity_cap[1]
 
+
+
     def set_gp_parameters(self, ell, sigmaF, sigmaN):
-        self.mGPR = MultiGPR(2,2)
         self.mGPR.setHyperParams(ell, sigmaF, sigmaN)
 
     def setOriginalDynamics(self, fun):
@@ -99,7 +105,7 @@ class GPMDS:
             # Calculate the rotation matrix
             R = array([[cos(angle), -sin(angle)],[sin(angle),cos(angle)]])
             # Rotate velocity by R and scale by kappa
-            velocity = (1.0 + kappa)*dot(R,originalVelocity)
+            velocity = (1.0 + kappa)*dot(R, originalVelocity)
 
         # Put velocity limits
         if (linalg.norm(velocity)>self.v_capHigh):
@@ -107,3 +113,46 @@ class GPMDS:
         if (linalg.norm(velocity)<self.v_capLow):
             velocity = velocity/linalg.norm(velocity)*self.v_capLow
         return velocity
+
+
+
+def originalDynamicsLinear(pose):
+    p = 4
+    A = -p * np.eye(2)
+    xd = np.dot(A, pose)
+    jacobian = A
+    return xd
+# function [xd jacobian] = originalDynamicsLINEAR(x)
+# % stable linear isotropic dynamics. adjust speed of convergence with p.
+# p = 4;
+# A = -p*eye(2);
+# xd =A*x;
+# %xd(2,:) =xd(2,:) + 2*p*x(1,:).*cos(2*pi/150*x(1,:));
+# jacobian = A;
+
+
+if __name__ == '__main__':
+    print 'hello'
+
+    (ell, sigmaF, sigmaN) = (30, 1.0, 0.4)
+    gp = GPMDS(ell, sigmaF, sigmaN)
+    print gp
+    print gp.mGPR
+
+    originalDynamics = originalDynamicsLinear
+
+    pose = np.array((5, 2))
+    velocity = np.array((1.0, 1.0))
+
+    gp.setOriginalDynamics(originalDynamics)
+
+    gp.addData(pose, velocity)
+    gp.mGPR.prepareRegression()
+
+    th = gp.getTheta(pose, velocity)
+    print 'Th: {}'.format(th)
+
+    reshaped = gp.reshapedDynamics(pose)
+    print 'Reshaped: {}'.format(reshaped)
+
+

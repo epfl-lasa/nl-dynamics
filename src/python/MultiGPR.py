@@ -149,6 +149,7 @@ class MultiGPR:
     def prepareRegression(self):
         if len(self.inputData) <=1:
             print 'Error. Not enough data.'
+
         # Time consuming
         self.KXX = self.covSEiso(self.inputData)
         #self.covSEiso(self.inputData, self.inputData)
@@ -159,6 +160,7 @@ class MultiGPR:
         self.KXX_ = linalg.inv(self.KXX_)
 
     def doRegression(self, inp):
+        assert self.KXX is not None, 'Call prepareRegression first.'
         outputData = transpose(matrix(self.outputData))
         outp = zeros(size(outputData[:,0]))
         self.KXx = transpose(self.covSEiso(asarray(self.inputData), transpose(array([inp]))))
