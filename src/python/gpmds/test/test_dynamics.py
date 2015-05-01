@@ -3,7 +3,8 @@ __author__ = 'felixd'
 import unittest
 import numpy as np
 
-from gpmds import GPMDS
+from gpmds.GPMDS import GPMDS
+from gpmds.GPMDS import originalDynamicsLinear
 
 
 class MyTestCase(unittest.TestCase):
@@ -14,13 +15,13 @@ class MyTestCase(unittest.TestCase):
 
         # GP hyper parameters
         (ell, sigmaF, sigmaN) = (30, 1.0, 0.4)
-        self._gp = GPMDS.GPMDS(ell, sigmaF, sigmaN, velocity_cap=(-1e12, 1e12))
+        self._gp = GPMDS(ell, sigmaF, sigmaN, velocity_cap=(-1e12, 1e12))
 
-        dynamics = GPMDS.originalDynamicsLinear
+        dynamics = originalDynamicsLinear
         self._gp.setOriginalDynamics(dynamics)
 
     def test_dynamics(self):
-        out = GPMDS.originalDynamicsLinear(self._pose)
+        out = originalDynamicsLinear(self._pose)
         ref = (2,)
         self.assertEqual(ref, out.shape)
 
@@ -29,7 +30,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(-1e12, self._gp.v_capLow)
 
     def test_no_vcap(self):
-        self._gp = GPMDS.GPMDS(0, 0, 0)
+        self._gp = GPMDS(0, 0, 0)
         self.assertEqual(1.0, self._gp.v_capHigh)
         self.assertEqual(0.1, self._gp.v_capLow)
 
