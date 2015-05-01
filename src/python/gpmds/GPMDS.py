@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from numpy import *
 import numpy as np
 import math
 
@@ -46,32 +45,32 @@ class GPMDS:
         # Compute original dynamics at position
         originalVelocity = self.originalDynamics(position)
         # Find scaling between vectors
-        kappa = (linalg.norm(velocity)/linalg.norm(originalVelocity))-1.0
+        kappa = (np.linalg.norm(velocity)/np.linalg.norm(originalVelocity))-1.0
 
         # Compare original velocity with velocity to compute speed scaling (kappa) and rotation axis angle
         # Check for divide by 0 error
-        if linalg.norm(velocity)==0:
+        if np.linalg.norm(velocity)==0:
             normDesDir = velocity
         else:
-            normDesDir = velocity/linalg.norm(velocity)
+            normDesDir = velocity/np.linalg.norm(velocity)
 
         #print originalVelocity
-        if linalg.norm(originalVelocity)==0:
+        if np.linalg.norm(originalVelocity)==0:
             normOrgDir = originalVelocity
         else:
-            normOrgDir = originalVelocity/linalg.norm(originalVelocity)
+            normOrgDir = originalVelocity/np.linalg.norm(originalVelocity)
 
         # Calculate angle of rotation
         angle = math.atan2(normDesDir[1],normDesDir[0])-math.atan2(normOrgDir[1],normOrgDir[0])
 
         # put in a good range
-        if(angle > pi):
-            angle = -(2*pi-angle)
-        elif(angle < -pi):
-            angle = 2*pi+angle;
+        if (angle > np.pi):
+            angle = -1 * (2 * np.pi - angle)
+        elif (angle < -np.pi):
+            angle = 2 * np.pi + angle;
 
         # Create the datapoint, theta (the 2 number output of the GPR- angle, scaling)
-        theta = zeros(2)
+        theta = np.zeros(2)
         theta[0] = angle
         theta[1] = kappa
 
@@ -90,12 +89,7 @@ class GPMDS:
         # Get original dynamics at position
         originalVelocity = self.originalDynamics(position)
         if self.mGPR.nData==0:
-            velocity = originalVelocity
-            #if(linalg.norm(velocity)>self.v_capHigh):
-            #    velocity = velocity/linalg.norm(velocity)*self.v_capHigh
-            #if (linalg.norm(velocity)<self.v_capLow):
-            #    velocity = velocity/linalg.norm(velocity)*self.v_capLow
-            #return velocity
+            vel = originalVelocity
         else:
             result = self.mGPR.doRegression(position)
             angle = result[0]
@@ -103,16 +97,16 @@ class GPMDS:
             kappa = max(kappa, -0.9)
 
             # Calculate the rotation matrix
-            R = array([[cos(angle), -sin(angle)],[sin(angle),cos(angle)]])
+            R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
             # Rotate velocity by R and scale by kappa
-            velocity = (1.0 + kappa)*dot(R, originalVelocity)
+            vel = (1.0 + kappa)*np.dot(R, originalVelocity)
 
         # Put velocity limits
-        if (linalg.norm(velocity)>self.v_capHigh):
-            velocity = velocity/linalg.norm(velocity)*self.v_capHigh
-        if (linalg.norm(velocity)<self.v_capLow):
-            velocity = velocity/linalg.norm(velocity)*self.v_capLow
-        return velocity
+        if np.linalg.norm(vel) > self.v_capHigh:
+            vel = vel / np.linalg.norm(vel) * self.v_capHigh
+        if np.linalg.norm(vel) < self.v_capLow:
+            vel = vel / np.linalg.norm(vel) * self.v_capLow
+        return vel
 
 
 
