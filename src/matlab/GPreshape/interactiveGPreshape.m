@@ -74,7 +74,7 @@ ell = 30;   % INTERESTING PARAMTER TO PLAY WITH
 sf = 1;     % INTERESTING PARAMTER TO PLAY WITH 
 s.gprStruct.hyp.cov = log([ell; sf]);
 s.gprStruct.likfunc = @likGauss; 
-sn = 0.4;    % INTERESTING PARAMTER TO PLAY WITH
+sn = 01.0;    % INTERESTING PARAMTER TO PLAY WITH
 s.gprStruct.hyp.lik = log(sn);
 % store a handle to the regressionfunction for use in various functions
 s.gprStruct.regressionFunction = @(x_train,y_train,x_query) gp(s.gprStruct.hyp, @infExact, s.gprStruct.meanfunc, s.gprStruct.covfunc, s.gprStruct.likfunc, x_train, y_train, x_query);
@@ -219,10 +219,19 @@ P0(3,3) = 100;
 P0(4,4) = 100;
 P0(5,5) = 100;
 P0(6,6) = 100;
-% kalman smoothing of the demonstration
-[demPos,demVel, demAcc] = EstimateVA_P(s.newPosData(1:2,:),s.drawingDt,1e2*ones(2,1),0.001*ones(2,1),[s.newPosData(1:2,1);zeros(4,1)],P0);
-% get the angle and speed factor 
+
+% Kalman smoothing of the demonstration: the resulting poses are not
+% exactly the same as the demonstration points.
+X = s.newPosData(1:2,:);
+dt = s.drawingDt;
+Q = 1e2*ones(2,1);
+R = 0.001*ones(2,1);
+xi0 = [s.newPosData(1:2,1);zeros(4,1)];
+[demPos,demVel, demAcc] = EstimateVA_P(X, dt, Q, R, xi0, P0);
+% Compute the angle and speed factor. newData is a 4xN matrix with each
+% column: [x; y; theta; velocity].
 newData = computeLMDSdata2D(demPos,demVel,originalDynamics(demPos));
+
 % make sure there is at least one datapoint for the gp
 if(size(s.gpData,2)==0)
     s.gpData=newData(:,1);
@@ -233,21 +242,35 @@ end
 % select data
 nNewData = size(newData,2);
 newData(3,:);
+
+% Figure out which of the 'new' demonstrated data points to store as
+% training data. Predict the velocity and angle using the existing data,
+% and only store those where the predicted velocity or angle are different
+% enough from the training data. This subsamples the data points in an
+% online fashion (sequential inspection).
 for n=1:nNewData
+    % Two independent GP regression problems: angle and velocity at the new
+    % data point (nth point), given the training data seen so far.
+    %   Input to regressionFunction: x_train,y_train,x_query
     [angleHat s2]=s.gprStruct.regressionFunction(s.gpData(1:2,:)',s.gpData(3,:)',newData(1:2,n)');
-     [speedHat s2]=s.gprStruct.regressionFunction(s.gpData(1:2,:)',s.gpData(4,:)',newData(1:2,n)');
+    [speedHat s2]=s.gprStruct.regressionFunction(s.gpData(1:2,:)',s.gpData(4,:)',newData(1:2,n)');
     %xd = reshapedDynamics(demPos(:,n));
-    if ( abs((speedHat - newData(4,n))/newData(4,n)) > 0.3 | abs((angleHat - newData(3,n))) > 0.3    )%( norm(xd - demVel(:,n))/norm(demVel(:,n)) > 1.5)%abs((a-newData(3,n))/newData(3,n))>0.3)%s2>0.8)
-        s.gpData = [s.gpData,newData(:,n)];
+    
+    % Velocity and angle (predicted vs actual) comparison.
+    if ( abs((speedHat - newData(4,n))/newData(4,n)) > 0.3 || abs((angleHat - newData(3,n))) > 0.3    )%( norm(xd - demVel(:,n))/norm(demVel(:,n)) > 1.5)%abs((a-newData(3,n))/newData(3,n))>0.3)%s2>0.8)
+        s.gpData = [s.gpData,newData(:,n)];  % Append data
         % need to write it back here for reshapedDynamics function
         set(gcf,'UserData',s);
     else
-        kuk=1;
+        kuk=1;  % No-op.
     end 
 end
+
+% Now we have both gpData (training data points) and allData (all data
+% points).
 s.allData = [s.allData,newData];
 s.newPosData = [];
- set(gcf,'UserData',s);
+set(gcf,'UserData',s);
 
 %figure(3);clf; plot(s.gpData(3,:),'k.')
 end
