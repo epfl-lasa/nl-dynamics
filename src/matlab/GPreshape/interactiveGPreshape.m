@@ -125,7 +125,11 @@ end
 
 
 function ret = buttonClicked(h,e,args)
+
+
 disp(get(gcf,'selectiontype'))
+disp(get(gcf,'windowbuttondownfcn'))
+
 s=get(gcf,'UserData');
 s.breakSimulation =1;
 set(gcf,'UserData',s);
@@ -144,14 +148,14 @@ end
 end
 
 function ret = startDemonstration()
-disp('started demonstration')
+% disp('started demonstration')
 set(gcf,'WindowButtonUpFcn',@stopDemonstration);
 set(gcf,'WindowButtonMotionFcn',@recordPoint);
 tic
 end
 
 function ret = stopDemonstration(h,e)
-disp('stopped demonstration')
+% disp('stopped demonstration')
 set(gcf,'WindowButtonMotionFcn',[]);
 processNewData();
 updateStreamlines();
@@ -173,9 +177,16 @@ function ret = updateStreamlines()
 global originalDynamics;
 s = get(gcf,'UserData');
 
+% If not enough data, skip updating stream lines.
+if(size(s.gpData, 1) < 4)
+    return
+end
+
 Xd = reshapedDynamics(s.gridData.X);
 % plot
 clf; hold on;
+
+
 
 % plot the shaded influence region
 infl =  s.gprStruct.regressionFunction(s.gpData(1:2,:)',ones(size(s.gpData(3,:)')),s.gridData.X');
@@ -265,6 +276,11 @@ for n=1:nNewData
         kuk=1;  % No-op.
     end 
 end
+
+% Save all GP data (in the struct) to file.
+fname ='gpData.mat';
+save(fname, '-struct', 's', 'gpData')
+fprintf(1, 'Saved %d data points in %s\n', size(s.gpData, 2), fname);
 
 % Now we have both gpData (training data points) and allData (all data
 % points).
