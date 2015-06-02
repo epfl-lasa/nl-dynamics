@@ -86,10 +86,8 @@ set(gcf,'UserData',s)
 % prepare for interaction
 set(gcf, 'WindowButtonDownFcn', @(h,e)buttonClicked(h,e,varargin));
 
-
-% Secondary figure is the training data
-disp(s.opt)
-if(s.opt.global_demonstrations == 1)
+% Secondary figure is the training data. ** Not operational. ** 
+if(0 && s.opt.global_demonstrations == 1)
     demonstrations_fig = figure('name', 'Demonstrations');
     set(demonstrations_fig, 'WindowButtonDownFcn', @(h,e)demonstrationsCallback(h,e,varargin));
     axes()
@@ -232,11 +230,13 @@ clf; hold on;
 infl =  s.gprStruct.regressionFunction(s.gpData(1:2,:)',ones(size(s.gpData(3,:)')),s.gridData.X');
 load whiteCopperColorMap;
 
-s.inflHandle=pcolor(s.gridData.xM,s.gridData.yM,reshape(infl,s.gridData.nX,s.gridData.nX));
+axisHandle = findall(figureHandle,'type','axes');
+
+s.inflHandle=pcolor(axisHandle, s.gridData.xM,s.gridData.yM,reshape(infl,s.gridData.nX,s.gridData.nX));
 set(s.inflHandle,'linestyle','none');
 colormap(cm);
 
-axisHandle = findall(figureHandle,'type','axes');
+
 s.streamHandle = streamslice(axisHandle, s.gridData.xM,s.gridData.yM,reshape(Xd(1,:),s.gridData.nX,s.gridData.nX),reshape(Xd(2,:),s.gridData.nX,s.gridData.nX),0.5);
 % plot collected points
 
@@ -286,7 +286,7 @@ newData = computeLMDSdata2D(demPos,demVel,originalDynamics(demPos));
 if(size(s.gpData,2)==0)
     s.gpData=newData(:,1);
     % need to write it back here for reshapedDynamics function
-        set(gcf,'UserData',s);
+    set(gcf,'UserData',s);
 end
 %plot(demPos(1,:),demPos(2,:),'ro')
 % select data
@@ -375,5 +375,5 @@ end
 
 function ret = demonstrationsCallback(h, e, args)
     disp(['Click callback on global demonstrations: ', get(gcf, 'selectiontype')])
-
+    updateStreamlines(h)
 end
