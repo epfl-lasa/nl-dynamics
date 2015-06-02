@@ -86,7 +86,8 @@ set(gcf,'UserData',s)
 % prepare for interaction
 set(gcf, 'WindowButtonDownFcn', @(h,e)buttonClicked(h,e,varargin));
 
-% Secondary figure is the training data. ** Not operational. ** 
+% Secondary figure is the training data. ** Not operational. ** (due to the
+% way data is stored in the figure, we cannot have two figures open).
 if(0 && s.opt.global_demonstrations == 1)
     demonstrations_fig = figure('name', 'Demonstrations');
     set(demonstrations_fig, 'WindowButtonDownFcn', @(h,e)demonstrationsCallback(h,e,varargin));
