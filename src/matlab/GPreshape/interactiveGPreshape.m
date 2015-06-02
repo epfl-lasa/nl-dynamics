@@ -110,7 +110,6 @@ global originalDynamics;
 s = get(gcf,'UserData');
 
 if(size(s.gpData, 1) < 4)
-    disp 'bad shape';
     Xd = originalDynamics(x);
     return
 end
@@ -128,7 +127,6 @@ function ret = buttonClicked(h,e,args)
 
 
 disp(get(gcf,'selectiontype'))
-disp(get(gcf,'windowbuttondownfcn'))
 
 s=get(gcf,'UserData');
 s.breakSimulation =1;
@@ -144,6 +142,11 @@ elseif(strcmp(get(gcf,'SelectionType'),'alt'))
     startDemonstration();
 elseif(strcmp(get(gcf,'SelectionType'),'extend'))
     interactiveGPreshape(args{:});
+elseif(strcmp(get(gcf, 'SelectionType'), 'open'))
+    fprintf(1, 'Open\n');
+    x = get(gca,'Currentpoint');
+    x = x(1,1:2)';
+    loadStoredPoints(x)
 end
 end
 
@@ -162,7 +165,29 @@ updateStreamlines();
 set(gcf,'WindowButtonUpFcn',[]);
 end
 
+function ret = loadStoredPoints(offset)
+% Reproduces the stored training data around the double-clicked location
+% (from user input). The stored data is in gpData.mat (nominally these are
+% the last-added demonstration points). This calls processNewData() and
+% updateStreamLines().
 
+stored_data = load('gpData.mat');
+tmp = stored_data.saved_data;
+points = tmp(1:2, :);  % Select out the x/y coordinates, remove velocity.
+num_pts = size(tmp, 2);
+fprintf(1, 'Loading %d points and applying offset: %f %f\n', num_pts, offset)
+
+% Take the offset and add it to the poses.
+offset_mat = repmat(offset, 1, num_pts);
+new_points = points + offset_mat;
+
+% Set new position data
+s = get(gcf,'UserData');
+s.newPosData = new_points;
+set(gcf,'UserData',s);
+processNewData();  
+updateStreamlines();
+end
 
 function ret = recordPoint(h,e)
 s =get(gcf,'UserData');
@@ -186,8 +211,6 @@ Xd = reshapedDynamics(s.gridData.X);
 % plot
 clf; hold on;
 
-
-
 % plot the shaded influence region
 infl =  s.gprStruct.regressionFunction(s.gpData(1:2,:)',ones(size(s.gpData(3,:)')),s.gridData.X');
 load whiteCopperColorMap;
@@ -202,9 +225,7 @@ plot(s.allData(1,:),s.allData(2,:),'r.');
 
 
 % plot training points
-
 plot(s.gpData(1,:),s.gpData(2,:),'go');
-
 
 set(gcf,'UserData',s);
 %x=[0;0];
@@ -217,6 +238,7 @@ end
 function ret= processNewData()
 global originalDynamics;
 s = get(gcf,'UserData');
+
 if(size(s.newPosData,2)<10)
     return
 end
@@ -277,10 +299,11 @@ for n=1:nNewData
     end 
 end
 
-% Save all GP data (in the struct) to file.
+% Save all new data (from the current demonstration) to file.
+saved_data = newData;
 fname ='gpData.mat';
-save(fname, '-struct', 's', 'gpData')
-fprintf(1, 'Saved %d data points in %s\n', size(s.gpData, 2), fname);
+save(fname, 'saved_data');
+fprintf(1, 'Saved %d data points in %s\n', size(saved_data, 2), fname);
 
 % Now we have both gpData (training data points) and allData (all data
 % points).
