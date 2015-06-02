@@ -152,7 +152,6 @@ elseif(strcmp(get(gcf,'SelectionType'),'alt'))
 elseif(strcmp(get(gcf,'SelectionType'),'extend'))
     interactiveGPreshape(args{:});
 elseif(strcmp(get(gcf, 'SelectionType'), 'open'))
-    fprintf(1, 'Open\n');
     x = get(gca,'Currentpoint');
     x = x(1,1:2)';
     loadStoredPoints(h, x)
