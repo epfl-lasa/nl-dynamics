@@ -88,13 +88,27 @@ set(gcf, 'WindowButtonDownFcn', @(h,e)buttonClicked(h,e,varargin));
 
 
 % Secondary figure is the training data
-if(s.opt.global_demonstrations)
+disp(s.opt)
+if(s.opt.global_demonstrations == 1)
     demonstrations_fig = figure('name', 'Demonstrations');
     set(demonstrations_fig, 'WindowButtonDownFcn', @(h,e)demonstrationsCallback(h,e,varargin));
+    axes()
+    setup_global_demo_figure(demonstrations_fig, originalDynamics)
 end
 end
 
+function setup_global_demo_figure(figureHandle, dynamics)
 
+    ax = findall(figureHandle,'type','axes');
+
+    nX = 100;
+    x = linspace(-200,200,nX);
+    y = linspace(-200,200,nX);
+    [xM, yM] = meshgrid(x,y);
+    X = [xM(:)';yM(:)'];
+    Xd = dynamics(X);
+    hs = streamslice(ax, xM,yM,reshape(Xd(1,:),nX,nX),reshape(Xd(2,:),nX,nX),0.5);
+end
 
 function [xd jac] = originalDynamicsGMR(x)
 global originalGMM;
@@ -129,12 +143,11 @@ Xd = locallyRotateV(Xd,angleHat,speedHat);
 end
 
 
-function ret = buttonClicked(h,e,args)
-
+function ret = buttonClicked(h, e, args)
 disp(['Click callback on main figure: ', get(gcf,'selectiontype')])
 
 s=get(gcf,'UserData');
-s.breakSimulation =1;
+s.breakSimulation = 1;
 set(gcf,'UserData',s);
 if(strcmp(get(gcf,'SelectionType'),'normal'))
     x = get(gca,'Currentpoint');
@@ -151,7 +164,7 @@ elseif(strcmp(get(gcf, 'SelectionType'), 'open'))
     fprintf(1, 'Open\n');
     x = get(gca,'Currentpoint');
     x = x(1,1:2)';
-    loadStoredPoints(x)
+    loadStoredPoints(h, x)
 end
 end
 
@@ -166,11 +179,11 @@ function ret = stopDemonstration(h,e)
 % disp('stopped demonstration')
 set(gcf,'WindowButtonMotionFcn',[]);
 processNewData();
-updateStreamlines();
+updateStreamlines(h);
 set(gcf,'WindowButtonUpFcn',[]);
 end
 
-function ret = loadStoredPoints(offset)
+function ret = loadStoredPoints(figureHandle, offset)
 % Reproduces the stored training data around the double-clicked location
 % (from user input). The stored data is in gpData.mat (nominally these are
 % the last-added demonstration points). This calls processNewData() and
@@ -191,7 +204,7 @@ s = get(gcf,'UserData');
 s.newPosData = new_points;
 set(gcf,'UserData',s);
 processNewData();  
-updateStreamlines();
+updateStreamlines(figureHandle);
 end
 
 function ret = recordPoint(h,e)
@@ -203,8 +216,7 @@ set(gcf,'UserData',s);
 plot(x(1),x(2),'r.')
 end
 
-function ret = updateStreamlines()
-global originalDynamics;
+function ret = updateStreamlines(figureHandle)
 s = get(gcf,'UserData');
 
 % If not enough data, skip updating stream lines.
@@ -223,14 +235,14 @@ load whiteCopperColorMap;
 s.inflHandle=pcolor(s.gridData.xM,s.gridData.yM,reshape(infl,s.gridData.nX,s.gridData.nX));
 set(s.inflHandle,'linestyle','none');
 colormap(cm);
-s.streamHandle = streamslice(s.gridData.xM,s.gridData.yM,reshape(Xd(1,:),s.gridData.nX,s.gridData.nX),reshape(Xd(2,:),s.gridData.nX,s.gridData.nX),0.5);
+
+axisHandle = findall(figureHandle,'type','axes');
+s.streamHandle = streamslice(axisHandle, s.gridData.xM,s.gridData.yM,reshape(Xd(1,:),s.gridData.nX,s.gridData.nX),reshape(Xd(2,:),s.gridData.nX,s.gridData.nX),0.5);
 % plot collected points
 
-plot(s.allData(1,:),s.allData(2,:),'r.');
-
-
+plot(axisHandle, s.allData(1,:),s.allData(2,:),'r.');
 % plot training points
-plot(s.gpData(1,:),s.gpData(2,:),'go');
+plot(axisHandle, s.gpData(1,:),s.gpData(2,:),'go');
 
 set(gcf,'UserData',s);
 %x=[0;0];
@@ -355,7 +367,7 @@ function opt = parseArguments(args)
        elseif strcmp(args{i},'dynamics')
            opt.dynamics = args{i+1};
        elseif strcmp(args{i},'global_demonstrations')
-           opt.global_demonstrations = args{i+1};
+           opt.global_demonstrations = str2num(args{i+1});
        end
     end
 end
@@ -363,4 +375,5 @@ end
 
 function ret = demonstrationsCallback(h, e, args)
     disp(['Click callback on global demonstrations: ', get(gcf, 'selectiontype')])
+
 end
