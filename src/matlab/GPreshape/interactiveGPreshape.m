@@ -34,7 +34,7 @@ if(~exist('EstimateVA_P'))
 end
    
 
-%close all
+close all
 figure(opt.figNb)
 set(gcf,'UserData',[])
 set(gcf,'WindowButtonDownFcn',[])
@@ -84,8 +84,14 @@ s.gprStruct.regressionFunction = @(x_train,y_train,x_query) gp(s.gprStruct.hyp, 
 set(gcf,'UserData',s)
 
 % prepare for interaction
-set(gcf,'WindowButtonDownFcn',@(h,e)buttonClicked(h,e,varargin));
+set(gcf, 'WindowButtonDownFcn', @(h,e)buttonClicked(h,e,varargin));
 
+
+% Secondary figure is the training data
+if(s.opt.global_demonstrations)
+    demonstrations_fig = figure('name', 'Demonstrations');
+    set(demonstrations_fig, 'WindowButtonDownFcn', @(h,e)demonstrationsCallback(h,e,varargin));
+end
 end
 
 
@@ -125,8 +131,7 @@ end
 
 function ret = buttonClicked(h,e,args)
 
-
-disp(get(gcf,'selectiontype'))
+disp(['Click callback on main figure: ', get(gcf,'selectiontype')])
 
 s=get(gcf,'UserData');
 s.breakSimulation =1;
@@ -334,24 +339,28 @@ while ~breakSimulation
    if(norm(x)<5)
        break;
    end
-   x;
-   xd;
    b=get(gcf,'UserData');
    breakSimulation = b.breakSimulation;
 end
 end
 
 function opt = parseArguments(args)
-opt = {};
-opt.figNb = 1;
-for i=1:size(args,2)
-   if strcmp(args{i},'figure')
-       opt.figNb = args{i+1};
-   elseif strcmp(args{i},'dynamics')
-       opt.dynamics = args{i+1};
-   end
+    opt = {};
+    opt.figNb = 1;  % default values
+    opt.dynamics = 'linear';
+    opt.global_demonstrations = 0;
+    for i=1:size(args,2)
+       if strcmp(args{i},'figure')
+           opt.figNb = args{i+1};
+       elseif strcmp(args{i},'dynamics')
+           opt.dynamics = args{i+1};
+       elseif strcmp(args{i},'global_demonstrations')
+           opt.global_demonstrations = args{i+1};
+       end
+    end
 end
 
 
-
+function ret = demonstrationsCallback(h, e, args)
+    disp(['Click callback on global demonstrations: ', get(gcf, 'selectiontype')])
 end
