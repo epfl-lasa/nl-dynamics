@@ -4,9 +4,8 @@
 #include <fstream>
 #include <getopt.h>
 
-#include "GPMDS.h"
-#include "Timer.h"
-
+#include "GPMDS/GPMDS.h"
+#include "GPMDS/Timer.h"
 
 using namespace std;
 using namespace Eigen;
@@ -58,6 +57,7 @@ int main(int argc, char *argv[]) {
   Timer tmr;
   int N = training_pos.size();
   for (int i = 0; i < N; i++){
+    //cout<<"in here now<<"<<endl;
     mGPMDS.addData(training_pos[i], training_vel[i]);
   }
   cout<<"done adding "<<tmr.elapsed()<<endl;
