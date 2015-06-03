@@ -8,7 +8,7 @@
 using namespace std;
 using namespace Eigen;
 
-void load_training_data(const char * fname, vector<Vector3r> &pos, vector<Vector3r> &vel) {
+void load_training_data(const char *fname, vector<Vector3r> &pos, vector<Vector3r> &vel) {
   Vector3r tempPos;
   Vector3r tempVel;
   ifstream myfile;

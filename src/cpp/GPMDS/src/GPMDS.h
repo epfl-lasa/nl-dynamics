@@ -8,15 +8,12 @@ typedef double REALTYPE;
 typedef float REALTYPE;
 #endif
 
-using namespace Eigen;
-using namespace std;
-
-typedef Matrix<REALTYPE,Dynamic,Dynamic> MatrixXr;
-typedef Matrix<REALTYPE,Dynamic,1> VectorXr;
-typedef Matrix<REALTYPE,3,1> Vector3r;
-typedef Matrix<REALTYPE,4,1> Vector4r;
-typedef Matrix<REALTYPE,3,3> Matrix3r;
-typedef AngleAxis<REALTYPE> AngleAxisr;
+typedef Eigen::Matrix<REALTYPE,Eigen::Dynamic,Eigen::Dynamic> MatrixXr;
+typedef Eigen::Matrix<REALTYPE,Eigen::Dynamic,1> VectorXr;
+typedef Eigen::Matrix<REALTYPE,3,1> Vector3r;
+typedef Eigen::Matrix<REALTYPE,4,1> Vector4r;
+typedef Eigen::Matrix<REALTYPE,3,3> Matrix3r;
+typedef Eigen::AngleAxis<REALTYPE> AngleAxisr;
 
 class GPMDS{
   MultiGPR * mGPR;

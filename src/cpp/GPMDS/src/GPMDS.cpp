@@ -2,6 +2,9 @@
 #include <math.h>
 #include "Timer.h"
 
+using namespace Eigen;
+using namespace std;
+
 GPMDS::GPMDS(REALTYPE ell, REALTYPE sigmaF, REALTYPE sigmaN,REALTYPE speedErrorTol, REALTYPE angleErrorTol)
 {
   //Initialize Gaussian Process

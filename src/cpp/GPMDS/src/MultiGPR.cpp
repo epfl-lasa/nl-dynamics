@@ -1,6 +1,9 @@
 #include "MultiGPR.h"
 #include "Timer.h"
 
+using namespace Eigen;
+using namespace std;
+
 MultiGPR::MultiGPR(int inputDim,int outputDim)
 {
   inputData.resize(inputDim,0);

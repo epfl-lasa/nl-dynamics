@@ -8,11 +8,8 @@ typedef float REALTYPE;
 #endif
 
 
-using namespace Eigen;
-using namespace std;
-
-typedef Matrix<REALTYPE,Dynamic,Dynamic> MatrixXr;
-typedef Matrix<REALTYPE,Dynamic,1> VectorXr;
+typedef Eigen::Matrix<REALTYPE,Eigen::Dynamic,Eigen::Dynamic> MatrixXr;
+typedef Eigen::Matrix<REALTYPE,Eigen::Dynamic,1> VectorXr;
 
 class MultiGPR{
   MatrixXr inputData;
