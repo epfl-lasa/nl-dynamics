@@ -11,10 +11,15 @@
 using namespace std;
 using namespace Eigen;
 
+// Forward declaration
+bool parse_args(int argc, char **argv, string *filename, int *verbose_flag);
+
 void load_training_data(const char *fname, vector<Vector3r> &pos, vector<Vector3r> &vel) {
   Vector3r tempPos;
   Vector3r tempVel;
   ifstream myfile;
+
+  cout << "Loading training data from " << fname << endl;
   myfile.open(fname);
   while(myfile >> tempPos(0)){
     myfile>>tempPos(1)>>tempPos(2)>>tempVel(0)>>tempVel(1)>>tempVel(2);
@@ -29,7 +34,15 @@ Vector3r linear_isotropic_dynamics(Vector3r pos) {
   return vel;
 }
 
-int main2(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
+
+  string filename = "data.txt";
+  int verbose_flag = 0;
+
+  bool ret = parse_args(argc, argv, &filename, &verbose_flag);
+  if (!ret)
+    return 0;
+
   const double ell = 0.07;
   const double sigmaF = 1.0;
   const double sigmaN = 0.4;
@@ -40,7 +53,7 @@ int main2(int argc, char *argv[]) {
   vector<Vector3r> training_pos;
   vector<Vector3r> training_vel;
 
-  load_training_data("data.txt", training_pos, training_vel);
+  load_training_data(filename.c_str(), training_pos, training_vel);
   cout<<"done reading "<<training_pos.size()<<" "<<training_vel.size()<<endl;
   Timer tmr;
   int N = training_pos.size();
@@ -60,92 +73,73 @@ int main2(int argc, char *argv[]) {
   return 0;
 }
 
+static void
+usage (const char *progname){
 
-bool parse_args(int argc, char **argv,
-                string *file,
-                int *verbose) {
-  int c;
-  string filename = "data.txt";
+    fprintf (stdout, "Usage: %s [options]\n"
+             "\n"
+             "Options:\n"
+             "    -f, --file NAME        Data file name\n"
+             "    --verbose              Verbose\n"
+             "    -h, --help             This help message\n"
+             "\n", progname);
 
-  int verbose_flag;
-
-  while (1)
-    {
-      static struct option long_options[] =
-        {
-          /* These options set a flag. */
-          {"verbose", no_argument,       &verbose_flag, 1},
-          /* These options don’t set a flag.
-             We distinguish them by their indices. */
-          {"file",    required_argument, 0, 'f'},
-          {0}
-        };
-      /* getopt_long stores the option index here. */
-      int option_index = 0;
-
-      c = getopt_long (argc, argv, "f:",
-                       long_options, &option_index);
-
-      /* Detect the end of the options. */
-      if (c == -1)
-        break;
-
-      switch (c)
-        {
-        case 0:
-          /* If this option set a flag, do nothing else now. */
-          if (long_options[option_index].flag != 0)
-            break;
-          printf ("option %s", long_options[option_index].name);
-          if (optarg)
-            printf (" with arg %s", optarg);
-          printf ("\n");
-          break;
-
-        case 'f':
-          printf ("option -f with value `%s'\n", optarg);
-          filename = optarg;
-          break;
-
-        case '?':
-          /* getopt_long already printed an error message. */
-          break;
-
-        default:
-          abort ();
-        }
-    }
-
-  /* Instead of reporting ‘--verbose’
-     and ‘--brief’ as they are encountered,
-     we report the final status resulting from them. */
-  if (verbose_flag)
-    puts ("verbose flag is set");
-
-  /* Print any remaining command line arguments (not options). */
-  if (optind < argc)
-    {
-      printf ("non-option ARGV-elements: ");
-      while (optind < argc)
-        printf ("%s ", argv[optind++]);
-      putchar ('\n');
-    }
-
-  cout << "Filename: " << filename << endl;
-
-  *file = filename;
-  *verbose = verbose_flag;
-
-  return true;
+    return;
 }
 
-int main(int argc, char *argv[]) {
-  cout << "hello world" << endl;
-  string filename = "data.txt";
-  int verbose_flag = 0;
+bool parse_args(int argc, char **argv,
+                string *filename,
+                int *verbose_flag) {
+  int c;
+  while (1) {
+    static struct option long_options[] = {
+      {"verbose", no_argument, verbose_flag, 1},
+      {"file", required_argument, 0, 'f'},
+      {"help", no_argument, 0, 'h'},
+      {0, 0}
+    };
+    /* getopt_long stores the option index here. */
+    int option_index = 0;
 
-  bool ret = parse_args(argc, argv, &filename, &verbose_flag);
-  cout << " -- ret: " << ret << endl;
-  cout << " -- filename: " << filename << endl;
-  cout << " -- verbose_flag: " << verbose_flag << endl;
+    c = getopt_long (argc, argv, "vf:h", long_options, &option_index);
+
+    /* Detect the end of the options. */
+    if (c == -1)
+      break;
+
+    switch (c) {
+    case 0:
+      /* If this option set a flag, do nothing else now. */
+      if (long_options[option_index].flag != 0)
+        break;
+      break;
+
+    case 'f':
+      *filename = optarg;
+      break;
+
+    case 'h':
+      cout << "help" << endl;
+      usage(argv[0]);
+      return false;
+      break;
+
+    case '?':
+      /* getopt_long already printed an error message. */
+      break;
+
+    default:
+      abort ();
+    }
+  }
+
+  /* Print any remaining command line arguments (not options). */
+  if (optind < argc) {
+    printf ("other arguments: ");
+    while (optind < argc)
+      printf ("%s ", argv[optind++]);
+    putchar ('\n');
+  }
+
+  return true;
 }
