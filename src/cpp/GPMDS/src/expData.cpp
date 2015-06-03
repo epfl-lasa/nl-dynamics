@@ -8,9 +8,7 @@
 using namespace std;
 using namespace Eigen;
 
-
-
-void load_training_data(char * fname, vector<Vector3r> &pos, vector<Vector3r> &vel){
+void load_training_data(const char * fname, vector<Vector3r> &pos, vector<Vector3r> &vel) {
   Vector3r tempPos;
   Vector3r tempVel;
   ifstream myfile;
@@ -22,20 +20,18 @@ void load_training_data(char * fname, vector<Vector3r> &pos, vector<Vector3r> &v
   }
 }
 
-
-Vector3r linear_isotropic_dynamics(Vector3r pos){
+Vector3r linear_isotropic_dynamics(Vector3r pos) {
   Vector3r vel;
   vel = -3*pos;
   return vel;
 }
 
-int main(int argc, char *argv[])
-{
-
+int main(int argc, char *argv[]) {
   GPMDS mGPMDS(0.07,1,0.4,0.01,0.1);
   mGPMDS.setOriginalDynamics(&linear_isotropic_dynamics);
   vector<Vector3r> training_pos;
   vector<Vector3r> training_vel;
+
   load_training_data("data.txt",training_pos,training_vel);
   cout<<"done reading "<<training_pos.size()<<" "<<training_vel.size()<<endl;
   Timer tmr;
@@ -43,6 +39,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < N; i++){
     mGPMDS.addData(training_pos[i],training_vel[i]);
   }
+
   cout<<"done adding "<<tmr.elapsed()<<endl;
   tmr.reset();
   mGPMDS.prepareFastQuery();
@@ -51,7 +48,6 @@ int main(int argc, char *argv[])
   tmr.reset();
   tvel = mGPMDS.reshapedDynamics(training_pos[0]);
   cout<<"reshaping took.."<<tmr.elapsed()<<endl;
-
 
   return 0;
 }
