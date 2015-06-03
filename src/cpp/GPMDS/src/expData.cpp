@@ -27,20 +27,25 @@ Vector3r linear_isotropic_dynamics(Vector3r pos) {
 }
 
 int main(int argc, char *argv[]) {
-  GPMDS mGPMDS(0.07,1,0.4,0.01,0.1);
+  const double ell = 0.07;
+  const double sigmaF = 1.0;
+  const double sigmaN = 0.4;
+  const double speedErrorTol = 0.01;
+  const double angleErrorTol = 0.1;
+  GPMDS mGPMDS(ell, sigmaF, sigmaN, speedErrorTol, angleErrorTol);
   mGPMDS.setOriginalDynamics(&linear_isotropic_dynamics);
   vector<Vector3r> training_pos;
   vector<Vector3r> training_vel;
 
-  load_training_data("data.txt",training_pos,training_vel);
+  load_training_data("data.txt", training_pos, training_vel);
   cout<<"done reading "<<training_pos.size()<<" "<<training_vel.size()<<endl;
   Timer tmr;
   int N = training_pos.size();
   for (int i = 0; i < N; i++){
-    mGPMDS.addData(training_pos[i],training_vel[i]);
+    mGPMDS.addData(training_pos[i], training_vel[i]);
   }
-
   cout<<"done adding "<<tmr.elapsed()<<endl;
+
   tmr.reset();
   mGPMDS.prepareFastQuery();
   cout<<"preparing took.."<<tmr.elapsed()<<endl;

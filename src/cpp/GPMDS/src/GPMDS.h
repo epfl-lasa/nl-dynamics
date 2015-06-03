@@ -28,5 +28,4 @@ class GPMDS{
   Vector4r computeLMDSParameters(Vector3r position, Vector3r velocity);
   void prepareFastQuery();
   bool checkNewData(Vector3r position, Vector4r theta);
-
 };

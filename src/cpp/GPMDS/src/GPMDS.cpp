@@ -85,8 +85,8 @@ bool GPMDS::checkNewData(Vector3r position, Vector4r theta){
   {
     return true;
   }
-  else{
-    std::cout << mGPR->getNData() << std::endl;
+  else {
+    cout << "Number of data points: " << mGPR->getNData() << endl;
     return false;
   }
 }
