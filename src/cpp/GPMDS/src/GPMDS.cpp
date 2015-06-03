@@ -34,12 +34,12 @@ Vector4r GPMDS::computeLMDSParameters(Vector3r position, Vector3r velocity){
   Vector3r originalVelocity, axis;
   Vector4r theta;
   REALTYPE kappa, angle;
-  
+
   //Compute original dynamics at position
   originalVelocity = originalDynamics(position);
 
   // Find the scaling between vectors
-  kappa = (velocity.norm()/originalVelocity.norm())-1.0; 
+  kappa = (velocity.norm()/originalVelocity.norm())-1.0;
 
   //Compare resulting original velocity with velocity to compute speed scaling (kappa) and rotation axis angle
   angle = acos((originalVelocity.dot(velocity))/(originalVelocity.norm()*velocity.norm()));
@@ -67,7 +67,7 @@ void GPMDS::addData(Vector3r position, Vector3r velocity)
 bool GPMDS::checkNewData(Vector3r position, Vector4r theta){
   if(mGPR->getNData() <1)
     return true;
-  
+
   Vector4r theta_p;
   theta_p = mGPR->doRegression(position,true);
   Vector3r angleaxis_p,angleaxis;
@@ -81,7 +81,7 @@ bool GPMDS::checkNewData(Vector3r position, Vector4r theta){
   if(fabs(theta_p(3) - theta(3))>speedErrorTol)// || fabs(angle_p-angle)>angleErrorTol){
   {
     return true;
-   }
+  }
   else{
     std::cout << mGPR->getNData() << std::endl;
     return false;
@@ -100,7 +100,7 @@ Vector3r GPMDS::reshapedDynamics(Vector3r position)
   // Get original dynamics at position
   originalVelocity = originalDynamics(position);
 
-  // Perform GPR on the given position to compute reshaping parameters 
+  // Perform GPR on the given position to compute reshaping parameters
   //(*mGPR).prepareRegression();
   //cout<<originalVelocity<<endl;
   result = (*mGPR).doRegression(position);
@@ -110,21 +110,21 @@ Vector3r GPMDS::reshapedDynamics(Vector3r position)
   kappa  = result(3);
   angle = axis.norm();
   axis = axis/angle;
-  if (angle < 0.001)  
-    {
-      // If the angle is very small, make rotation matrix the identity
-      rot_mat.Identity();
-    }
+  if (angle < 0.001)
+  {
+    // If the angle is very small, make rotation matrix the identity
+    rot_mat.Identity();
+  }
   else
-    {
-      // Find the rotation matrix from the axis and angle
-      AngleAxisr rot_aa(angle, axis);
-      rot_mat = rot_aa.toRotationMatrix();
-    }
+  {
+    // Find the rotation matrix from the axis and angle
+    AngleAxisr rot_aa(angle, axis);
+    rot_mat = rot_aa.toRotationMatrix();
+  }
   //Rotate and scale the original velocity
   velocity = rot_mat*originalVelocity;
   velocity= velocity*(kappa+1);
-    
+
   //Return resulting velocity
   return velocity;
 }

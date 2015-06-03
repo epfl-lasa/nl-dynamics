@@ -31,7 +31,7 @@ Vector3r linear_isotropic_dynamics(Vector3r pos){
 
 int main(int argc, char *argv[])
 {
-  
+
   GPMDS mGPMDS(0.07,1,0.4,0.01,0.1);
   mGPMDS.setOriginalDynamics(&linear_isotropic_dynamics);
   vector<Vector3r> training_pos;
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
   tmr.reset();
   tvel = mGPMDS.reshapedDynamics(training_pos[0]);
   cout<<"reshaping took.."<<tmr.elapsed()<<endl;
-  
+
 
   return 0;
 }
