@@ -60,12 +60,14 @@ int main2(int argc, char *argv[]) {
   return 0;
 }
 
-static int verbose_flag;
-int
-main (int argc, char **argv)
-{
+
+bool parse_args(int argc, char **argv,
+                string *file,
+                int *verbose) {
   int c;
   string filename = "data.txt";
+
+  int verbose_flag;
 
   while (1)
     {
@@ -131,5 +133,19 @@ main (int argc, char **argv)
 
   cout << "Filename: " << filename << endl;
 
-  exit (0);
+  *file = filename;
+  *verbose = verbose_flag;
+
+  return true;
+}
+
+int main(int argc, char *argv[]) {
+  cout << "hello world" << endl;
+  string filename = "data.txt";
+  int verbose_flag = 0;
+
+  bool ret = parse_args(argc, argv, &filename, &verbose_flag);
+  cout << " -- ret: " << ret << endl;
+  cout << " -- filename: " << filename << endl;
+  cout << " -- verbose_flag: " << verbose_flag << endl;
 }
