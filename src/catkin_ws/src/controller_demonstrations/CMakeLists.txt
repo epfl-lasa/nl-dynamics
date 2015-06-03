@@ -47,6 +47,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   Demonstration.msg
+  Demonstration_vec.msg
 #   Message1.msg
 #   Message2.msg
 )
