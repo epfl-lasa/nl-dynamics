@@ -19,8 +19,10 @@ class GPMDS{
   MultiGPR * mGPR;
   Vector3r (*originalDynamics)(Vector3r);
   REALTYPE speedErrorTol,angleErrorTol;
+  bool bSparse;
  public:
   GPMDS(REALTYPE ell, REALTYPE sigmaF, REALTYPE sigmaN,REALTYPE speedErrorTol = 0.1, REALTYPE angleErrorTol = 0.1);
+  void setSparse(bool);
   void setGPParameters(REALTYPE ell, REALTYPE sigmaF, REALTYPE sigmaN);
   void setOriginalDynamics(Vector3r (*fun)(Vector3r));
   void addData(Vector3r position, Vector3r velocity);

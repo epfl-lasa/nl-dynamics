@@ -1,6 +1,6 @@
-#include "GPMDS.h"
+#include "GPMDS/GPMDS.h"
 #include <math.h>
-#include "Timer.h"
+#include "GPMDS/Timer.h"
 
 using namespace Eigen;
 using namespace std;
@@ -11,6 +11,11 @@ GPMDS::GPMDS(REALTYPE ell, REALTYPE sigmaF, REALTYPE sigmaN,REALTYPE speedErrorT
   setGPParameters(ell, sigmaF, sigmaN);
   this->speedErrorTol = speedErrorTol;
   this->angleErrorTol = angleErrorTol;
+  bSparse = false;
+}
+
+void GPMDS::setSparse(bool s=true){
+  bSparse = s;
 }
 
 void GPMDS::setGPParameters(REALTYPE ell, REALTYPE sigmaF, REALTYPE sigmaN)
@@ -68,7 +73,7 @@ void GPMDS::addData(Vector3r position, Vector3r velocity)
 }
 
 bool GPMDS::checkNewData(Vector3r position, Vector4r theta){
-  if(mGPR->getNData() <1)
+  if(mGPR->getNData() <1 || bSparse==false)
     return true;
 
   Vector4r theta_p;

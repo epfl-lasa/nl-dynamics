@@ -1,5 +1,5 @@
-#include "GPMDS.h"
-#include "Timer.h"
+#include "GPMDS/GPMDS.h"
+#include "GPMDS/Timer.h"
 #include <iostream>
 #include <eigen3/Eigen/Dense>
 #include <vector>
@@ -42,6 +42,7 @@ int main(int argc, char *argv[]) {
   Timer tmr;
   int N = training_pos.size();
   for (int i = 0; i < N; i++){
+    //cout<<"in here now<<"<<endl;
     mGPMDS.addData(training_pos[i], training_vel[i]);
   }
   cout<<"done adding "<<tmr.elapsed()<<endl;

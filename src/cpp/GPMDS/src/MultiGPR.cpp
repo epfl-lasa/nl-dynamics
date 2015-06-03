@@ -1,5 +1,5 @@
-#include "MultiGPR.h"
-#include "Timer.h"
+#include "GPMDS/MultiGPR.h"
+#include "GPMDS/Timer.h"
 
 using namespace Eigen;
 using namespace std;
@@ -47,6 +47,8 @@ VectorXr MultiGPR::SQEcovFunc(MatrixXr x1, VectorXr x2){
   return KXx;
 }
 
+
+// This is a slow process that should be replaced by linear solve at some point
 void MultiGPR::prepareRegression(bool force_prepare)
 {
   if(!bNeedPrepare & !force_prepare)
