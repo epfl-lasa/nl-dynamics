@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.4.6)
 
+set(CMAKE_MODULE_PATH /usr/local/share/cmake/Modules/)  # OSX eigen3
 
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
