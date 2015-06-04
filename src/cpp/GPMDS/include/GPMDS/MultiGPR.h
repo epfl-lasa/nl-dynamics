@@ -1,12 +1,17 @@
+#ifndef MGPR_H
+#define MGPR_H
+
+
 # include <eigen3/Eigen/Dense>
 # include <iostream>
 
-#ifdef USE_DOUBLE_PRECISION
-typedef double REALTYPE;
-#else
-typedef float REALTYPE;
-#endif
+//#ifdef USE_DOUBLE_PRECISION
+//typedef double REALTYPE;
+//#else
+//typedef float REALTYPE;
+//#endif
 
+typedef double REALTYPE;
 
 typedef Eigen::Matrix<REALTYPE,Eigen::Dynamic,Eigen::Dynamic> MatrixXr;
 typedef Eigen::Matrix<REALTYPE,Eigen::Dynamic,1> VectorXr;
@@ -51,3 +56,6 @@ class MultiGPR{
   VectorXr doRegression(VectorXr inp,bool prepare = false);
   int getNData(){return nData;};
 };
+
+
+#endif //MGPR_H
