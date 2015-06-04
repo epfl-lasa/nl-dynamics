@@ -84,7 +84,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES controller_demonstrations
-#  CATKIN_DEPENDS message_generation rospy
+CATKIN_DEPENDS rospy nl_msgs
 #  DEPENDS system_lib
 )
 
