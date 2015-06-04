@@ -5,6 +5,16 @@
 using namespace Eigen;
 using namespace std;
 
+GPMDS::GPMDS(REALTYPE a)
+{
+
+}
+
+//GPMDS::GPMDS(double a)
+//{
+
+//}
+
 GPMDS::GPMDS(REALTYPE ell, REALTYPE sigmaF, REALTYPE sigmaN,REALTYPE speedErrorTol, REALTYPE angleErrorTol)
 {
   //Initialize Gaussian Process
@@ -26,7 +36,7 @@ void GPMDS::setGPParameters(REALTYPE ell, REALTYPE sigmaF, REALTYPE sigmaN)
   (*mGPR).setHyperParams(ell, sigmaF, sigmaN);
 }
 
-void GPMDS::setOriginalDynamics(Vector3r (*fun)(Vector3r))
+void GPMDS::setOriginalDynamics(std::function<Vector3r(Vector3r)> fun)
 {
   //Set the original dynamics to the function passed in by the user
   originalDynamics = fun;
@@ -107,12 +117,13 @@ Vector3r GPMDS::reshapedDynamics(Vector3r position)
 
   // Get original dynamics at position
   originalVelocity = originalDynamics(position);
-
+  //cout<<"dsfijsijfd"<<endl;
+  //cout<<originalVelocity<<endl;
   // Perform GPR on the given position to compute reshaping parameters
   //(*mGPR).prepareRegression();
   //cout<<originalVelocity<<endl;
   result = (*mGPR).doRegression(position);
-
+//cout<<result<<endl;
   // Calculate axis and angle from reshaping parameters
   for (int i=0; i<3; i++){axis(i)=result(i);}
   kappa  = result(3);
@@ -121,7 +132,8 @@ Vector3r GPMDS::reshapedDynamics(Vector3r position)
   if (angle < 0.001)
   {
     // If the angle is very small, make rotation matrix the identity
-    rot_mat.Identity();
+   rot_mat.setIdentity();
+   //cout<<"yes cam here"<<rot_mat<<endl;
   }
   else
   {
@@ -129,10 +141,18 @@ Vector3r GPMDS::reshapedDynamics(Vector3r position)
     AngleAxisr rot_aa(angle, axis);
     rot_mat = rot_aa.toRotationMatrix();
   }
+  //cout<<rot_mat<<endl;
   //Rotate and scale the original velocity
   velocity = rot_mat*originalVelocity;
+  //cout<<velocity<<endl;
   velocity= velocity*(kappa+1);
-
+   // cout<<velocity<<endl;
   //Return resulting velocity
   return velocity;
 }
+
+
+void GPMDS::dummyFunction(int a){
+
+}
+

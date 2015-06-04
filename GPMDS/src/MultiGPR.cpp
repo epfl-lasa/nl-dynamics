@@ -1,6 +1,8 @@
 #include "GPMDS/MultiGPR.h"
 #include "GPMDS/Timer.h"
 
+
+
 using namespace Eigen;
 using namespace std;
 
@@ -105,3 +107,4 @@ void MultiGPR::debug()
   cout<<"input data \n"<<inputData<<endl;
   cout<<"output data \n"<<outputData<<endl;
 }
+
