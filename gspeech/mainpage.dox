@@ -1,0 +1,14 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b gspeech 
+
+<!-- 
+Node that allows you to use the google speech to text engine API for ROS
+-->
+
+-->
+
+
+*/
