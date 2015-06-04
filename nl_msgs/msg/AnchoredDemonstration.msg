@@ -1,5 +1,5 @@
 Header header
-CartStateStamped offset
+CartStateStamped anchor
 uint32 num_points
 CartStateStamped[] demonstration
 uint32 num_words
