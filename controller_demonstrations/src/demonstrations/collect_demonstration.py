@@ -7,6 +7,7 @@ import numpy as np
 import sys
 
 import rospy
+import tf_conversions
 
 from nl_msgs.msg import CartStateStamped
 from nl_msgs.msg import AnchoredDemonstration
@@ -86,13 +87,18 @@ class CollectDemonstration(object):
 
     def remove_anchor_pose(self, anchor, data):
 
+
+        anchor_frame = tf_conversions.fromMsg(anchor.pose)
+
+
         def subtract_pose(anchor, point, verbose=True):
             p = copy.deepcopy(point)
-            p.pose.position.x -= anchor.pose.position.x
-            p.pose.position.y -= anchor.pose.position.y
-            p.pose.position.z -= anchor.pose.position.z
 
-            # TODO: this is a terrible way to do this. Use ROS tf module instead.
+            # Find the difference in poses. NOTE we do not change anything other
+            # than the pose.
+            point_frame = tf_conversions.fromMsg(point.pose)
+            delta = anchor_frame.Inverse() * point_frame
+            p.pose = tf_conversions.toMsg(delta)
 
             if verbose:
                 print('{} {} {} -> {} {} {}'.format(
@@ -102,7 +108,6 @@ class CollectDemonstration(object):
                     p.pose.position.x,
                     p.pose.position.y,
                     p.pose.position.z))
-
             return p
 
         parsed = [subtract_pose(anchor, x) for x in data]
