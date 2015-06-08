@@ -7,6 +7,7 @@ import numpy as np
 import sys
 
 import rospy
+import rosbag
 import tf_conversions
 
 from nl_msgs.msg import CartStateStamped
@@ -33,7 +34,7 @@ class CollectDemonstration(object):
 
     channel = 'KUKA/CartState'
 
-    def __init__(self, num_desired):
+    def __init__(self, words, num_desired_points, bag_filename):
         rospy.init_node('collect_demonstration', anonymous=True)
         rospy.Subscriber(CollectDemonstration.channel, CartStateStamped, self.callback_state)
 
@@ -41,7 +42,11 @@ class CollectDemonstration(object):
         self._demonstration_anchor = None
         self._demonstration_vector = []
 
-        self._num_desired_points = num_desired
+        self._words = words
+        self._num_desired_points = num_desired_points
+        self._bag_filename = bag_filename
+
+        rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
     def do(self):
         rospy.loginfo('Listening to messages on {} channel'.format(CollectDemonstration.channel))
@@ -66,7 +71,15 @@ class CollectDemonstration(object):
                                                                         plot=False)
         msg = self.make_message(processed_anchor, processed_data)
 
-        print msg
+        # Save message to a rosbag file.
+        topic = 'demonstration'
+        with rosbag.Bag(self._bag_filename, 'w') as bag:
+            bag.write(topic, msg)
+            bag.close()
+            rospy.loginfo('Saved bag {}'.format(self._bag_filename))
+
+
+
 
     def process_demonstration(self, demonstration_data, plot=True):
         """Process demonstration data
@@ -180,8 +193,9 @@ class CollectDemonstration(object):
             assert isinstance(d, CartStateStamped)
             msg.demonstration.append(d)
 
+        msg.num_words = len(self._words)
+        msg.words = self._words
 
-        # TODO get words
         return msg
 
     def dist_from_anchor(self, point):
@@ -230,7 +244,7 @@ def run(arguments):
     print args.num
 
 
-    demonstrator = CollectDemonstration(args.num)
+    demonstrator = CollectDemonstration(args.words, args.num, args.output)
     demonstrator.do()
 
     return
