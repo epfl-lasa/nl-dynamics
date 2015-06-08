@@ -54,6 +54,8 @@ class CollectDemonstration(object):
     def do(self, plot=False):
         rospy.loginfo('Listening to messages on {} channel'.format(
             CollectDemonstration.channel))
+        # Spin but do not catch keyboard interrupt exception -- just move onto
+        # processing & saving the demonstration.
         rospy.spin()
 
         rospy.loginfo('Finished collecting demonstration, have {} points'.format(
