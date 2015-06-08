@@ -6,10 +6,11 @@ def get_base():
 def get_files(base, directory):
     path = os.path.join(base, directory)
     files = os.listdir(path)
-    for f in files:
-        print f
+    return files
 
-def get_fpath(directory, filename):
-    base = os.path.dirname(__file__)
+def get_fpath(directory, filename, relative=False):
+    base = ''
+    if relative:
+        base = os.path.dirname(__file__)
     path = os.path.join(base, directory, filename)
     return path
