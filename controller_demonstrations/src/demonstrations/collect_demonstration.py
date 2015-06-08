@@ -50,7 +50,7 @@ class CollectDemonstration(object):
         msg = self.make_message(processed_data)
 
 
-    def process_demonstration(self, demonstration_data):
+    def process_demonstration(self, demonstration_data, plot=True):
         """Process demonstration data
 
         Downsample the data to only keep a smaller number of them, and subtract
@@ -78,20 +78,46 @@ class CollectDemonstration(object):
                              anchor.pose.position.y,
                              anchor.pose.position.z,
                              len(downsampled)))
-        corrections = self.remove_anchor_pose(anchor, downsampled)
+        (anchor_new, corrections_new) = self.remove_anchor_pose(anchor, downsampled)
 
-        return (anchor, corrections)
+        if plot:
+            import matplotlib.pyplot as plt
+            from mpl_toolkits.mplot3d import Axes3D
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            original_x = [f.pose.position.x for f in downsampled]
+            original_y = [f.pose.position.y for f in downsampled]
+            original_z = [f.pose.position.z for f in downsampled]
+
+            shifted_x = [f.pose.position.x for f in corrections_new]
+            shifted_y = [f.pose.position.y for f in corrections_new]
+            shifted_z = [f.pose.position.z for f in corrections_new]
+
+            ax.scatter(original_x, original_y, original_z, c='r')
+            ax.scatter(shifted_x, shifted_y, shifted_z, c='g')
+            ax.scatter(anchor.pose.position.x, anchor.pose.position.y,
+                       anchor.pose.position.z, c='k')
+            ax.scatter(anchor_new.pose.position.x,
+                       anchor_new.pose.position.y,
+                       anchor_new.pose.position.z, c='k')
+
+            plt.show()
+
+            pass
+
+
+        return (anchor_new, corrections_new)
 
         #times = [x.header.stamp.to_time() for x in demonstration_data['corrections']]
         #return times
 
-    def remove_anchor_pose(self, anchor, data):
+    @classmethod
+    def remove_anchor_pose(cls, anchor, data):
 
-
+        # Convert anchor pose into a PyKDL.Frame: simplifies
         anchor_frame = tf_conversions.fromMsg(anchor.pose)
 
-
-        def subtract_pose(anchor, point, verbose=True):
+        def subtract_pose(point, verbose=True):
             p = copy.deepcopy(point)
 
             # Find the difference in poses. NOTE we do not change anything other
@@ -110,8 +136,15 @@ class CollectDemonstration(object):
                     p.pose.position.z))
             return p
 
-        parsed = [subtract_pose(anchor, x) for x in data]
-        return (anchor, parsed)
+        parsed = [subtract_pose(x) for x in data]
+
+
+        # Create an identity translation/rotation for the new anchor pose.
+        anchor_new = copy.deepcopy(anchor)
+        identity = tf_conversions.Frame()
+        anchor_new.pose = tf_conversions.toMsg(identity)
+
+        return (anchor_new, parsed)
 
 
     def make_message(self, anchor, data):
