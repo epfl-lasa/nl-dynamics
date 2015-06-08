@@ -14,6 +14,22 @@ from nl_msgs.msg import AnchoredDemonstration
 
 
 class CollectDemonstration(object):
+    """Collect and store kinesthetic demonstrations for a natural language.
+
+    This listens for Kuka messages, and collects a trajectory. We then
+    interpolate the points (keeping only --num <N> of them), transforms the
+    trajectory points so it begins at the origin (with no orientation), and then
+    saves a single 'AnchoredDemonstration' message as a bag file.
+
+    While collecting demonstrations, use <Ctrl+C> to end the demonstrations,
+    which automatically moves to the next phase.
+
+    Options:
+      --num: Number of states to save.
+      --output: rosbag filename
+      words: Mandatory argument: command being demonstrated
+
+    """
 
     channel = 'KUKA/CartState'
 
@@ -35,7 +51,7 @@ class CollectDemonstration(object):
             self._num_demo_points))
 
         demonstration_data = {'anchor': self._demonstration_anchor,
-                   'corrections': self._demonstration_vector}
+                              'corrections': self._demonstration_vector}
 
         try:
             filepath = 'demo_data-all.pck'
@@ -46,9 +62,9 @@ class CollectDemonstration(object):
             print e
             pass
 
-        (anchor, processed_data) = self.process_demonstration(demonstration_data)
-        msg = self.make_message(processed_data)
-
+        (processed_anchor, processed_data) = self.process_demonstration(demonstration_data,
+                                                                        plot=True)
+        msg = self.make_message(processed_anchor, processed_data)
 
     def process_demonstration(self, demonstration_data, plot=True):
         """Process demonstration data
@@ -100,16 +116,17 @@ class CollectDemonstration(object):
             ax.scatter(anchor_new.pose.position.x,
                        anchor_new.pose.position.y,
                        anchor_new.pose.position.z, c='k')
-
+            ax.axis('equal')
             plt.show()
 
             pass
 
+        # Note: if you need the header time:
+        # times = [x.header.stamp.to_time() for x in demonstration_data['corrections']]
+
 
         return (anchor_new, corrections_new)
 
-        #times = [x.header.stamp.to_time() for x in demonstration_data['corrections']]
-        #return times
 
     @classmethod
     def remove_anchor_pose(cls, anchor, data):
@@ -117,27 +134,23 @@ class CollectDemonstration(object):
         # Convert anchor pose into a PyKDL.Frame: simplifies
         anchor_frame = tf_conversions.fromMsg(anchor.pose)
 
-        def subtract_pose(point, verbose=True):
+        def subtract_pose(point, verbose=False):
             p = copy.deepcopy(point)
 
             # Find the difference in poses. NOTE we do not change anything other
-            # than the pose.
+            # than the pose (twist & wrench stay the same).
             point_frame = tf_conversions.fromMsg(point.pose)
             delta = anchor_frame.Inverse() * point_frame
             p.pose = tf_conversions.toMsg(delta)
 
             if verbose:
                 print('{} {} {} -> {} {} {}'.format(
-                    point.pose.position.x,
-                    point.pose.position.y,
-                    point.pose.position.z,
-                    p.pose.position.x,
-                    p.pose.position.y,
-                    p.pose.position.z))
+                    point.pose.position.x, point.pose.position.y,
+                    point.pose.position.z, p.pose.position.x,
+                    p.pose.position.y, p.pose.position.z))
             return p
 
         parsed = [subtract_pose(x) for x in data]
-
 
         # Create an identity translation/rotation for the new anchor pose.
         anchor_new = copy.deepcopy(anchor)
@@ -146,9 +159,17 @@ class CollectDemonstration(object):
 
         return (anchor_new, parsed)
 
-
     def make_message(self, anchor, data):
         pass
+
+    def dist_from_anchor(self, point):
+
+        anchor_frame = tf_conversions.fromMsg(self._demonstration_anchor.pose)
+        point_frame = tf_conversions.fromMsg(point.pose)
+
+        delta = anchor_frame.Inverse() * point_frame
+
+        return delta.p.Norm()
 
 
     def callback_state(self, data):
@@ -163,7 +184,9 @@ class CollectDemonstration(object):
         self._num_demo_points += 1
         self._demonstration_vector.append(data)
 
-        rospy.loginfo('Got a demonstration {}'.format(self._num_demo_points))
+
+        rospy.loginfo('Got demonstration {} \t d={:.2f}'.format(
+            self._num_demo_points, self.dist_from_anchor(data)))
 
 def run(arguments):
     parser = argparse.ArgumentParser(
@@ -186,8 +209,9 @@ def run(arguments):
 
 
     demonstrator = CollectDemonstration(args.num)
-    #demonstrator.do()
+    demonstrator.do()
 
+    return
 
     filepath = 'demo_data-all.pck'
     with open(filepath) as f:
