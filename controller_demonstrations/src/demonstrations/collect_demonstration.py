@@ -48,7 +48,7 @@ class CollectDemonstration(object):
 
         rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
-    def do(self):
+    def do(self, plot=False):
         rospy.loginfo('Listening to messages on {} channel'.format(CollectDemonstration.channel))
         rospy.spin()
 
@@ -67,8 +67,8 @@ class CollectDemonstration(object):
             print e
             pass
 
-        (processed_anchor, processed_data) = self.process_demonstration(demonstration_data,
-                                                                        plot=False)
+        (processed_anchor, processed_data) = self.process_demonstration(
+            demonstration_data, plot)
         msg = self.make_message(processed_anchor, processed_data)
 
         # Save message to a rosbag file.
@@ -235,26 +235,14 @@ def run(arguments):
     parser.add_argument('words', default='default', metavar='words',
                         nargs='+',
                         help='Demonstration word(s)')
-
+    parser.add_argument('--plot', default=False, action='store_true',
+                        help='Plot demonstration.')
     args = parser.parse_args(arguments)
 
-    print args
-    print args.output
-    print args.words
-    print args.num
-
-
     demonstrator = CollectDemonstration(args.words, args.num, args.output)
-    demonstrator.do()
+    demonstrator.do(args.plot)
 
     return
-
-    filepath = 'demo_data-all.pck'
-    with open(filepath) as f:
-        data = pickle.load(f)
-
-        demonstrator.process_demonstration(data)
-
 
 if __name__ == '__main__':
     arguments = sys.argv[1:]  # argv[0] is the program name.
