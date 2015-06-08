@@ -18,8 +18,11 @@ class CollectDemonstration(object):
 
     This listens for Kuka messages, and collects a trajectory. We then
     interpolate the points (keeping only --num <N> of them), transforms the
-    trajectory points so it begins at the origin (with no orientation), and
-    then saves a single 'AnchoredDemonstration' message as a bag file.
+    trajectory points so it begins at the origin (with no orientation), and then
+    saves a single 'AnchoredDemonstration' message as a bag file.
+
+    Note we use rosbag as a storage because it's convenient, we won't actually
+    play back the rosbag file.
 
     While collecting demonstrations, use <Ctrl+C> to end the demonstrations,
     which automatically moves to the next phase.
