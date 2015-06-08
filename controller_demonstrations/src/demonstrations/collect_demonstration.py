@@ -3,7 +3,6 @@
 import argparse
 import cPickle as pickle
 import copy
-import numpy as np
 import sys
 
 import rospy
@@ -19,8 +18,8 @@ class CollectDemonstration(object):
 
     This listens for Kuka messages, and collects a trajectory. We then
     interpolate the points (keeping only --num <N> of them), transforms the
-    trajectory points so it begins at the origin (with no orientation), and then
-    saves a single 'AnchoredDemonstration' message as a bag file.
+    trajectory points so it begins at the origin (with no orientation), and
+    then saves a single 'AnchoredDemonstration' message as a bag file.
 
     While collecting demonstrations, use <Ctrl+C> to end the demonstrations,
     which automatically moves to the next phase.
@@ -36,7 +35,8 @@ class CollectDemonstration(object):
 
     def __init__(self, words, num_desired_points, bag_filename):
         rospy.init_node('collect_demonstration', anonymous=True)
-        rospy.Subscriber(CollectDemonstration.channel, CartStateStamped, self.callback_state)
+        rospy.Subscriber(CollectDemonstration.channel, CartStateStamped,
+                         self.callback_state)
 
         self._num_demo_points = 0
         self._demonstration_anchor = None
@@ -49,7 +49,8 @@ class CollectDemonstration(object):
         rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
     def do(self, plot=False):
-        rospy.loginfo('Listening to messages on {} channel'.format(CollectDemonstration.channel))
+        rospy.loginfo('Listening to messages on {} channel'.format(
+            CollectDemonstration.channel))
         rospy.spin()
 
         rospy.loginfo('Finished collecting demonstration, have {} points'.format(
@@ -131,9 +132,9 @@ class CollectDemonstration(object):
             ax.scatter(anchor_new.pose.position.x,
                        anchor_new.pose.position.y,
                        anchor_new.pose.position.z, c='k')
+
             ax.axis('equal')
             plt.show()
-
             pass
 
         # Note: if you need the header time:
