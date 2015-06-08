@@ -63,8 +63,10 @@ class CollectDemonstration(object):
             pass
 
         (processed_anchor, processed_data) = self.process_demonstration(demonstration_data,
-                                                                        plot=True)
+                                                                        plot=False)
         msg = self.make_message(processed_anchor, processed_data)
+
+        print msg
 
     def process_demonstration(self, demonstration_data, plot=True):
         """Process demonstration data
@@ -160,7 +162,27 @@ class CollectDemonstration(object):
         return (anchor_new, parsed)
 
     def make_message(self, anchor, data):
-        pass
+        """ Create a AnchoredDemonstration message.
+
+        Message contains three parts:
+         - anchor
+         - demonstration points
+         - words
+        """
+
+        msg = AnchoredDemonstration()
+
+        assert isinstance(anchor, CartStateStamped)
+        msg.anchor = anchor
+
+        msg.num_points = len(data)
+        for d in data:
+            assert isinstance(d, CartStateStamped)
+            msg.demonstration.append(d)
+
+
+        # TODO get words
+        return msg
 
     def dist_from_anchor(self, point):
 
