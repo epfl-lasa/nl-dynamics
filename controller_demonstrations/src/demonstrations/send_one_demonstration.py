@@ -12,8 +12,17 @@ from nl_msgs.msg import AnchoredDemonstration
 import file_util
 
 class PublishCorrections(object):
-    channel_corrections = 'nl_corrections'
-    channel_kuka_state = 'KUKA/CartState'
+    """
+    ROS node that publishes 'anchored corrections' when it receives a NL command.
+
+    This node listens for the nl command and generates an AnchoredDemonstration
+    message when it receives any new command.
+
+    """
+
+    channel_corrections = 'nl_corrections'  # output
+    channel_command = 'nl_command'  # input
+    channel_kuka_state = 'KUKA/CartState'  # input
 
     def __init__(self, demonstration_dir):
         rospy.init_node('publish_corrections', anonymous=True)
@@ -33,10 +42,9 @@ class PublishCorrections(object):
         self._robot_anchor = None
 
     def load_all_demonstrations(self, demonstration_dir):
-        # Find all files in the directory.
         ret = {}
 
-        #TODO: iterate over files in
+        # Find all files in the directory.
         files = file_util.get_files('', demonstration_dir)
         for f in files:
             filepath = file_util.get_fpath(demonstration_dir, f)
@@ -71,6 +79,11 @@ class PublishCorrections(object):
         return msg
 
     def send_correction(self, nl_command, robot_anchor):
+        if not robot_anchor:
+            rospy.logerr('Cannot send correction with no anchor')
+            return
+
+
         command_split = nl_command.split(' ')
         corrections = []
         for word in command_split:
@@ -87,9 +100,8 @@ class PublishCorrections(object):
 
         for c in corrections:
             self.pub.publish(c)
-            rospy.loginfo('Sent demonstration at t={} -- {}'.format(
-                rospy.get_time(), c.words))
-
+            rospy.loginfo('Sent demonstration at t={} -- {}  anchor_t={}'.format(
+                rospy.get_time(), c.words, c.anchor.header.stamp.to_time()))
         pass
 
     def create_correction(self, word, robot_anchor):
@@ -117,16 +129,14 @@ class PublishCorrections(object):
 
         return correction
 
-
     def kuka_callback(self, data):
         self._robot_state = data
         assert isinstance(data, CartStateStamped)
 
     def do(self):
-
         nl_command = 'left towards right'
         # TODO: Get latest robot state
-        anchor = CartStateStamped()
+        anchor = self._robot_state
 
         self.send_correction(nl_command, anchor)
 
@@ -140,6 +150,8 @@ def run(arguments):
 
 
     demo_publisher = PublishCorrections(args.demo_dir)
+
+    time.sleep(0.1)
 
     try:
         demo_publisher.do()
