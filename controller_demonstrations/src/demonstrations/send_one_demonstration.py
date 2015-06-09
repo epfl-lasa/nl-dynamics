@@ -25,11 +25,7 @@ class PublishCorrections(object):
                          CartStateStamped, self.kuka_callback)
 
         # Corrections are dict word->data
-        self._corrections = {}
-
-        # Load demonstrations
-        self.load_all_demonstrations(demonstration_dir)
-
+        self._corrections = self.load_all_demonstrations(demonstration_dir)
 
     def load_all_demonstrations(self, demonstration_dir):
         # Find all files in the directory.
@@ -69,22 +65,65 @@ class PublishCorrections(object):
 
         return msg
 
-    def send_correction(self, command):
+    def send_correction(self, nl_command, robot_anchor):
+        command_split = nl_command.split(' ')
+        corrections = []
+        for word in command_split:
+            if word in self._corrections:
+                rospy.loginfo('demo: {}'.format(word))
+
+                # TODO create a message with the data & using the anchor.
+
+                msg = self.create_correction(word, robot_anchor)
+                corrections.append(msg)
+
+            else:
+                rospy.loginfo('skip: {}'.format(word))
+
+        for c in corrections:
+            self.pub.publish(c)
+            rospy.loginfo('Sent demonstration at t={} -- {}'.format(
+                rospy.get_time(), c.words))
+
         pass
+
+    def create_correction(self, word, robot_anchor):
+        """ Create an AnchoredCorrection message using the given word & anchor.
+
+        Get the correction points from the stored map, using a *single* word.
+        """
+
+        if word not in self._corrections:
+            rospy.logerr('Word [{}] not in known corrections: {}'.format(
+                word, self._corrections.keys()))
+            return None
+
+        assert isinstance(word, basestring)  # Get a string, not a list of strings.
+
+        correction = AnchoredDemonstration()
+        correction.header.stamp = rospy.Time.now()
+        correction.words.append(word)
+        correction.num_words = 1
+
+        correction.demonstration = self._corrections[word]
+        correction.num_points = len(self._corrections[word])
+
+        correction.anchor = robot_anchor
+
+        return correction
+
 
     def kuka_callback(self, data):
         print 'Received kuka state'
         pass
 
     def do(self):
-        data = [(0, 1, 2, 3), (1, 2, 3, 4)]
-        v = self.make_demo_vec(data)
-        self.pub.publish(v)
 
-        log_str = "Sent demonstration at t={} -- {}".format(rospy.get_time(), v)
-        rospy.loginfo(log_str)
+        nl_command = 'left towards'
+        # TODO: Get latest robot state
+        anchor = CartStateStamped()
 
-        time.sleep(0.5)
+        self.send_correction(nl_command, anchor)
 
 
 def run(arguments):
@@ -97,10 +136,8 @@ def run(arguments):
 
     demo_publisher = PublishCorrections(args.demo_dir)
 
-    return
-
     try:
-        demo_publisher.run()
+        demo_publisher.do()
     except rospy.ROSInterruptException as e:
         print e
         pass
