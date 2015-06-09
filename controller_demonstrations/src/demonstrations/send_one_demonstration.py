@@ -41,6 +41,8 @@ class PublishCorrections(object):
         self._robot_state = None
         self._robot_anchor = None
 
+        rospy.loginfo('-- Finished init --')
+
     def load_all_demonstrations(self, demonstration_dir):
         ret = {}
 
@@ -87,14 +89,17 @@ class PublishCorrections(object):
         corrections = []
         for word in command_split:
             if word in self._corrections:
-                rospy.loginfo('demo: {}'.format(word))
+                rospy.logdebug('Sending demonstration for word: {}'.format(word))
 
                 # Create a message with the data & using the anchor.
                 msg = self.create_correction(word, robot_anchor)
                 corrections.append(msg)
             else:
-                rospy.loginfo('skip: {}'.format(word))
+                rospy.logdebug('Skipping demonstration for unknown '
+                               'word: {}'.format(word))
+                pass
 
+        # Publish corrections here.
         for c in corrections:
             self.pub.publish(c)
             rospy.loginfo('Sent demonstration at t={} -- {}  anchor_t={}'.format(
@@ -159,10 +164,12 @@ def run_send_one_command(arguments):
 
     try:
         demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
+        time.sleep(0.5)  # Sleep to make sure the message goes out.
     except rospy.ROSInterruptException as e:
         print e
         pass
 
+    # Do not spin: only one command goes out.
     #rospy.spin()
 
 
