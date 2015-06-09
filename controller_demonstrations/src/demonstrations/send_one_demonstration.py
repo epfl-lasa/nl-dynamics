@@ -1,8 +1,6 @@
 #! /usr/bin/env python
-
 import sys
 import argparse
-import numpy as np
 import time
 import os
 
@@ -26,6 +24,13 @@ class PublishCorrections(object):
 
         # Corrections are dict word->data
         self._corrections = self.load_all_demonstrations(demonstration_dir)
+
+        # Kuka state: we store the current robot state every time it is
+        # received, and when a command *begins* we copy the current state (at
+        # that time) to 'anchor' the correction. This specifies where the
+        # demonstration should begin from.
+        self._robot_state = None
+        self._robot_anchor = None
 
     def load_all_demonstrations(self, demonstration_dir):
         # Find all files in the directory.
@@ -114,12 +119,12 @@ class PublishCorrections(object):
 
 
     def kuka_callback(self, data):
-        print 'Received kuka state'
-        pass
+        self._robot_state = data
+        assert isinstance(data, CartStateStamped)
 
     def do(self):
 
-        nl_command = 'left towards'
+        nl_command = 'left towards right'
         # TODO: Get latest robot state
         anchor = CartStateStamped()
 
@@ -141,6 +146,10 @@ def run(arguments):
     except rospy.ROSInterruptException as e:
         print e
         pass
+
+    rospy.spin()
+
+
 
 
 if __name__ == '__main__':
