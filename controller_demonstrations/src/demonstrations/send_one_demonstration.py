@@ -83,18 +83,15 @@ class PublishCorrections(object):
             rospy.logerr('Cannot send correction with no anchor')
             return
 
-
         command_split = nl_command.split(' ')
         corrections = []
         for word in command_split:
             if word in self._corrections:
                 rospy.loginfo('demo: {}'.format(word))
 
-                # TODO create a message with the data & using the anchor.
-
+                # Create a message with the data & using the anchor.
                 msg = self.create_correction(word, robot_anchor)
                 corrections.append(msg)
-
             else:
                 rospy.loginfo('skip: {}'.format(word))
 
@@ -133,37 +130,42 @@ class PublishCorrections(object):
         self._robot_state = data
         assert isinstance(data, CartStateStamped)
 
-    def do(self):
-        nl_command = 'left towards right'
-        # TODO: Get latest robot state
-        anchor = self._robot_state
+    def process_command(self, nl_command, use_current_state_as_anchor=False):
+
+        # Either use the anchor (a copy of the state when the command first
+        # started) or the current state directly.
+        anchor = self._robot_anchor
+        if use_current_state_as_anchor:
+            anchor = self._robot_state
 
         self.send_correction(nl_command, anchor)
 
 
-def run(arguments):
+def run_send_one_command(arguments):
     parser = argparse.ArgumentParser(
         description=('Load a directory of demonstration data (stored as bag '
                      'files).'))
     parser.add_argument('--demo_dir', metavar='directory', required=True)
+    parser.add_argument('command', nargs='+')
     args = parser.parse_args(arguments)
 
 
     demo_publisher = PublishCorrections(args.demo_dir)
 
+    nl_command = ' '.join(args.command)
+
+    # Sleep just long enough to get the Kuka State.
     time.sleep(0.1)
 
     try:
-        demo_publisher.do()
+        demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
     except rospy.ROSInterruptException as e:
         print e
         pass
 
-    rospy.spin()
-
-
+    #rospy.spin()
 
 
 if __name__ == '__main__':
     arguments = sys.argv[1:]  # argv[0] is the program name.
-    run(arguments)
+    run_send_one_command(arguments)
