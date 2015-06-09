@@ -3,9 +3,11 @@ import sys
 import argparse
 import time
 import os
+import copy
 
 import rospy
 import rosbag
+import tf_conversions
 from nl_msgs.msg import CartStateStamped
 from nl_msgs.msg import AnchoredDemonstration
 
@@ -124,10 +126,21 @@ class PublishCorrections(object):
         correction.words.append(word)
         correction.num_words = 1
 
-        correction.demonstration = self._corrections[word]
+        #correction.demonstration = self._corrections[word]
         correction.num_points = len(self._corrections[word])
 
+        anchor_frame = tf_conversions.fromMsg(robot_anchor.pose)
+        for c in self._corrections[word]:
+            
+            pose_frame = tf_conversions.fromMsg(c.pose)
+            offset = anchor_frame * pose_frame
+            
+            new_c = copy.deepcopy(c)
+            new_c.pose = tf_conversions.toMsg(offset)
+            correction.demonstration.append(new_c)
+
         correction.anchor = robot_anchor
+        correction.anchor.pose = tf_conversions.toMsg(tf_conversions.Frame())
 
         return correction
 
@@ -154,23 +167,23 @@ def run_send_one_command(arguments):
     parser.add_argument('command', nargs='+')
     args = parser.parse_args(arguments)
 
-
+    
     demo_publisher = PublishCorrections(args.demo_dir)
 
     nl_command = ' '.join(args.command)
 
     # Sleep just long enough to get the Kuka State.
-    time.sleep(0.1)
+    time.sleep(1)
 
     try:
         demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
-        time.sleep(0.5)  # Sleep to make sure the message goes out.
+        time.sleep(1)  # Sleep to make sure the message goes out.
     except rospy.ROSInterruptException as e:
         print e
         pass
 
     # Do not spin: only one command goes out.
-    #rospy.spin()
+    rospy.spin()
 
 
 if __name__ == '__main__':
