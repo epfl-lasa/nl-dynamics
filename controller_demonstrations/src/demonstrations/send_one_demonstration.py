@@ -39,7 +39,8 @@ class PublishCorrections(object):
         # Kuka state: we store the current robot state every time it is
         # received, and when a command *begins* we copy the current state (at
         # that time) to 'anchor' the correction. This specifies where the
-        # demonstration should begin from.
+        # demonstration should begin from, and is used to transform the
+        # correction points (the demonstration) into the local current frame.
         self._robot_state = None
         self._robot_anchor = None
 
@@ -126,21 +127,25 @@ class PublishCorrections(object):
         correction.words.append(word)
         correction.num_words = 1
 
-        #correction.demonstration = self._corrections[word]
-        correction.num_points = len(self._corrections[word])
 
-        anchor_frame = tf_conversions.fromMsg(robot_anchor.pose)
+        # Set the corrections: Transform each demonstrated point so it begins
+        # from the robot anchor.
+        correction.num_points = len(self._corrections[word])
+        anchor_frame = tf_conversions.fromMsg(robot_anchor.pose)  # Use PyKDL.Frame.
         for c in self._corrections[word]:
-            
+
+            # Convert each pose to be in the world frame, using the anchor.
             pose_frame = tf_conversions.fromMsg(c.pose)
             offset = anchor_frame * pose_frame
-            
+
+            # Copy the correction and update the *pose only*.
             new_c = copy.deepcopy(c)
             new_c.pose = tf_conversions.toMsg(offset)
             correction.demonstration.append(new_c)
+            pass
 
+        # Keep the anchor pose to indicate where the correction starts from.
         correction.anchor = robot_anchor
-        correction.anchor.pose = tf_conversions.toMsg(tf_conversions.Frame())
 
         return correction
 
@@ -149,7 +154,6 @@ class PublishCorrections(object):
         assert isinstance(data, CartStateStamped)
 
     def process_command(self, nl_command, use_current_state_as_anchor=False):
-
         # Either use the anchor (a copy of the state when the command first
         # started) or the current state directly.
         anchor = self._robot_anchor
@@ -167,17 +171,17 @@ def run_send_one_command(arguments):
     parser.add_argument('command', nargs='+')
     args = parser.parse_args(arguments)
 
-    
     demo_publisher = PublishCorrections(args.demo_dir)
 
     nl_command = ' '.join(args.command)
 
-    # Sleep just long enough to get the Kuka State.
-    time.sleep(1)
+    # Sleep long enough to get the Kuka State and have all messages register
+    # with the core.
+    time.sleep(1.0)
 
     try:
         demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
-        time.sleep(1)  # Sleep to make sure the message goes out.
+        time.sleep(0.5)  # Sleep to make sure the message goes out.
     except rospy.ROSInterruptException as e:
         print e
         pass
