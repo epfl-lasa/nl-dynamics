@@ -49,9 +49,11 @@ class CollectDemonstration(object):
         self._num_desired_points = num_desired_points
         self._bag_filename = bag_filename
 
+        self.MOTION_DISTANCE_THRESHOLD = 1e-3
+
         rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
-    def do(self, plot=False):
+    def do(self, discard_static_points, plot=False):
         rospy.loginfo('Listening to messages on {} channel'.format(
             CollectDemonstration.channel))
         # Spin but do not catch keyboard interrupt exception -- just move onto
@@ -74,7 +76,7 @@ class CollectDemonstration(object):
             pass
 
         (processed_anchor, processed_data) = self.process_demonstration(
-            demonstration_data, plot)
+            demonstration_data, discard_static_points, plot)
         msg = self.make_message(processed_anchor, processed_data)
 
         # Save message to a rosbag file.
@@ -84,26 +86,44 @@ class CollectDemonstration(object):
             bag.close()
             rospy.loginfo('Saved bag {}'.format(self._bag_filename))
 
-
-
-
-    def process_demonstration(self, demonstration_data, plot=True):
-        """Process demonstration data
+    def process_demonstration(self, demonstration_data,
+                              discard_static_points,
+                              plot=True):
+        """Process demonstration data.
 
         Downsample the data to only keep a smaller number of them, and subtract
         the anchor pose from all points such that the first correction is
         centered at 'zero' pose. Note that only poses are subtracted, no other
         information is changed.
 
+        Remove any non-moving poses if desired (before downsampling).
+
+        Input: dict{'anchor'->CartStateStamped, 'corrections'->list[CartStateStamped]}
+
         Returns (anchor, corrections)
 
         """
+
+        # Remove any points that are closer than 'MOTION_DISTANCE_THRESHOLD'
+        # from the anchor point.
+        if discard_static_points:
+            # Start with the anchor as a datapoint to keep so that the first
+            # point is (0, 0, 0).
+            data_keep = [demonstration_data['anchor']]
+            for data in demonstration_data['corrections']:
+                dist = self.dist_from_anchor(data)
+                if dist > self.MOTION_DISTANCE_THRESHOLD:
+                    data_keep.append(data)
+            rospy.loginfo('Discarded {} non-moving data points from dataset'.
+                          format(len(demonstration_data['corrections']) - len(data_keep)))
+            demonstration_data['corrections'] = data_keep
+
         rospy.loginfo('Processing {} demonstrations. Downsampling to {}.'.
                       format(len(demonstration_data['corrections']),
                              self._num_desired_points))
 
-        # First, downsample data. For now, just take every Nth piece of data,
-        # and truncate anything extra.
+        # Downsample the data. For now, just take every Nth piece of data, and
+        # truncate anything extra.
         every_nth = len(demonstration_data['corrections']) / self._num_desired_points
         downsampled = demonstration_data['corrections'][::every_nth]
         downsampled = downsampled[:self._num_desired_points]
@@ -241,12 +261,21 @@ def run(arguments):
     parser.add_argument('words', default='default', metavar='words',
                         nargs='+',
                         help='Demonstration word(s)')
+    parser.add_argument('--discard_static', action='store_true',
+                        dest='discard_static_points',
+                        default=True,
+                        help='Discard any points without motion from the start.')
+    parser.add_argument('--no-discard_static',
+                        dest='discard_static_points', action='store_false')
+
     parser.add_argument('--plot', default=False, action='store_true',
                         help='Plot demonstration.')
     args = parser.parse_args(arguments)
 
+
     demonstrator = CollectDemonstration(args.words, args.num, args.output)
-    demonstrator.do(args.plot)
+
+    demonstrator.do(args.discard_static_points, args.plot)
 
     return
 
