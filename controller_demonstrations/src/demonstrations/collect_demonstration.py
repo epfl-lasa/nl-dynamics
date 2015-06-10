@@ -63,6 +63,10 @@ class CollectDemonstration(object):
         rospy.loginfo('Finished collecting demonstration, have {} points'.format(
             self._num_demo_points))
 
+        if not self._demonstration_anchor or not self._demonstration_vector:
+            rospy.logerr('No training data collected, doing nothing.')
+            return
+
         demonstration_data = {'anchor': self._demonstration_anchor,
                               'corrections': self._demonstration_vector}
 
@@ -94,6 +98,7 @@ class CollectDemonstration(object):
         Returns (anchor, corrections)
 
         """
+        num_corrections = len(demonstration_data['corrections'])
 
         # Remove any points that are closer than 'MOTION_DISTANCE_THRESHOLD'
         # from the anchor point.
@@ -106,16 +111,17 @@ class CollectDemonstration(object):
                 if dist > self.MOTION_DISTANCE_THRESHOLD:
                     data_keep.append(data)
             rospy.loginfo('Discarded {} non-moving data points from dataset.'.
-                          format(len(demonstration_data['corrections']) - len(data_keep)))
+                          format(num_corrections - len(data_keep)))
             demonstration_data['corrections'] = data_keep
 
+        num_corrections = len(demonstration_data['corrections'])  # Update number.
         rospy.loginfo('Processing {} demonstrations. Downsampling to {}.'.
-                      format(len(demonstration_data['corrections']),
-                             self._num_desired_points))
+                      format(num_corrections,
+                             min(self._num_desired_points, num_corrections)))
 
         # Downsample the data. For now, just take every Nth piece of data, and
         # truncate anything extra (only do this with enough data points).
-        every_nth = len(demonstration_data['corrections']) / self._num_desired_points
+        every_nth = num_corrections / self._num_desired_points
         if every_nth > 1:
             downsampled = demonstration_data['corrections'][::every_nth]
             downsampled = downsampled[:self._num_desired_points]
@@ -125,7 +131,7 @@ class CollectDemonstration(object):
 
         # Subtract the pose of the anchor from all downsampled points.
         anchor = demonstration_data['anchor']
-        rospy.loginfo('Removing anchor {} {} {} from {} data points'.
+        rospy.loginfo('Removing anchor ({:.2f} {:.2f} {:.2f}) from {} data points'.
                       format(anchor.pose.position.x,
                              anchor.pose.position.y,
                              anchor.pose.position.z,
