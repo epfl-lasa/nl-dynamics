@@ -66,15 +66,6 @@ class CollectDemonstration(object):
         demonstration_data = {'anchor': self._demonstration_anchor,
                               'corrections': self._demonstration_vector}
 
-        try:
-            filepath = 'demo_data-all.pck'
-            with open(filepath, 'w') as f:
-                pickle.dump(demonstration_data, f)
-                print 'Object saved to [%s].' % filepath
-        except IOError as e:
-            print e
-            pass
-
         (processed_anchor, processed_data) = self.process_demonstration(
             demonstration_data, discard_static_points, plot)
         msg = self.make_message(processed_anchor, processed_data)
@@ -114,7 +105,7 @@ class CollectDemonstration(object):
                 dist = self.dist_from_anchor(data)
                 if dist > self.MOTION_DISTANCE_THRESHOLD:
                     data_keep.append(data)
-            rospy.loginfo('Discarded {} non-moving data points from dataset'.
+            rospy.loginfo('Discarded {} non-moving data points from dataset.'.
                           format(len(demonstration_data['corrections']) - len(data_keep)))
             demonstration_data['corrections'] = data_keep
 
@@ -123,10 +114,14 @@ class CollectDemonstration(object):
                              self._num_desired_points))
 
         # Downsample the data. For now, just take every Nth piece of data, and
-        # truncate anything extra.
+        # truncate anything extra (only do this with enough data points).
         every_nth = len(demonstration_data['corrections']) / self._num_desired_points
-        downsampled = demonstration_data['corrections'][::every_nth]
-        downsampled = downsampled[:self._num_desired_points]
+        if every_nth > 1:
+            downsampled = demonstration_data['corrections'][::every_nth]
+            downsampled = downsampled[:self._num_desired_points]
+        else:
+            # There will be at least one point.
+            downsampled = demonstration_data['corrections']
 
         # Subtract the pose of the anchor from all downsampled points.
         anchor = demonstration_data['anchor']
@@ -246,9 +241,9 @@ class CollectDemonstration(object):
         self._num_demo_points += 1
         self._demonstration_vector.append(data)
 
-
-        rospy.loginfo('Got demonstration {} \t d={:.2f}'.format(
-            self._num_demo_points, self.dist_from_anchor(data)))
+        if self._num_demo_points % 50 == 0:
+            rospy.loginfo('Got demonstration {} \t d={:.2f}'.format(
+                self._num_demo_points, self.dist_from_anchor(data)))
 
 def run(arguments):
     parser = argparse.ArgumentParser(
