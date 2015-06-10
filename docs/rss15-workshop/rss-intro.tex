@@ -1,3 +1,43 @@
 % -*- mode:LaTeX; mode:visual-line; mode:flyspell; fill-column:75 -*-
 \section{Introduction}
 \label{secIntroduction}
+
+
+
+Enabling robots to understand natural language would provide an intuitive interface between lay users and complex robots.
+
+Prior work on enabling robots to understand language has addressed diverse tasks such as following route directions through indoor and outdoor environments, manipulating objects,
+
+
+
+requiring
+
+This specifies \emph{what} the robot should do to complete a task.
+
+
+
+
+In this work, we enable the robot to understand \emph{how} it should do a task using natural language instructions.
+
+
+We train a model from human demonstrations of t
+
+
+For example, an assistive robot may need to understand how much pressure it should exert when cleaning a patient's skin,
+or a factory robot may need to change how stiffly it should hold a part when cooperatively holding it for a person to assemble,
+or a <> robot may need to know from which direction to approach an object
+
+
+
+Furthermore, using controllers provides several key benefits:
+ - defined over the entire state space: robust to perturbations of the robot.
+ - reactive behavior: robust to perturbations of the environment.
+
+\begin{figure}[h]
+  \centering
+  \missingfigure{Modified DS}
+  \caption{A Modified Dynamical System, representing the controller policy at every point in the state space (2D in this case). In the colored areas, the user has provided a correction to the policy (red line), which updates the policy in the same region of state space.
+    Our goal is to use natural language to modify a dynamical system, resulting in a controller that performs the desired behavior.
+}
+  \label{figProblemSetup}
+\end{figure}
