@@ -13,7 +13,6 @@ class TestDemonstrationPoseUtils(unittest.TestCase):
         pass;
 
 
-
 if __name__ == '__main__':
     import rosunit
     rosunit.unitrun(PKG, 'test_demonstration_pose_utils', TestDemonstrationPoseUtils)

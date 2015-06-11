@@ -1,14 +1,21 @@
 % -*- mode:LaTeX; mode:visual-line; mode:flyspell; fill-column:75 -*-
+
+
 \section{Approach}
 \label{sec:approach}
 
-\subsection{Dynamical System}
-\todo[inline]{Klas fill this in.}
-
-Talk about DS here. Make sure to define DS = Dynamical System.
-
-Note; I think we should introduce the MDS in the last section
-
+\subsection{Modified Dynamical System}
+In this work, we model the desired motion of the robot with a first order autonmous DS:
+\begin{equation}
+  \label{eq:DS_general}
+  \dot x = f(x)
+\end{equation}
+where $x \in \mathbb{R}^3$ is the position of the end-effector of the robot with respect to an external coordinate frame. We will exclusively consider DS models that are stable at a single attractor point. Specifically, we use Locally Modulated Dynamical Systems (LMDS), which uses a basic DS model with known stability properties $\dot x = f^o(x)$ and achieves flexibility by reshaping this model locally:
+\begin{equation}
+  \label{eq:DS_reshaped}
+  \dot x = f(x) = M(x)f^o(x)
+\end{equation}
+where $M(x)$ is a matrix valued function that rotates and scales the original dynamics in a continous manner accross the workspace. An example is given in Fig. \ref{figProblemSetup}, which plots the integral curves of a DS over 2d space. In this case, the original dynamics is a linear system and the DS is locally rotated in the right part of workspace. The procedure of reshaping the DS such that it locally aligns with incrementally arricing training data is described in detail in \todo{add reference to klas's RAS paper}.
 \subsection{Demonstrations}
 
 \subsection{Inferring Controllers from Language}
