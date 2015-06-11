@@ -6,19 +6,19 @@ Enabling robots to understand natural language would provide an intuitive interf
 Prior work on enabling robots to understand language has addressed diverse tasks such as following route directions through indoor and outdoor environments~\cite{macmahon06, kollar10, matuszek12a, duvallet13, boularias15}, mobile manipulation~\cite{tellex11, howard14a}, or building semantically-annotated maps of the environment~\cite{walter13}.
 These approaches typically map language to robot plans or high-level symbolic robot languages, and assume a controller exists that can adequately execute the desired actions.
 Hence, natural language has been used mainly as a means of communicating final or intermediate task goals to the robot (e.g., route directions), but not in specifying \emph{how} to reach those goals.
-Our work addresses this gap by leveraging the expressiveness of language and the power of Dynamical Systems-based motion generation.
+Our work addresses this gap by leveraging the expressiveness of language and the power of Dynamical Systems-based trajectory generation.
 This could enable language-based control of robots performing complex tasks that require reasoning at the trajectory level.
 
-Dynamical Systems (DS) based approaches have emerged as an extremely effective means of generating robot trajectories, and provides several key benefits over planning-based approaches:
+Dynamical Systems (DS) have emerged as an effective means of generating robot trajectories, and provide several key benefits over planning-based approaches:
 they are robust to perturbations of the robot,
 they are robust to perturbations in the environment,
 and they generalize well across entire families of trajectories.
 Such DS models are usually tailored to specific tasks via learning from demonstration or reinforcement learning for tasks such as reaching a target point~\cite{KhansariZadeh2011,Calinon2012} or repeating a pattern~\cite{Buchli2006}.
 Connecting natural language and Dynamical Systems would enable users to communication both \emph{what} to do and \emph{how} to do it in a unified representation.
 
-In this report, we explore natural language for online modification of DS models belonging to a recent framework allowing incremental learning in stable DS models proposed by \citet{Kronander2015}.
-We train a model from human demonstrations of the desired behavior modifications (using kinesthetic teaching), and generalize those to novel environments.
-During execution, the user can then change the behavior of robot (through the controller) by using the trained natural language commands instead of requiring more manual interaction.
+In this report, we explore natural language for online modification of DS models, using a recent framework proposed by \citet{Kronander2015} which allows incremental learning in stable DS models.
+We first train a correction model from human demonstrations of the desired behavior modifications (using kinesthetic teaching).
+During execution, the user can then change the behavior of robot (through a modification to the DS) by using the trained natural language corrections instead of requiring more manual interaction.
 This ability can be especially advantageous when the user is unable to interact physically with the robot, either due to safety constraints or a disability.
 
 \begin{figure}[t]

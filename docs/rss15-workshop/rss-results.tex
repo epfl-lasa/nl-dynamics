@@ -5,15 +5,15 @@
 We now present proof-of-concept experiments on a robot reaching task.
 These early results serve as an initial demonstration of our ability to learn the correct behavior from user demonstrations and apply those when the user provides natural language command during task execution.
 
-The robot is tasked with reaching a goal, and the initial Dynamical System is a linear dynamics model with a stable attractor at the goal position; this results in straight-line trajectories towards the goal.
-While this initial behavior correctly specifies the task (the \emph{what}), changes in the environment (such as the addition of a bin) may result in the robot incorrectly performing the task, as shown in \Cref{figExperimentSetup}.
+The robot is tasked with reaching a goal, and as the initial Dynamical System is a linear dynamics model with a stable attractor at the goal position this results in straight-line trajectories towards the goal.
+While this initial behavior correctly specifies the task (the \emph{what}), changes in the environment (such as the addition of a basket) may result in the robot incorrectly performing the task, as shown in \Cref{figExperimentSetup}.
 Note that in our experiments the robot has no sensors to detect obstacles.
 The training phase consisted of a single demonstration with the user back-driving the robot under the original dynamics with the utterance ``go up''.
 
-During the experiment, the user (though natural language) helps the robot to complete the task correctly by reshaping the Dynamical System using the learned correction (invoked using the same utterance).
-In this work we used text-based input with no delay, using a speech-to-text engine would be straightforward but would introduce additional delays, handling those remains future work.
-In this scenario the robot is able to complete the task without hitting the box, and can generalize to different starting positions.
-Additionally, using the same learned correction the user could modify the dynamics on a different task (reaching inside a box in another location).
+During the experiment, the user helps the robot to complete the task correctly by reshaping the Dynamical System using the learned correction (invoked using the same natural language utterance).
+In this work we used text-based input with no delay; using a speech-to-text engine would be straightforward but would introduce additional delays, handling those remains future work.
+In this scenario the robot is able to complete the task without hitting the box with the modified DS, and can generalize to different starting positions.
+Additionally, using the same learned correction the user could modify the dynamics on a different task (reaching inside a box in another location) with the same utterance.
 
 \begin{figure}[t]
   \centering
