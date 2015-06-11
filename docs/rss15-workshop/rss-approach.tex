@@ -11,7 +11,7 @@ We train a model to generalize from the demonstrations to other scenarios, such 
 
 We will now describe our trajectory generator formulation as a Locally Modulated Dynamical System (LMDS), how the user provides demonstrations of the desired (correct) behavior along with a natural language description, and how to infer a new controller solely from natural language instructions given during execution.
 
-\subsection{Locally Modulated Dynamical Systems}
+%%\subsection{Locally Modulated Dynamical Systems}
 
 We model the desired motion of the robot with a first order autonomous DS:
 \begin{equation}
@@ -30,7 +30,7 @@ An example is given in \Cref{figProblemSetup}, which plots the integral curves o
 In this case, the original dynamics is a linear system and the DS is locally rotated in the right part of workspace.
 The modulation function $M$ is learned from incoming trajectory data by using Gaussian Process Regression (GPR), as detailed in \cite{Kronander2015}.
 
-\subsection{Demonstrations}
+%\subsection{Demonstrations}
 
 During training, the user can provide kinesthetic demonstrations (by back-driving the robot) of the correct behavior and attach a natural language utterance to the demonstration.
 For example, the user can say ``go up'' while back-driving the robot along an upwards trajectory.
@@ -41,7 +41,7 @@ More formally, each demonstration $\xi$ for an utterance $\Lambda$ consists of a
 In our experiments we train a model containing several demonstrations provided by the user.
 
 
-\subsection{Inferring Controllers from Language}
+%\subsection{Inferring Controllers from Language}
 
 During execution of the task, the robot can locally modify its trajectory generation model~($M\parens{x}$ in \cref{eq:DS_reshaped}) when it receives a natural language utterance from the user.
 To do so, when the user provides an utterance (representing the desired correction), we apply a correction $\Delta_\Lambda$ from the current robot position, by translating the demonstrated poses:

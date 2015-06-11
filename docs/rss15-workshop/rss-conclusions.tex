@@ -3,14 +3,12 @@
 \label{secConclusions}
 
 
+In this work, we have demonstrated how a robot manipulator can learn to modify its Dynamical System using natural language input from a user supervising the robot, enabling the robot to adapt to changing environments.
+After the corrective model has been trained, this method offers an alternative teaching interface
+that removes the need for physical interaction during task refinement, and provides an intuitive interface for controlling the robot.
 
+Future work will address using \emph{features} to further enable generalization to different scenarios.
+For example, the commands ``keep the tool upright'' or ``stay above the table'' are respectively defined over features of the robot and world states, and these features should be used when generating the correction $\Delta_\Lambda$.
+As our current work only used text-based input, future work will also investigate how to best handle delays introduced by a speech recognition engine.
 
-\subsection{Future work}
-
-Learn corrections using \emph{features} of the state space: this would further enable generalization to novel scenarios.
-For example, the command ``keep the tool upright'' or ``stay above the table'' are respectively defined over features of the robot and world states.
-
-Impedance control: change the stiffness of the robot during the task execution.
-
-
-Handling delays introduced by the speech recognition engine.
+%Impedance control: change the stiffness of the robot during the task execution.
