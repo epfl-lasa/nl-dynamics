@@ -31,9 +31,14 @@ During execution, the user can then change the behavior of robot (through the co
 
 \begin{figure}[t]
   \centering
-  \missingfigure{Modified DS}
-  \caption{A Modified Dynamical System, representing the controller policy at every point in the state space (2D in this case): at every point the robot follows the gradient until it reaches the global minima.
- In the colored areas, the user has provided a correction to the policy (red line), which updates the policy in the same region of state space.
+  \includegraphics[
+    % trim = left bottom right top
+    trim = 150mm 50mm 100mm 50mm, clip,
+    width = 0.4\textwidth,
+  ]{figs/gp_figs/3a-traj1.png}
+  \caption{A Modified Dynamical System, representing the controller policy over the entire state space (a 2D plane in this example): at every point the robot follows the gradient until it reaches the attractor.
+ In the colored areas, the user has provided a correction to the policy (black arrow), which updates the policy in the same region of state space (re-shaped blue lines).
+ This results in a modification to the behavior of the robot (red trajectory).
     Our goal is to use natural language to modify a dynamical system, resulting in a controller that performs the desired behavior.
 }
   \label{figProblemSetup}
@@ -44,3 +49,7 @@ During execution, the user can then change the behavior of robot (through the co
 For example, an assistive robot may need to understand how much pressure it should exert when cleaning a patient's skin,
 or a factory robot may need to change how stiffly it should hold a part when cooperatively holding it for a person to assemble,
 or a <> robot may need to know from which direction to approach an object
+
+
+
+attractor point
