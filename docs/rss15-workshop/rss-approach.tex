@@ -7,7 +7,7 @@ Our approach performs online modifications of a Dynamical System (DS) trajectory
 Such tasks can be conveniently represented by a DS whose trajectories converge to the target point.
 However, some tasks may require that not only the goal but also the path to the goal is important.
 We leverage the fact that the user can show a demonstration of the desired behavior along with a natural language description of this correction.
-We train a model to generalize from the demonstrations to other scenarios, such that the user can simply ``tell'' the robot how to change their behavior in novel domains without the need for any kinesthetic corrections.
+We train a model to generalize from the demonstrations to other scenarios, such that the user can simply tell the robot how to change its behavior in a different environment without the need for any kinesthetic corrections.
 
 We will now describe our trajectory generator formulation as a Locally Modulated Dynamical System (LMDS), how the user provides demonstrations of the desired (correct) behavior along with a natural language description, and how to infer a new controller solely from natural language instructions given during execution.
 
@@ -33,7 +33,7 @@ The modulation function $M$ is learned from incoming trajectory data by using Ga
 \subsection{Demonstrations}
 
 During training, the user can provide kinesthetic demonstrations (by back-driving the robot) of the correct behavior and attach a natural language utterance to the demonstration.
-For example, the user can say ``come from above'' while back-driving the robot along an upwards trajectory.
+For example, the user can say ``go up'' while back-driving the robot along an upwards trajectory.
 More formally, each demonstration $\xi$ for an utterance $\Lambda$ consists of a sequence of $N$ demonstrated positions and velocities ($x$ and $\dot{x}$):
 \begin{equation}
   \xi_\Lambda = \braces{x_i, \dot{x}_i}_{i=0}^N.
