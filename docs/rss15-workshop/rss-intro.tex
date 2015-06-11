@@ -5,9 +5,9 @@
 Enabling robots to understand natural language would provide an intuitive interface between lay users and complex robots.
 Prior work on enabling robots to understand language has addressed diverse tasks such as following route directions through indoor and outdoor environments~\cite{macmahon06, kollar10, matuszek12a, duvallet13, boularias15}, mobile manipulation~\cite{tellex11, howard14a}, or building semantically-annotated maps of the environment~\cite{walter13}.
 These approaches typically map language to robot plans or high-level symbolic robot languages, and assume a controller exists that can adequately execute the desired actions.
-Hence, natural language has been used mainly as a means of communicating final or intermediate task goals to the robot (e.g., route directions), but not in specifying \emph{how} to reach those goals.
-Our work addresses this gap by leveraging the expressiveness of language and the power of Dynamical Systems-based trajectory generation.
-This could enable language-based control of robots performing complex tasks that require reasoning at the trajectory level.
+Hence, natural language has been used mainly as a means of communicating final or intermediate goals to the robot (e.g., route directions), but not in specifying \emph{how} to reach those goals.
+Our work addresses this gap by leveraging the expressiveness of language and the power of Dynamical Systems to learn a trajectory generation model from natural language instructions.
+This could enable language-based control of robots performing complex tasks that require reasoning at the trajectory level such as fine manipulation, assembly, or cooperative human-robot tasks.
 
 Dynamical Systems (DS) have emerged as an effective means of generating robot trajectories, and provide several key benefits over planning-based approaches:
 they are robust to perturbations of the robot,
