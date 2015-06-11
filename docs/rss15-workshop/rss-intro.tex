@@ -11,13 +11,7 @@ These approaches typically map language to robot plans or high-level symbolic co
 Dynamical Systems (DS) based approaches have emerged as an extremely effective means of trajectory representation, which can encapsulate high level \emph{what}'s and lower level \emph{how}'s in a unified representation. Examples of such encodings include \todo[inline]{klas: put some DS citations}. Such DS models are usually tailored to specific tasks via learning from demonstration or reinforcement learning. To the best of our knowledge, NL has previously not been explored in the context of developing DS models for motion representation.
 
 In this report, we explore NL for online modification of DS models belonging to a recently proposed framework allowing incremental learning in stable DS models \todo[inline]{cite klas's RAS paper}. \todo[inline]{need some sort of example on how the system works from the perspective of the user, e.g. what happens when we say turn left etc.}. We train a model from human demonstrations of the desired behavior modifications (using kinesthetic teaching), and generalize those to novel states in the world.
- During execution, the user can then change the behavior of robot (through the controller) by using the trained natural language commands.
-
-
-
-
-
-
+During execution, the user can then change the behavior of robot (through the controller) by using the trained natural language commands.
 
 
 % However, there are many robot tasks that require reasoning not just about \emph{what} to do, but \emph{how} to do it, for example fine manipulation tasks or tasks that require varying impedance during execution.
