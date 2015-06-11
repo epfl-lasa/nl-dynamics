@@ -3,9 +3,9 @@
 \section{Approach}
 \label{sec:approach}
 
-Our approach performs online modifications of a Dynamical System (DS) trajectory generator, applied to a robot manipulator performing some reaching task (bringing the end effector to a particular goal location). 
+Our approach performs online modifications of a Dynamical System (DS) trajectory generator, applied to a robot manipulator performing some reaching task (bringing the end effector to a particular goal location).
 Such tasks can be conveniently represented by a DS whose trajectories converge to the target point.
-However, some tasks may require that not only the goal but also the path to the goal is important. 
+However, some tasks may require that not only the goal but also the path to the goal is important.
 We leverage the fact that the user can show a demonstration of the desired behavior along with a natural language description of this correction.
 We train a model to generalize from the demonstrations to other scenarios, such that the user can simply ``tell'' the robot how to change their behavior in novel domains without the need for any kinesthetic corrections.
 
@@ -23,28 +23,36 @@ We will exclusively consider DS models that are stable at a single attractor poi
 Specifically, we use Locally Modulated Dynamical Systems (LMDS), which uses a basic DS model with known stability properties $\dot x = f^o(x)$ and achieves flexibility by reshaping this model locally:
 \begin{equation}
   \label{eq:DS_reshaped}
-  \dot x = f(x) = M(x)f^o(x)
+  \dot x = f(x) = M(x)f^o(x),
 \end{equation}
 where $M(x)$ is a matrix-valued function that rotates and scales the original dynamics in a continuous manner across the workspace.
 An example is given in \Cref{figProblemSetup}, which plots the integral curves of a DS over 2d space.
 In this case, the original dynamics is a linear system and the DS is locally rotated in the right part of workspace.
 The modulation function $M$ is learned from incoming trajectory data by using Gaussian Process Regression (GPR).
- This procedure is described in detail in \cite{Kronander2015}. 
+ This procedure is described in detail in \cite{Kronander2015}.
 
 
 \subsection{Demonstrations}
 
 During training, the user can provide kinesthetic demonstrations (by back-driving the robot) of the correct behavior and attach a natural language utterance to the demonstration.
 For example, the user can say ``come from above'' while back-driving the robot along an upwards trajectory.
-
-
-In our experiments we train a model containing several corrections the user may describe.
+More formally, each demonstration $\xi$ for an utterance $\Lambda$ consists of a sequence of $N$ demonstrated positions and velocities ($x$ and $\dot{x}$):
+\begin{equation}
+  \xi_\Lambda = \braces{x_i, \dot{x}_i}_{i=0}^N.
+\end{equation}
+In our experiments we train a model containing several demonstrations provided by the user.
 
 
 \subsection{Inferring Controllers from Language}
 
 During execution of the task, the robot can locally modify its trajectory generation model~($M\parens{x}$ in \cref{eq:DS_reshaped}) when it receives a natural language utterance from the user.
+To do so, when the user provides an utterance (representing the desired correction), we apply a correction $\Delta_\Lambda$ from the current robot position, by translating the demonstrated poses:
+\begin{equation}
+  \Delta_\Lambda = \braces{x_i - x_0  + x_r, \,\, \dot{x}_i}_{i=0}^N,
+\end{equation}
+where $x_r$ is robot pose when the utterance was initiated,
+and $x_i-x_0$ represents the transformation of the trajectory data to the new location (this enables our approach to generalize to new poses in the state).
 
-
-\todo[inline]{Describe how we learn the M matrix using a GP consisting of
-  position and velocity}
+This correction $\Delta_\Lambda$ is used as an input to the learning algorithm presented in \citet{Kronander2015} to yield the modulation matrix $M\parens{x}$ in \Cref{eq:DS_reshaped}.
+This results in an immediate modification of the robot trajectory according to the utterance provided by the user.
+These are remembered during subsequent task executions, and the user can provide further natural language modifications.
