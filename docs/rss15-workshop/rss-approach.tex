@@ -3,14 +3,15 @@
 \section{Approach}
 \label{sec:approach}
 
-Our approach performs online modifications of a Dynamical System (DS) trajectory generator, applied to a robot manipulator performing a reaching task (bringing the end effector to a particular goal location).
-In many tasks the original dynamics are not enough to successfully complete the task, for example if the user wants the robot to take a specific path.
+Our approach performs online modifications of a Dynamical System (DS) trajectory generator, applied to a robot manipulator performing some reaching task (bringing the end effector to a particular goal location). 
+Such tasks can be conveniently represented by a DS whose trajectories converge to the target point.
+However, some tasks may require that not only the goal but also the path to the goal is important. 
 We leverage the fact that the user can show a demonstration of the desired behavior along with a natural language description of this correction.
 We train a model to generalize from the demonstrations to other scenarios, such that the user can simply ``tell'' the robot how to change their behavior in novel domains without the need for any kinesthetic corrections.
 
-We will now describe our trajectory generator formulation as a Modified Dynamical System, how the user provides demonstrations of the desired (correct) behavior along with a natural language description, and how to infer a new controller solely from natural language instructions given during execution.
+We will now describe our trajectory generator formulation as a Locally Modulated Dynamical System (LMDS), how the user provides demonstrations of the desired (correct) behavior along with a natural language description, and how to infer a new controller solely from natural language instructions given during execution.
 
-\subsection{Modified Dynamical System}
+\subsection{Locally Modulated Dynamical Systems}
 
 We model the desired motion of the robot with a first order autonomous DS:
 \begin{equation}
@@ -24,10 +25,11 @@ Specifically, we use Locally Modulated Dynamical Systems (LMDS), which uses a ba
   \label{eq:DS_reshaped}
   \dot x = f(x) = M(x)f^o(x)
 \end{equation}
-where $M(x)$ is a matrix valued function that rotates and scales the original dynamics in a continuous manner across the workspace.
+where $M(x)$ is a matrix-valued function that rotates and scales the original dynamics in a continuous manner across the workspace.
 An example is given in \Cref{figProblemSetup}, which plots the integral curves of a DS over 2d space.
 In this case, the original dynamics is a linear system and the DS is locally rotated in the right part of workspace.
-The procedure of reshaping the DS such that it locally aligns with incrementally-arriving training data is described in detail in \todo{add reference to klas's RAS paper}.
+The modulation function $M$ is learned from incoming trajectory data by using Gaussian Process Regression (GPR).
+ This procedure is described in detail in \cite{Kronander2015}. 
 
 
 \subsection{Demonstrations}
