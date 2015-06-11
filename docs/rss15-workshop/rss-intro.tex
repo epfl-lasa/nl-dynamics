@@ -4,7 +4,9 @@
 
 
 Enabling robots to understand natural language would provide an intuitive interface between lay users and complex robots.
-Prior work on enabling robots to understand language has addressed diverse tasks such as following route directions through indoor and outdoor environments, manipulating objects,
+Prior work on enabling robots to understand language has addressed diverse tasks such as following route directions through indoor and outdoor environments~\cite{macmahon06, kollar10, matuszek12a, duvallet13, boularias15}, mobile manipulation~\cite{tellex11, howard14a}, or building semantically-annotated maps of the environment~\cite{walter13}.
+
+
 
 
 These approaches map language to robot plans or high-level symbolic control languages.
@@ -33,12 +35,13 @@ During execution, the user can then change the behavior of robot (through the co
   \centering
   \includegraphics[
     % trim = left bottom right top
-    trim = 150mm 50mm 100mm 50mm, clip,
+    trim = 150mm 50mm 100mm 80mm, clip,
     width = 0.4\textwidth,
   ]{figs/gp_figs/3a-traj1.png}
   \caption{A Modified Dynamical System, representing the controller policy over the entire state space (a 2D plane in this example): at every point the robot follows the gradient until it reaches the attractor.
  In the colored areas, the user has provided a correction to the policy (black arrow), which updates the policy in the same region of state space (re-shaped blue lines).
  This results in a modification to the behavior of the robot (red trajectory).
+ More importantly, the behavior generalizes to other areas of the state space
     Our goal is to use natural language to modify a dynamical system, resulting in a controller that performs the desired behavior.
 }
   \label{figProblemSetup}
@@ -51,5 +54,5 @@ or a factory robot may need to change how stiffly it should hold a part when coo
 or a <> robot may need to know from which direction to approach an object
 
 
-
+\todo[inline] Things to add in:
 attractor point
