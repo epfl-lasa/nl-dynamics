@@ -61,7 +61,7 @@ export LC_ALL		?= C
 #
 # If you specify sources here, all other files with the same suffix
 # will be treated as if they were _include_ files.
-onlysources.tex	?= rss15-nl.controllers.tex
+onlysources.tex	?= rss15-nl.dynamical.systems.tex
 #onlysources.lhs	?=
 #onlysources.tex.sh	?=
 #onlysources.tex.pl	?=
