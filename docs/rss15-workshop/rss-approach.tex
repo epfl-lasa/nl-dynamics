@@ -37,4 +37,8 @@ In our experiments we train a model containing several corrections the user may 
 
 \subsection{Inferring Controllers from Language}
 
-During execution of the task, the robot can locally modify its trajectory generation model~(\cref{eq:DS_reshaped}) when it receives a natural language utterance from the user.
+During execution of the task, the robot can locally modify its trajectory generation model~($M\parens{x}$ in \cref{eq:DS_reshaped}) when it receives a natural language utterance from the user.
+
+
+\todo[inline]{Describe how we learn the M matrix using a GP consisting of
+  position and velocity}
