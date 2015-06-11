@@ -8,9 +8,12 @@ Prior work on enabling robots to understand language has addressed diverse tasks
 
 These approaches typically map language to robot plans or high-level symbolic control languages \todo[inline]{FELIX: add some citations here}. This approach is focused solely on high-level reasoning, and assumes that a controller that can adequately execute the plan is available. Hence, natural language has been used mainly as a means of communicating final or intermediate task goals to the robot, but not in specifying \emph{how} to reach those goals.
 
-Dynamical Systems (DS) based approaches have emerged as an extremely effective means of trajectory representation, which can encapsulate high level \emph{what}'s and lower level \emph{how}'s in a unified representation. Examples of such encodings include \todo[inline]{klas: put some DS citations}. Such DS models are usually tailored to specific tasks via learning from demonstration or reinforcement learning. To the best of our knowledge, NL has previously not been explored in the context of developing DS models for motion representation.
+Dynamical Systems (DS) based approaches have emerged as an extremely effective means of trajectory representation, which can encode high level desiderata such as reaching a target point \cite{Khansari-Zadeh2011,Calinon2012} or repeating a pattern \cite{Buchli2006,Kronander2015} while simoultaneously encoding \emph{how} these goals are achieved, i.e. which paths the robot should move along.
+ DS models are usually tailored to specific tasks via learning from demonstration or reinforcement learning.
+ To the best of our knowledge, NL has previously not been explored in the context of developing DS models for motion representation.
 
-In this report, we explore NL for online modification of DS models belonging to a recently proposed framework allowing incremental learning in stable DS models \todo[inline]{cite klas's RAS paper}. \todo[inline]{need some sort of example on how the system works from the perspective of the user, e.g. what happens when we say turn left etc.}. We train a model from human demonstrations of the desired behavior modifications (using kinesthetic teaching), and generalize those to novel states in the world.
+In this report, we explore NL for online modification of DS models belonging to a recently proposed framework allowing incremental learning in stable DS models \cite{Kronander2015}. \todo[inline]{need some sort of example on how the system works from the perspective of the user, e.g. what happens when we say turn left etc.}. 
+We train a model from human demonstrations of the desired behavior modifications (using kinesthetic teaching), and generalize those to novel states in the world.
 During execution, the user can then change the behavior of robot (through the controller) by using the trained natural language commands.
 
 
