@@ -2,34 +2,24 @@
 \section{Introduction}
 \label{secIntroduction}
 
-
 Enabling robots to understand natural language would provide an intuitive interface between lay users and complex robots.
 Prior work on enabling robots to understand language has addressed diverse tasks such as following route directions through indoor and outdoor environments~\cite{macmahon06, kollar10, matuszek12a, duvallet13, boularias15}, mobile manipulation~\cite{tellex11, howard14a}, or building semantically-annotated maps of the environment~\cite{walter13}.
 
-These approaches typically map language to robot plans or high-level symbolic control languages \todo[inline]{FELIX: add some citations here}. This approach is focused solely on high-level reasoning, and assumes that a controller that can adequately execute the plan is available. Hence, natural language has been used mainly as a means of communicating final or intermediate task goals to the robot, but not in specifying \emph{how} to reach those goals.
+These approaches typically map language to robot plans or high-level symbolic robot languages, and as they are focused solely on high-level reasoning they assume that a controller exists that can adequately execute the desired actions.
+Hence, natural language has been used mainly as a means of communicating final or intermediate task goals to the robot (e.g., route directions), but not in specifying \emph{how} to reach those goals.
+Our work addresses this gap by leveraging the expressiveness of language and the power of Dynamical Systems-based motion generation.
+This could enable language-based control of robots performing complex tasks that require reasoning at the trajectory level such as fine manipulation tasks, variable-impedance tasks, or tasks that .
 
-Dynamical Systems (DS) based approaches have emerged as an extremely effective means of trajectory representation, which can encapsulate high level \emph{what}'s and lower level \emph{how}'s in a unified representation. Examples of such encodings include \todo[inline]{klas: put some DS citations}. Such DS models are usually tailored to specific tasks via learning from demonstration or reinforcement learning. To the best of our knowledge, NL has previously not been explored in the context of developing DS models for motion representation.
+Dynamical Systems (DS) based approaches have emerged as an extremely effective means of representing trajectories, and provides several key benefits:
+they are robust to perturbations of the robot,
+they are robust to perturbations in the environment,
+and they generalize well across entire families of trajectories.
+Such DS models are usually tailored to specific tasks via learning from demonstration or reinforcement learning~\ref{klas_cite_papers_here}.
+Connecting natural language and Dynamical Systems would enable users to communication both \emph{what} to do and \emph{how} to do it in a unified representation.
 
-In this report, we explore NL for online modification of DS models belonging to a recently proposed framework allowing incremental learning in stable DS models \todo[inline]{cite klas's RAS paper}. \todo[inline]{need some sort of example on how the system works from the perspective of the user, e.g. what happens when we say turn left etc.}. We train a model from human demonstrations of the desired behavior modifications (using kinesthetic teaching), and generalize those to novel states in the world.
+In this report, we explore NL for online modification of DS models belonging to a recently proposed framework allowing incremental learning in stable DS models \todo[inline]{cite klas's RAS paper}. \todo[inline]{need some sort of example on how the system works from the perspective of the user, e.g. what happens when we say turn left etc.}.
+We train a model from human demonstrations of the desired behavior modifications (using kinesthetic teaching), and generalize those to novel states in the world.
 During execution, the user can then change the behavior of robot (through the controller) by using the trained natural language commands.
-
-
-% However, there are many robot tasks that require reasoning not just about \emph{what} to do, but \emph{how} to do it, for example fine manipulation tasks or tasks that require varying impedance during execution.
-% To date, no work connects language and robot behavior at the controller\todo{??} level.
-% Using a controller such as a Dynamical System provides several key benefits:
-% \begin{itemize}
-% \item defined over the entire state space: robust to perturbations of the robot.
-% \item reactive behavior: robust to perturbations of the environment.
-% \item generalizability: a dynamical system provides a family of trajectories, not just a single one.
-% \end{itemize}
-
-
-
-% In this work, we enable the robot to understand \emph{how} it should do a task using natural language instructions.
-% Specifically, we represent a task using a ``vanilla'' DS, and leverage the expressive power of language to infer \emph{modifications} to the Dynamical System.
-% We train a model from human demonstrations of the desired behavior modifications (using kinesthetic teaching), and generalize those to novel states in the world.
-% During execution, the user can then change the behavior of robot (through the controller) by using the trained natural language commands.
-
 
 
 
@@ -41,10 +31,9 @@ During execution, the user can then change the behavior of robot (through the co
     width = 0.4\textwidth,
   ]{figs/gp_figs/3a-traj1.png}
   \caption{A Modified Dynamical System, representing the controller policy over the entire state space (a 2D plane in this example): at every point the robot follows the gradient until it reaches the attractor.
- In the colored areas, the user has provided a correction to the policy (black arrow), which updates the policy in the same region of state space (re-shaped blue lines).
- This results in a modification to the behavior of the robot (red trajectory).
- More importantly, the behavior generalizes to other areas of the state space
-    Our goal is to use natural language to modify a dynamical system, resulting in a controller that performs the desired behavior.
+ In the colored areas, the user has provided a correction to the policy (black arrow), which updates the policy in the same region of state space (re-shaped blue lines),
+ resulting in behavior that generalizes to other nearby areas of the state space: for example the red trajectory.
+    Our goal is to use natural language to modify a dynamical system, resulting in trajectories that performs the desired behavior.
 }
   \label{figProblemSetup}
 \end{figure}
