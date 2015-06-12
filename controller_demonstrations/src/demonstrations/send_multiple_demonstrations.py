@@ -7,6 +7,34 @@ import rospy
 
 from correction_publisher import PublishCorrections
 
+"""
+Send multiple commands at once, using stdin as the input
+"""
+
+
+def is_finished(command, allow_single_letter):
+    # Returns True if the user wants to stop (input = 'quit' or 'done'). single
+    # letter stop is allowed if the input is exactly one letter.
+
+    finished = False
+
+    if command == 'quit': finished = True
+    if command == 'done': finished = True
+
+    if allow_single_letter:
+        if command == 'q': finished = True
+
+    return finished
+
+
+def get_command(allow_single_letter):
+    # Returns the NL command, or None if we are finished.
+    command = raw_input('Enter command:')
+    if is_finished(command, allow_single_letter):
+        command = None
+
+    return command
+
 
 def run_send_multiple_commands(arguments):
     parser = argparse.ArgumentParser(
@@ -17,20 +45,24 @@ def run_send_multiple_commands(arguments):
 
     demo_publisher = PublishCorrections(args.demo_dir)
 
-    nl_command = 'blank'
-
-    # Sleep long enough to get the Kuka State and have all messages register
-    # with the core.
-    time.sleep(1.0)
-
     try:
-        demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
-        time.sleep(0.5)  # Sleep to make sure the message goes out.
+        finished = False
+        while not finished:
+            nl_command = get_command(allow_single_letter=True)  # TODO get from opts
+            if not nl_command:
+                finished = True
+                rospy.loginfo('Finished.')
+                break
+
+            rospy.loginfo('Command: {}'.format(nl_command))
+            demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
+
     except rospy.ROSInterruptException as e:
         print e
         pass
 
-    # Do not spin: only one command goes out. rospy.spin()
+    rospy.loginfo('Goodbye.')
+
 
 
 if __name__ == '__main__':
