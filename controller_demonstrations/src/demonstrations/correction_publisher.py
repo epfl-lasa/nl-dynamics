@@ -3,6 +3,7 @@ import copy
 import rosbag
 import rospy
 import tf_conversions
+import PyKDL
 
 from nl_msgs.msg import CartStateStamped
 from nl_msgs.msg import AnchoredDemonstration
@@ -135,6 +136,7 @@ class PublishCorrections(object):
         # from the robot anchor.
         correction.num_points = len(self._corrections[word])
         anchor_frame = tf_conversions.fromMsg(robot_anchor.pose)  # Use PyKDL.Frame.
+        anchor_frame.M = PyKDL.Rotation()  # NO ROTATION HACK
         for c in self._corrections[word]:
 
             # Convert each pose to be in the world frame, using the anchor.
