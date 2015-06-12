@@ -46,6 +46,9 @@ class PublishCorrections(object):
 
         rospy.loginfo('-- Finished init --')
 
+    def words(self):
+        return self._corrections.keys()
+
     def load_all_demonstrations(self, demonstration_dir):
         ret = {}
 
