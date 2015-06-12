@@ -1,2 +1,23 @@
 *~
 *.pyc
+
+
+# LaTeX compilation files
+docs/**/*.aux
+docs/**/*.temp
+docs/**/*.make
+docs/**/*.bbl
+docs/**/*.blg
+docs/**/*.log
+docs/**/*.cookie
+docs/**/*.fls
+docs/**/*.out
+docs/**/*.d
+docs/**/*.fls
+docs/**/*.xml
+docs/**/*.gz
+docs/**/*.tui
+docs/**/*.bcf
+docs/**/*.top
+docs/**/auto
+docs/**/figs/auto

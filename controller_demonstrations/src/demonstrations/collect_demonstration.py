@@ -8,6 +8,7 @@ import sys
 import rospy
 import rosbag
 import tf_conversions
+import PyKDL
 
 from nl_msgs.msg import CartStateStamped
 from nl_msgs.msg import AnchoredDemonstration
@@ -158,7 +159,11 @@ class CollectDemonstration(object):
             ax.scatter(anchor_new.pose.position.x,
                        anchor_new.pose.position.y,
                        anchor_new.pose.position.z, c='k')
+            ax.scatter(0, 0, 0, c='r')
 
+            ax.set_xlabel('X axis')
+            ax.set_ylabel('Y axis')
+            ax.set_zlabel('Z axis')
             ax.axis('equal')
             plt.show()
             pass
@@ -175,6 +180,7 @@ class CollectDemonstration(object):
 
         # Convert anchor pose into a PyKDL.Frame: simplifies
         anchor_frame = tf_conversions.fromMsg(anchor.pose)
+        anchor_frame.M = PyKDL.Rotation()  # NO ROTATION
 
         def subtract_pose(point, verbose=False):
             p = copy.deepcopy(point)
