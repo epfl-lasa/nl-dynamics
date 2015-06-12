@@ -98,7 +98,7 @@ class PublishCorrections(object):
                 msg = self.create_correction(word, robot_anchor)
                 corrections.append(msg)
             else:
-                rospy.logdebug('Skipping demonstration for unknown '
+                rospy.loginfo('Skipping demonstration for unknown '
                                'word: {}'.format(word))
                 pass
 
