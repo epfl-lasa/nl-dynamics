@@ -18,6 +18,7 @@ GPMDS::GPMDS(REALTYPE a)
 GPMDS::GPMDS(REALTYPE ell, REALTYPE sigmaF, REALTYPE sigmaN,REALTYPE speedErrorTol, REALTYPE angleErrorTol)
 {
   //Initialize Gaussian Process
+  mGPR = new MultiGPR(3,4);
   setGPParameters(ell, sigmaF, sigmaN);
   this->speedErrorTol = speedErrorTol;
   this->angleErrorTol = angleErrorTol;
@@ -31,9 +32,9 @@ void GPMDS::setSparse(bool s=true){
 void GPMDS::setGPParameters(REALTYPE ell, REALTYPE sigmaF, REALTYPE sigmaN)
 {
   //Create the GPR (input 3, output 4)
-  mGPR = new MultiGPR(3,4);
+  //mGPR = new MultiGPR(3,4);
   //Set parameters for the GPR;
-  (*mGPR).setHyperParams(ell, sigmaF, sigmaN);
+  mGPR->setHyperParams(ell, sigmaF, sigmaN);
 }
 
 void GPMDS::setOriginalDynamics(std::function<Vector3r(Vector3r)> fun)
@@ -58,17 +59,38 @@ Vector4r GPMDS::computeLMDSParameters(Vector3r position, Vector3r velocity){
 
   // Find the scaling between vectors
   kappa = (velocity.norm()/originalVelocity.norm())-1.0;
-
+  //cout<<"velocoity.norm() "<<velocity.norm()<<" org. vel nomr. "<<originalVelocity.norm()<<endl;
   //Compare resulting original velocity with velocity to compute speed scaling (kappa) and rotation axis angle
   angle = acos((originalVelocity.dot(velocity))/(originalVelocity.norm()*velocity.norm()));
+  Vector3r colinerity_measure;
+  colinerity_measure= originalVelocity/originalVelocity.norm() - velocity/velocity.norm();
+//  if(colinearity_measure.norm()<0.00001){
+//      axis.setRandom();
+//      axis -= axis.dot(velocity)*velocity/velocity.norm();
+//  }else{
   axis = originalVelocity.cross(velocity);
+
   axis /= axis.norm();
 
   //Create the datapoint, theta (the 4 number output of the GPR- axis angle, scaling)
   for (int i=0; i<3; i++)
     theta(i) = angle*axis(i);
 
+//  cout<<"start here"<<endl;
+//  cout<<originalVelocity<<endl;
+//  cout<<velocity<<endl;
+//  cout<<axis<<endl;
+//  cout<<"ang "<<angle<<endl;
   theta(3) = kappa;
+//  for (int i = 0; i < 4; ++i) {
+//      if(std::isnan(theta(i))){
+//          cout<<"start here"<<endl;
+//          cout<<originalVelocity<<endl;
+//          cout<<velocity<<endl;
+//          cout<<axis<<endl;
+//          cout<<"ang "<<angle<<endl;
+//      }
+//  }
 
   return theta;
 }
@@ -77,7 +99,9 @@ Vector4r GPMDS::computeLMDSParameters(Vector3r position, Vector3r velocity){
 void GPMDS::addData(Vector3r position, Vector3r velocity)
 {
   Vector4r theta;
+  // need to subtract target posioitn
   theta = computeLMDSParameters(position, velocity);
+  cout<<"theta before GPR: "<<theta<<endl;
   if(checkNewData(position,theta))
     mGPR->addTrainingData(position, theta);
 }
@@ -106,6 +130,11 @@ bool GPMDS::checkNewData(Vector3r position, Vector4r theta){
   }
 }
 
+void GPMDS::clearData()
+{
+    mGPR->clearTrainingData();
+}
+
 Vector3r GPMDS::reshapedDynamics(Vector3r position)
 {
 
@@ -123,7 +152,7 @@ Vector3r GPMDS::reshapedDynamics(Vector3r position)
   //(*mGPR).prepareRegression();
   //cout<<originalVelocity<<endl;
   result = (*mGPR).doRegression(position);
-//cout<<result<<endl;
+  cout<<"result in gpr: "<<result<<endl;
   // Calculate axis and angle from reshaping parameters
   for (int i=0; i<3; i++){axis(i)=result(i);}
   kappa  = result(3);
@@ -145,10 +174,20 @@ Vector3r GPMDS::reshapedDynamics(Vector3r position)
   //Rotate and scale the original velocity
   velocity = rot_mat*originalVelocity;
   //cout<<velocity<<endl;
+  //kappa = 0.0;
+  if(kappa < -0.7)
+      kappa = -0.7;
+
+  kappa = 0.0;
   velocity= velocity*(kappa+1);
    // cout<<velocity<<endl;
   //Return resulting velocity
   return velocity;
+}
+
+Vector3r GPMDS::evaluateOriginalDynamics(Vector3r position)
+{
+    return originalDynamics(position);
 }
 
 

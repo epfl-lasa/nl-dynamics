@@ -55,6 +55,7 @@ class MultiGPR{
   void prepareRegression(bool force_prepare = false);
   VectorXr doRegression(VectorXr inp,bool prepare = false);
   int getNData(){return nData;};
+  void clearTrainingData();
 };
 
 

@@ -73,21 +73,32 @@ void MultiGPR::prepareRegression(bool force_prepare)
 
 
 VectorXr MultiGPR::doRegression(VectorXr inp,bool prepare){
-  if(prepare){
+  if(prepare || bNeedPrepare){
     prepareRegression();
   }
 
   VectorXr outp(outputData.rows());
+  outp.setZero();
   KXx = SQEcovFunc(inputData,inp);
   KxX = SQEcovFunc(inputData,inp).transpose();
   VectorXr tmp(inputData.cols());
   // this line is the slow one, hard to speed up further?
   tmp = KXX_*KXx;
+ // cout<<"inputdata: "<<inputData<<endl<<"outputdata: "<<outputData<<endl;
+  // cout<<"tmp: "<<tmp<<endl;
   // the rest is noise in comparison with the above line.
   for(int i=0;i<outputData.rows();i++){
     outp(i)=tmp.dot(outputData.row(i));
   }
   return outp;
+}
+
+void MultiGPR::clearTrainingData()
+{
+    inputData.resize(inputData.rows(),0);
+    outputData.resize(outputData.rows(),0);
+    bNeedPrepare = true;
+    nData = 0;
 }
 
 MatrixXr MultiGPR::SQEcovFunc(MatrixXr x1){

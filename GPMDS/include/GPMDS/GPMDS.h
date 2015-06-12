@@ -40,9 +40,11 @@ class GPMDS{
   void setOriginalDynamics(std::function<Vector3r(Vector3r)>);
   void addData(Vector3r position, Vector3r velocity);
   Vector3r reshapedDynamics(Vector3r position);
+  Vector3r evaluateOriginalDynamics(Vector3r position);
   Vector4r computeLMDSParameters(Vector3r position, Vector3r velocity);
   void prepareFastQuery();
   bool checkNewData(Vector3r position, Vector4r theta);
+  void clearData();
   static void dummyFunction(int);
 };
 
