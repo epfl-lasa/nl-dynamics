@@ -27,7 +27,44 @@ Vector3r linear_isotropic_dynamics(Vector3r pos) {
   return vel;
 }
 
+
+void ensureDoingRightThing(){
+
+    const double ell = 0.1;
+    const double sigmaF = 1.0;
+    const double sigmaN = 0.01;
+    const double speedErrorTol = 0.01;
+    const double angleErrorTol = 0.1;
+    GPMDS mGPMDS(ell, sigmaF, sigmaN, speedErrorTol, angleErrorTol);
+    mGPMDS.setOriginalDynamics(&linear_isotropic_dynamics);
+
+    Vector3r pos,vel;
+    vector<Vector3r> training_pos;
+    vector<Vector3r> training_vel;
+
+    pos.setZero();
+    pos(2) = 1.0;
+    cout<<"org vel:" << mGPMDS.reshapedDynamics(pos)<<endl;
+
+    vel.setZero();
+    vel(1) = 1.0;
+    mGPMDS.addData(pos,vel);
+    mGPMDS.prepareFastQuery();
+    cout<<"reshaped vel on trianing point: "<<mGPMDS.reshapedDynamics(pos)<<endl;
+
+
+
+
+
+}
+
 int main(int argc, char *argv[]) {
+
+  ensureDoingRightThing();
+  exit(2);
+
+
+
   const double ell = 0.07;
   const double sigmaF = 1.0;
   const double sigmaN = 0.4;
