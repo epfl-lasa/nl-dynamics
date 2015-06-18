@@ -1,6 +1,11 @@
 *~
 *.pyc
 
+# PyCharm setting files.
+.idea/workspace.xml
+.idea/tasks.xml
+**.iws
+
 
 # LaTeX compilation files
 docs/**/*.aux
