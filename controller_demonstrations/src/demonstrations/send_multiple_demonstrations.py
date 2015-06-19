@@ -99,6 +99,6 @@ def run_send_multiple_commands(arguments):
 
 
 if __name__ == '__main__':
-    arguments = sys.argv[1:]  # argv[0] is the program name.
-    run_send_multiple_commands(arguments)
+    args = sys.argv[1:]  # argv[0] is the program name.
+    run_send_multiple_commands(args)
 
