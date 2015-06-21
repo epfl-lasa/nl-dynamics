@@ -50,6 +50,10 @@ class PublishCorrections(object):
     def words(self):
         return self._corrections.keys()
 
+    @property
+    def corrections(self):
+        return self._corrections.items()
+
     def load_all_demonstrations(self, demonstration_dir):
         ret = {}
 
@@ -71,7 +75,8 @@ class PublishCorrections(object):
         return ret
 
     def load_demonstration(self, filepath):
-        # Load a single demonstration. Returns a single AnchoredDemonstration message.
+        # Loads a single demonstration from a file and returns a single
+        # AnchoredDemonstration message.
         rospy.loginfo('Loading demonstration from {}.'.format(filepath))
 
         msg = None
