@@ -2,12 +2,16 @@
 
 import sys
 import argparse
+import time
 
+import rospy
 from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker
 
 from correction_publisher import PublishCorrections
 from nl_msgs.msg import AnchoredDemonstration
+
+channel_viz = 'visualization_channel'
 
 
 def run(arguments):
@@ -18,6 +22,9 @@ def run(arguments):
     args = parser.parse_args(arguments)
 
     do(args.demo_dir)
+
+    rospy.loginfo('Spin...')
+    rospy.spin()
 
     pass
 
@@ -42,16 +49,28 @@ def cart_state_to_point(point):
 def do(demo_dir):
 
     # Use the correction publisher to load the demonstrations for a directory.
-    corr = PublishCorrections(demo_dir)
 
-    for (word, correction) in corr.corrections:
+
+    rospy.init_node('visualization_node', anonymous=False)
+    publisher = rospy.Publisher(channel_viz, Marker, queue_size=10)
+
+    time.sleep(1.0)
+
+    corrections = PublishCorrections.load_all_demonstrations(demo_dir)
+
+    for (word, correction) in corrections.iteritems():
         # Correction is a list[CartStateStamped]
         print 'word: ', word
 
         marker = create_correction_viz_msg(correction)
         print '  Got a marker with {} points'.format(len(marker.points))
 
-    create_correction_viz_msg(correction)
+        # Publish each message
+        publisher.publish(marker)
+        pass
+
+    publisher.unregister()
+
 
 
     pass
