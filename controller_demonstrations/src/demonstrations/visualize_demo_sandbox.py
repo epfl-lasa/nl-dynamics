@@ -12,7 +12,7 @@ from visualization_msgs.msg import MarkerArray
 from correction_publisher import PublishCorrections
 from nl_msgs.msg import AnchoredDemonstration
 
-channel_viz = 'visualization_marker_array'
+channel_viz = '/visualization_marker_array'
 
 
 def run(arguments):
@@ -24,8 +24,10 @@ def run(arguments):
 
     do(args.demo_dir)
 
-    rospy.loginfo('Spin...')
-    rospy.spin()
+    time.sleep(1.0)
+
+    #rospy.loginfo('Spin...')
+    #rospy.spin()
 
     pass
 
@@ -33,9 +35,9 @@ def create_correction_viz_msg(anchored_correction, id=0):
 
     marker = Marker()
 
-    marker.header.frame_id = "/my_frame"
+    marker.header.frame_id = '/world_frame'
     marker.header.stamp = rospy.Time.now()
-    marker.ns = "my_namespace"
+    marker.ns = 'viz_namespace'
     marker.id = id
     marker.type = Marker.LINE_STRIP
     marker.action = Marker.ADD
@@ -46,11 +48,11 @@ def create_correction_viz_msg(anchored_correction, id=0):
     marker.pose.orientation.y = 0.0
     marker.pose.orientation.z = 0.0
     marker.pose.orientation.w = 1.0
-    marker.scale.x = 0.1
+    marker.scale.x = 0.01
     marker.scale.y = 0
     marker.scale.z = 0
     marker.color.a = 1.0  # Alpha must not be zero.
-    marker.color.r = 0.0
+    marker.color.r = 1.0
     marker.color.g = 1.0
     marker.color.b = 1.0
 
@@ -68,7 +70,7 @@ def cart_state_to_point(point):
 
 def do(demo_dir):
 
-    rospy.init_node('visualization_node', anonymous=False)
+    rospy.init_node('visualize_corrections', anonymous=True)
     publisher = rospy.Publisher(channel_viz, MarkerArray, queue_size=10)
 
     time.sleep(1.0)
@@ -80,8 +82,6 @@ def do(demo_dir):
 
     for (idx, (word, correction)) in enumerate(corrections.iteritems()):
         # Correction is a list[CartStateStamped]
-        print 'word: ', word
-
         marker = create_correction_viz_msg(correction, idx)
         print '  Got a marker with {} points'.format(len(marker.points))
 
@@ -89,16 +89,10 @@ def do(demo_dir):
 
         pass
 
-
     # Publish the entire marker array
     publisher.publish(marker_array)
     rospy.loginfo('Published markers: {}'.format(len(marker_array.markers)))
-
-    publisher.unregister()
-
-
-
-    pass
+    return
 
 
 if __name__ == '__main__':
