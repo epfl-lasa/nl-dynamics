@@ -5,12 +5,19 @@ import readline
 
 import rospy
 
+from std_msgs.msg import String
+
 from correction_publisher import PublishCorrections
+from kit_speech_client.msg import NLCommand
+from kit_speech_client.msg import AudioReceivedSignal
 
 """
 Send multiple commands at once, using stdin as the input
 """
 
+topic_command_parsed = "nl_command_parsed"
+topic_microphone_active = "nl_command_received"
+topic_kuka_pause = "KUKA/PauseCommand"
 
 def is_finished(command, allow_single_letter):
     # Returns True if the user wants to stop (input = 'quit' or 'done'). single
@@ -60,6 +67,23 @@ def get_command(allow_single_letter):
 
     return command
 
+def nl_command_received_callback(data):
+    print 'Received NL command'
+
+
+def nl_microphone_active_callback(data):
+    rospy.loginfo('Microphone active -- publishing message')
+    msg = String("PAUSE")
+
+    # TODO: just store the publisher in a class.
+    kuka_pause_publisher = rospy.Publisher(topic_kuka_pause, String,
+                                           queue_size=100)
+
+    kuka_pause_publisher.publish(msg)
+
+    # TODO: store the time of reception.
+    last_time_microphone_active = rospy.Time.now()
+
 
 def run_send_multiple_commands(arguments):
     parser = argparse.ArgumentParser(
@@ -77,6 +101,16 @@ def run_send_multiple_commands(arguments):
     # (along with stop/quit).
     readline.set_completer(SimpleCompleter(words).complete)
     readline.parse_and_bind('tab: complete')
+
+    # Subscribe to voice commands channel.
+    rospy.Subscriber(topic_microphone_active, AudioReceivedSignal,
+                     nl_microphone_active_callback)
+    rospy.Subscriber(topic_command_parsed, NLCommand,
+                     nl_command_received_callback)
+
+    # TODO: make this a class, store the publisher.
+    kuka_pause_publisher = rospy.Publisher(topic_kuka_pause, String,
+                                           queue_size=100)
 
     try:
         finished = False
@@ -101,4 +135,3 @@ def run_send_multiple_commands(arguments):
 if __name__ == '__main__':
     args = sys.argv[1:]  # argv[0] is the program name.
     run_send_multiple_commands(args)
-
