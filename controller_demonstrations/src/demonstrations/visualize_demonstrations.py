@@ -5,6 +5,10 @@ import rospy
 import time
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
+
+
+from nl_msgs.msg import AnchoredDemonstration
+
 #from visualization_msgs import MarkerArray
 
 def run(arguments):
