@@ -58,80 +58,81 @@ class SimpleCompleter(object):
             response = None
         return response
 
+class DemonstrationPlayback(object):
+    def __init__(self, arguments):
+        parser = argparse.ArgumentParser(
+            description=('Load a directory of demonstration data (stored as bag '
+                         'files).'))
+        parser.add_argument('--demo_dir', metavar='directory', required=True)
+        args = parser.parse_args(arguments)
 
-def get_command(allow_single_letter):
-    # Returns the NL command, or None if we are finished.
-    command = raw_input('Enter command:')
-    if is_finished(command, allow_single_letter):
-        command = None
+        self._demo_publisher = PublishCorrections(args.demo_dir)
 
-    return command
+        words = self._demo_publisher.words()
+        words.extend(['stop', 'quit'])
 
-def nl_command_received_callback(data):
-    print 'Received NL command'
+        # Use the tab key for completion, using the words in the demo publisher
+        # (along with stop/quit).
+        readline.set_completer(SimpleCompleter(words).complete)
+        readline.parse_and_bind('tab: complete')
 
+        # Subscribe to voice commands channel.
+        rospy.Subscriber(topic_microphone_active, AudioReceivedSignal,
+                         self.nl_microphone_active_callback)
+        rospy.Subscriber(topic_command_parsed, NLCommand,
+                         self.nl_command_received_callback)
 
-def nl_microphone_active_callback(data):
-    rospy.loginfo('Microphone active -- publishing message')
-    msg = String("PAUSE")
+        # Store the publisher for kuka pause messages.
+        self._kuka_pause_publisher = rospy.Publisher(
+            topic_kuka_pause, String, queue_size=100)
 
-    # TODO: just store the publisher in a class.
-    kuka_pause_publisher = rospy.Publisher(topic_kuka_pause, String,
-                                           queue_size=100)
-
-    kuka_pause_publisher.publish(msg)
-
-    # TODO: store the time of reception.
-    last_time_microphone_active = rospy.Time.now()
-
-
-def run_send_multiple_commands(arguments):
-    parser = argparse.ArgumentParser(
-        description=('Load a directory of demonstration data (stored as bag '
-                     'files).'))
-    parser.add_argument('--demo_dir', metavar='directory', required=True)
-    args = parser.parse_args(arguments)
-
-    demo_publisher = PublishCorrections(args.demo_dir)
-
-    words = demo_publisher.words()
-    words.extend(['stop', 'quit'])
-
-    # Use the tab key for completion, using the words in the demo publisher
-    # (along with stop/quit).
-    readline.set_completer(SimpleCompleter(words).complete)
-    readline.parse_and_bind('tab: complete')
-
-    # Subscribe to voice commands channel.
-    rospy.Subscriber(topic_microphone_active, AudioReceivedSignal,
-                     nl_microphone_active_callback)
-    rospy.Subscriber(topic_command_parsed, NLCommand,
-                     nl_command_received_callback)
-
-    # TODO: make this a class, store the publisher.
-    kuka_pause_publisher = rospy.Publisher(topic_kuka_pause, String,
-                                           queue_size=100)
-
-    try:
-        finished = False
-        while not finished:
-            nl_command = get_command(allow_single_letter=True)  # TODO get from opts
-            if not nl_command:
-                finished = True
-                rospy.loginfo('Finished.')
-                break
-
-            rospy.loginfo('Command: {}'.format(nl_command))
-            demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
-
-    except rospy.ROSInterruptException as e:
-        print e
         pass
 
-    rospy.loginfo('Goodbye.')
+    def get_command(self, allow_single_letter):
+        # Returns the NL command, or None if we are finished.
+        command = raw_input('Enter command:')
+        if is_finished(command, allow_single_letter):
+            command = None
+
+        return command
+
+    def nl_command_received_callback(self, data):
+        print 'Received NL command'
+
+
+    def nl_microphone_active_callback(self, data):
+        rospy.loginfo('Microphone active -- publishing message')
+        msg = String("PAUSE")
+        self._kuka_pause_publisher.publish(msg)
+
+        # TODO: store the time of reception.
+        last_time_microphone_active = rospy.Time.now()
+
+
+    def run_send_multiple_commands(self):
+
+        try:
+            finished = False
+            while not finished:
+                nl_command = self.get_command(allow_single_letter=True)
+                if not nl_command:
+                    finished = True
+                    rospy.loginfo('Finished.')
+                    break
+
+                rospy.loginfo('Command: {}'.format(nl_command))
+                self._demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
+
+        except rospy.ROSInterruptException as e:
+            print e
+            pass
+
+        rospy.loginfo('Goodbye.')
 
 
 
 if __name__ == '__main__':
     args = sys.argv[1:]  # argv[0] is the program name.
-    run_send_multiple_commands(args)
+
+    playback = DemonstrationPlayback(arguments=args)
+    playback.run_send_multiple_commands()
