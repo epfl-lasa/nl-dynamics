@@ -66,6 +66,9 @@ class DemonstrationPlayback(object):
         parser.add_argument('--demo_dir', metavar='directory', required=True)
         args = parser.parse_args(arguments)
 
+        # The time for the last microphone activity.
+        self._last_time_microphone_active = rospy.Time()
+
         self._demo_publisher = PublishCorrections(args.demo_dir)
 
         words = self._demo_publisher.words()
@@ -97,20 +100,18 @@ class DemonstrationPlayback(object):
         return command
 
     def nl_command_received_callback(self, data):
-        print 'Received NL command'
-
+        command_str = data.command
+        rospy.loginfo('Received NL command: {}'.format(command_str))
 
     def nl_microphone_active_callback(self, data):
-        rospy.loginfo('Microphone active -- publishing message')
+        rospy.loginfo('Microphone active -- pausing robot')
         msg = String("PAUSE")
         self._kuka_pause_publisher.publish(msg)
 
-        # TODO: store the time of reception.
-        last_time_microphone_active = rospy.Time.now()
-
+        # Store the time of reception.
+        self._last_time_microphone_active = rospy.Time.now()
 
     def run_send_multiple_commands(self):
-
         try:
             finished = False
             while not finished:
