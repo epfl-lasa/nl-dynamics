@@ -1,0 +1,5 @@
+- git: {local-name: kit-speech-ros, uri: 'git@github.com:felixduvallet/kit-speech-ros.git'}
+- git: {local-name: robot_toolkit, uri: 'felixd@lasasrv2.epfl.ch:/disk1/git_wet/RobotToolKit'}
+- git: {local-name: execution_timer, uri: 'felixd@lasasrv2.epfl.ch:/home/klas/VC/execution_timer'}
+- git: {local-name: passive_ds_control, uri: 'felixd@lasasrv2.epfl.ch:/home/klas/VC/passive_ds_control'}
+- git: {local-name: nl_dynamics, uri: 'git@github.com:felixduvallet/nl-dynamics.git'}
