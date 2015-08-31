@@ -3,3 +3,4 @@
 - git: {local-name: execution_timer, uri: 'felixd@lasasrv2.epfl.ch:/home/klas/VC/execution_timer'}
 - git: {local-name: passive_ds_control, uri: 'felixd@lasasrv2.epfl.ch:/home/klas/VC/passive_ds_control'}
 - git: {local-name: nl_dynamics, uri: 'git@github.com:felixduvallet/nl-dynamics.git'}
+- git: {local-name: pocketsphinx-ros, uri: 'git@github.com:felixduvallet/pocketsphinx.git'}
