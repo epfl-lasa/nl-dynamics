@@ -174,7 +174,6 @@ class CollectDemonstration(object):
 
         return (anchor_new, corrections_new)
 
-
     @classmethod
     def remove_anchor_pose(cls, anchor, data):
 
