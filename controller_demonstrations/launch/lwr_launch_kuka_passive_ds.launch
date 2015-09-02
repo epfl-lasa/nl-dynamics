@@ -1,0 +1,6 @@
+<launch>
+  <node name="lwr_main" pkg="lwr_interface" type="lwr_main"
+        output="screen"
+        launch-prefix="xterm -hold -e "
+        args="--config packages/kuka_passive_ds/KUKAPassiveDS" />
+</launch>
