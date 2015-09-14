@@ -102,6 +102,8 @@ class DemonstrationPlayback(object):
     def nl_command_received_callback(self, data):
         command_str = data
         rospy.loginfo('Received NL command: {}'.format(command_str))
+        self._demo_publisher.process_command(command_str,
+                                             use_current_state_as_anchor=True)
 
     def nl_microphone_active_callback(self, data):
         rospy.loginfo('Microphone active -- pausing robot')
@@ -115,6 +117,8 @@ class DemonstrationPlayback(object):
         try:
             finished = False
             while not finished:
+                # Get the command from the keyboard (option 1). Note the audio
+                # recognizer is still running using callbacks.
                 nl_command = self.get_command(allow_single_letter=True)
                 if not nl_command:
                     finished = True
