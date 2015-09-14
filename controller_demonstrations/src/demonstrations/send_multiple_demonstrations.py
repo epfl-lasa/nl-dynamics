@@ -8,7 +8,7 @@ import rospy
 from std_msgs.msg import String
 
 from correction_publisher import PublishCorrections
-from kit_speech_client.msg import NLCommand
+from kit_speech_client.msg import NLCommand  # TODO deprecate this
 from kit_speech_client.msg import AudioReceivedSignal
 
 """
@@ -82,7 +82,7 @@ class DemonstrationPlayback(object):
         # Subscribe to voice commands channel.
         rospy.Subscriber(topic_microphone_active, AudioReceivedSignal,
                          self.nl_microphone_active_callback)
-        rospy.Subscriber(topic_command_parsed, NLCommand,
+        rospy.Subscriber(topic_command_parsed, String,
                          self.nl_command_received_callback)
 
         # Store the publisher for kuka pause messages.
@@ -100,7 +100,7 @@ class DemonstrationPlayback(object):
         return command
 
     def nl_command_received_callback(self, data):
-        command_str = data.command
+        command_str = data
         rospy.loginfo('Received NL command: {}'.format(command_str))
 
     def nl_microphone_active_callback(self, data):
