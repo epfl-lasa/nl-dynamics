@@ -101,7 +101,7 @@ void GPMDS::addData(Vector3r position, Vector3r velocity)
   Vector4r theta;
   // need to subtract target posioitn
   theta = computeLMDSParameters(position, velocity);
-  cout<<"theta before GPR: "<<theta<<endl;
+  //cout<<"theta before GPR: "<<theta<<endl;
   if(checkNewData(position,theta))
     mGPR->addTrainingData(position, theta);
 }
