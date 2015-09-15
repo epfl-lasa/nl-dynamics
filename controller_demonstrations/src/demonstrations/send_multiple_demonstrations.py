@@ -99,8 +99,8 @@ class DemonstrationPlayback(object):
 
         return command
 
-    def nl_command_received_callback(self, data):
-        command_str = data
+    def nl_command_received_callback(self, msg):
+        command_str = msg.data
         rospy.loginfo('Received NL command: {}'.format(command_str))
         self._demo_publisher.process_command(command_str,
                                              use_current_state_as_anchor=True)
