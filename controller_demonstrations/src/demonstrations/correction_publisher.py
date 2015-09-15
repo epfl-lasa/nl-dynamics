@@ -50,14 +50,19 @@ class PublishCorrections(object):
     def words(self):
         return self._corrections.keys()
 
-    def load_all_demonstrations(self, demonstration_dir):
+    @property
+    def corrections(self):
+        return self._corrections.items()
+
+    @classmethod
+    def load_all_demonstrations(cls, demonstration_dir):
         ret = {}
 
         # Find all files in the directory.
         files = file_util.get_files('', demonstration_dir)
         for f in files:
             filepath = file_util.get_fpath(demonstration_dir, f)
-            anchored_demo = self.load_demonstration(filepath)
+            anchored_demo = cls.load_demonstration(filepath)
 
             words = anchored_demo.words
             for w in words:
@@ -70,13 +75,16 @@ class PublishCorrections(object):
             len(ret.keys()), ret.keys()))
         return ret
 
-    def load_demonstration(self, filepath):
-        # Load a single demonstration. Returns a single AnchoredDemonstration message.
+    @classmethod
+    def load_demonstration(cls, filepath):
+        # Loads a single demonstration from a file and returns a single
+        # AnchoredDemonstration message.
         rospy.loginfo('Loading demonstration from {}.'.format(filepath))
 
         msg = None
         with rosbag.Bag(filepath) as bag:
-            assert bag.get_message_count() == 1, 'Demonstration should have exactly one message'
+            assert bag.get_message_count() == 1, \
+                'Demonstration should have exactly one message'
             for (_, msg, _) in bag.read_messages():  # Get the message contents.
                 pass
 

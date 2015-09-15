@@ -152,7 +152,7 @@ Vector3r GPMDS::reshapedDynamics(Vector3r position)
   //(*mGPR).prepareRegression();
   //cout<<originalVelocity<<endl;
   result = (*mGPR).doRegression(position);
-  //  cout<<"result in gpr: "<<result<<endl;
+
   // Calculate axis and angle from reshaping parameters
   for (int i=0; i<3; i++){axis(i)=result(i);}
   kappa  = result(3);
@@ -194,4 +194,3 @@ Vector3r GPMDS::evaluateOriginalDynamics(Vector3r position)
 void GPMDS::dummyFunction(int a){
 
 }
-

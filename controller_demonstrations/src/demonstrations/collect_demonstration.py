@@ -174,7 +174,6 @@ class CollectDemonstration(object):
 
         return (anchor_new, corrections_new)
 
-
     @classmethod
     def remove_anchor_pose(cls, anchor, data):
 
@@ -262,21 +261,21 @@ def run(arguments):
         description=('Collect demonstrations from the robot. Specify the words '
                      'on the command line. Optionally change the filename as well'))
     parser.add_argument('--output', default='out.bag', metavar='output_filename',
-                        help='Filename of output bag file.')
+                        help='Filename of output bag file (default=out.bag).')
     parser.add_argument('--num', default=50, type=int,
-                        help='Number of demonstration points to store.')
+                        help='Number of demonstration points to store (default=50).')
     parser.add_argument('words', default='default', metavar='words',
                         nargs='+',
-                        help='Demonstration word(s)')
+                        help='Demonstration word(s), required.')
     parser.add_argument('--discard_static', action='store_true',
                         dest='discard_static_points',
                         default=True,
-                        help='Discard any points without motion from the start.')
+                        help='Discard any points without motion from the start (default=True).')
     parser.add_argument('--no-discard_static',
                         dest='discard_static_points', action='store_false')
 
     parser.add_argument('--plot', default=False, action='store_true',
-                        help='Plot demonstration.')
+                        help='Plot demonstration (default=False).')
     args = parser.parse_args(arguments)
 
 

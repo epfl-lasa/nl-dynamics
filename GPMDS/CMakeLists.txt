@@ -7,6 +7,7 @@ project(GPMDS)
 find_package(catkin REQUIRED COMPONENTS
 roscpp
 rosbag
+nl_msgs
 passive_ds_control
 )
 
@@ -29,7 +30,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES gpmds
-#  CATKIN_DEPENDS other_catkin_pkg
+  CATKIN_DEPENDS nl_msgs
 #  DEPENDS system_lib
 )
 
