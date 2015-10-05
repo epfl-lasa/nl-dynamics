@@ -1,3 +1,4 @@
+%adding splinning tools
 function [  ] = interactiveGPreshape(varargin)
 
 global originalGMM originalDynamics;
