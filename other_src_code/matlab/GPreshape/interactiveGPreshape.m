@@ -1,4 +1,3 @@
-%adding splinning tools
 function [  ] = interactiveGPreshape(varargin)
 
 global originalGMM originalDynamics;
@@ -66,7 +65,8 @@ s.newPosData = [];
 s.drawingDt = 0.01;
 s.breakSimulation = 0;
 s.opt = opt;
-
+s.trianglesData = [];
+s.spline = [];
 
 % parameters for GP regression
 s.gprStruct.meanfunc = {@meanZero};
@@ -116,7 +116,6 @@ xd = GMR(originalGMM.Priors,originalGMM.Mu,originalGMM.Sigma,x,1:2,3:4 );
 jac = eye(2);
 end
 
-
 function Xd = reshapedDynamics(x)
 global originalDynamics;
 s = get(gcf,'UserData');
@@ -133,7 +132,6 @@ speedHat = max(speedHat, -0.9);
 Xd = originalDynamics(x);
 Xd = locallyRotateV(Xd,angleHat,speedHat);
 end
-
 
 function ret = buttonClicked(h, e, args)
 disp(['Click callback on main figure: ', get(gcf,'selectiontype')])
@@ -231,17 +229,29 @@ colormap(cm);
 
 
 s.streamHandle = streamslice(axisHandle, s.gridData.xM,s.gridData.yM,reshape(Xd(1,:),s.gridData.nX,s.gridData.nX),reshape(Xd(2,:),s.gridData.nX,s.gridData.nX),0.5);
-% plot collected points
 
+% plot collected points (desactivated because spline are plot now)
 plot(axisHandle, s.allData(1,:),s.allData(2,:),'r.');
 % plot training points
 plot(axisHandle, s.gpData(1,:),s.gpData(2,:),'go');
+
+%drawing triangles
+for i=1:2:size(s.trianglesData, 1)
+    drawTriangle(s.trianglesData(i,:), 'm');
+    drawTriangle(s.trianglesData(i+1,:), 'k');
+end
+
+%drawing spline
+for i=1:size(s.spline)
+    t=linspace(0,1,s.spline(i).nbPoints);
+    plot(ppval(s.spline(i).vect(1), t), ppval(s.spline(i).vect(2), t), 'r', 'LineWidth', 1.5);
+end
 
 set(gcf,'UserData',s);
 %x=[0;0];
 %[orgVel orgJac]=originalDynamics(x);
 %J=compute2dGPLMDSjacobian(s.gprStruct,s.gpData,orgVel,orgJac,x);
-%eig(J)
+%eig(J)'
 
 end
 
@@ -271,6 +281,14 @@ Q = 1e2*ones(2,1);
 R = 0.001*ones(2,1);
 xi0 = [s.newPosData(1:2,1);zeros(4,1)];
 [demPos,demVel, demAcc] = EstimateVA_P(X, dt, Q, R, xi0, P0);
+
+
+fig = get(groot,'CurrentFigure');
+analyzeError(demPos);
+set(groot,'CurrentFigure', fig);
+s.trianglesData = [s.trianglesData; analyzeData(demPos, demVel)];
+s.spline = [s.spline ; computeTrajectory(demPos, demVel)];
+
 % Compute the angle and speed factor. newData is a 4xN matrix with each
 % column: [x; y; theta; velocity].
 newData = computeLMDSdata2D(demPos,demVel,originalDynamics(demPos));
@@ -324,6 +342,95 @@ set(gcf,'UserData',s);
 %figure(3);clf; plot(s.gpData(3,:),'k.')
 end
 
+function ret = smoothData(nbPoint, alpha)
+    if (alpha==0)
+        ret=[1,nbPoint];
+    else
+        ret=round(1:1/alpha:nbPoint);
+        if (ret(end) ~= nbPoint)
+            ret=[ret nbPoint];
+        end
+    end
+end
+
+function splinesData = computeTrajectory(pos, vel)
+    values=smoothData(size(pos,2), 1/5);
+    x=transpose(pos(1,values));
+    y=transpose(pos(2,values));
+
+    nbPoint = size(x,1)*30;
+    
+    % INSERTED BY KLAS: %
+    % less confusing parameterization
+    t = linspace(0,1,size(x,1));
+    % replace tx AND ty by t below and replace ttx and tty in plot function
+    % by linspace(0,1,nbPoints)
+    % END KLAS%
+    
+    %spline data calculation
+    splinesData.vect=[spline(t,x) spline(t,y)];
+    splinesData.points=[min(x), max(x) ;min(y),max(y)];
+    splinesData.nbPoints = nbPoint;
+end
+
+function start_stop=analyzeData (pos, vel)
+    precisionFactor = 0.15; %percent
+    s = get(gcf,'UserData');
+    
+    %vectors from point to the attractor following dynamics direction
+    originalDS=[];
+    for i=1:size(pos,2)
+        [temp1, temp2] = originalDynamicsLINEAR(pos(:,i));
+        originalDS=[originalDS, temp1];
+    end
+    
+    %normalization of the vectors in the matrix
+    %this could be done in only two lines with matlab 2015a and normc
+    for i = 1:size(pos,2)-1
+        vel(:,i) = vel(:,i) / norm(vel(:,i));
+        originalDS(:,i) = originalDS(:,i) / norm(originalDS(:,i));
+    end
+    
+    %comparison with dotproduct
+    dotProd = dot(originalDS, vel);
+    
+    %verifying all the starts-and-stops
+    isIn=false;
+    count=0;
+    start_stop=[];
+    for i = 1:size(pos,2)-1
+        
+        if ~isIn && dotProd(i)<1-precisionFactor
+            start_stop = [start_stop; [pos(1,i), pos(2,i)] ];
+            isIn = true;
+            count=count+1;
+            
+        elseif isIn && dotProd(i)>=1-precisionFactor
+            start_stop = [start_stop; [pos(1,i), pos(2,i)] ];
+            isIn = false;
+            
+            %for only one start-and-stop uncomment the next line
+            %break
+        end
+    end
+    
+    %in case of there weren't the last stop
+    if isIn
+        start_stop= [start_stop; [pos(1,size(pos,2)-1), pos(2, size(pos,2)-1)]];
+    end
+end
+
+function drawTriangle(pos, color)
+    %drawing a triangle around the point
+    halfLength=5;
+    a=[pos(1)-halfLength,pos(1)+halfLength,pos(1),pos(1)-halfLength];
+    b=[pos(2)-halfLength,pos(2)-halfLength,pos(2)+halfLength,pos(2)-halfLength];
+    plot(a,b,color, 'LineWidth', 2)
+    
+    %having the color's point changed
+    plot(pos(1),pos(2),strcat(color, '.'))
+end
+
 function r = startSimulation(x)
 s = get(gcf,'UserData');
 disp('starting simulation')
@@ -364,7 +471,6 @@ function opt = parseArguments(args)
        end
     end
 end
-
 
 function ret = demonstrationsCallback(h, e, args)
     disp(['Click callback on global demonstrations: ', get(gcf, 'selectiontype')])
