@@ -67,6 +67,7 @@ s.breakSimulation = 0;
 s.opt = opt;
 s.trianglesData = [];
 s.spline = [];
+s.smooth = 1/5;
 
 % parameters for GP regression
 s.gprStruct.meanfunc = {@meanZero};
@@ -235,16 +236,24 @@ plot(axisHandle, s.allData(1,:),s.allData(2,:),'r.');
 % plot training points
 plot(axisHandle, s.gpData(1,:),s.gpData(2,:),'go');
 
-%drawing triangles
-for i=1:2:size(s.trianglesData, 1)
-    drawTriangle(s.trianglesData(i,:), 'm');
-    drawTriangle(s.trianglesData(i+1,:), 'k');
-end
+% %drawing triangles
+% for i=1:2:size(s.trianglesData, 1)
+%     drawTriangle(s.trianglesData(i,:), 'm');
+%     drawTriangle(s.trianglesData(i+1,:), 'k');
+% end
+
+%drawing points in green
+plot(s.allData(1,:), s.allData(2,:), 'ro')
+t=smoothData(size(s.allData, 2), s.smooth);
+plot(s.allData(1,t), s.allData(2,t), 'bo','LineWidth', 1.3);
 
 %drawing spline
 for i=1:size(s.spline)
-    t=linspace(0,1,s.spline(i).nbPoints);
-    plot(ppval(s.spline(i).vect(1), t), ppval(s.spline(i).vect(2), t), 'r', 'LineWidth', 1.5);
+    t=linspace(-0.003,1.003,s.spline(i,1).nbPoint*100);
+%     xx=linspace(0,1, s.spline(i).nbPoint * 1);
+    plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'b-', 'LineWidth', 1.5);
+%     plot(ppval(s.spline(i).vect(1), t), ppval(s.spline(i).vect(2), t), 'r', 'LineWidth', 1.5);
+%     plot(xx, getPointsSplineNO(s.spline(i), xx), 'b-', 'LineWidth', 1.5)
 end
 
 set(gcf,'UserData',s);
@@ -282,12 +291,11 @@ R = 0.001*ones(2,1);
 xi0 = [s.newPosData(1:2,1);zeros(4,1)];
 [demPos,demVel, demAcc] = EstimateVA_P(X, dt, Q, R, xi0, P0);
 
-
 fig = get(groot,'CurrentFigure');
 analyzeError(demPos);
 set(groot,'CurrentFigure', fig);
 s.trianglesData = [s.trianglesData; analyzeData(demPos, demVel)];
-s.spline = [s.spline ; computeTrajectory(demPos, demVel)];
+s.spline = [s.spline ; computeTrajectory(demPos, demVel, s.smooth)];
 
 % Compute the angle and speed factor. newData is a 4xN matrix with each
 % column: [x; y; theta; velocity].
@@ -343,34 +351,35 @@ set(gcf,'UserData',s);
 end
 
 function ret = smoothData(nbPoint, alpha)
-    if (alpha==0)
+% return a vector of the index of the new point 
+    if (nbPoint*alpha<2)
         ret=[1,nbPoint];
     else
-        ret=round(1:1/alpha:nbPoint);
-        if (ret(end) ~= nbPoint)
-            ret=[ret nbPoint];
-        end
+        ret=round(linspace(1,nbPoint,nbPoint*alpha));
     end
 end
 
-function splinesData = computeTrajectory(pos, vel)
-    values=smoothData(size(pos,2), 1/5);
-    x=transpose(pos(1,values));
-    y=transpose(pos(2,values));
+function splinesData = computeTrajectory(pos, vel, alpha)
+    %put originalDynamic velocity on first and last points
+    vel(:,1)  = originalDynamicsLINEAR(pos(:,1));
+    vel(:,end)= originalDynamicsLINEAR(pos(:,end));
 
-    nbPoint = size(x,1)*30;
+    %smooth data
+    values=smoothData(size(pos,2), alpha);
+    x =transpose(pos(1,values));
+    y =transpose(pos(2,values));
+    xp=transpose(vel(1,values));
+    yp=transpose(vel(2,values));
     
     % INSERTED BY KLAS: %
     % less confusing parameterization
-    t = linspace(0,1,size(x,1));
+    t = transpose(linspace(0,1,size(x,1)));
     % replace tx AND ty by t below and replace ttx and tty in plot function
     % by linspace(0,1,nbPoints)
     % END KLAS%
     
     %spline data calculation
-    splinesData.vect=[spline(t,x) spline(t,y)];
-    splinesData.points=[min(x), max(x) ;min(y),max(y)];
-    splinesData.nbPoints = nbPoint;
+    splinesData=[ownSpline(t,x,xp), ownSpline(t,y,yp)];
 end
 
 function start_stop=analyzeData (pos, vel)
@@ -476,3 +485,54 @@ function ret = demonstrationsCallback(h, e, args)
     disp(['Click callback on global demonstrations: ', get(gcf, 'selectiontype')])
     updateStreamlines(h)
 end
+
+% ------- myOwnSpline Functions
+
+function splineData = ownSpline(x,y, dev)
+    splineData.points = [];
+    splineData.coef   = [];
+    splineData.nbPoint= size(x,1);
+    
+    for i=1:size(x,1)-1
+        splineData.coef   = [splineData.coef, systemSolver(x(i), x(i+1), y(i), y(i+1), dev(i), dev(i+1))];
+        splineData.points = [splineData.points, [x(i); x(i+1)]];
+    end
+end
+
+function coef = systemSolver(t1, t2, f1, f2, fp1, fp2)
+% at^3+bt^2+ct+d=ft(1,2)
+% 3at^2+2bt+c=ftp(1,2)
+% ( t1^3    t1^2    t1     1) ( a )   ( ft1)
+% ( t2^3    t2^2    t2     1) ( b )   ( ft2)
+% (3t1^2    2t1     1      0) ( c ) = (fpt1)
+% (3t2^2    2t2     1      0) ( d )   (fpt2)
+    
+    A = [[t1.^3   t1.^2  t1 1];
+         [t2.^3   t2.^2  t2 1];
+         [3*t1.^2 2*t1   1  0];
+         [3*t2.^2 2*t2   1  0]];
+     
+    b=[f1;f2;fp1;fp2];
+    
+    coef = inv(A)*b;
+
+end
+
+function yy=getPointsSplineNO(splineData, xx)
+%this function coulp be optimized a bit, so NO for Not optimized
+    yy=[];
+    for i=1:size(xx,2)
+        count=2;
+        while (count<splineData.nbPoint && xx(i) > splineData.points(1,count))
+            count = count+1;
+        end
+        yy=[yy getValCoef(splineData.coef(:,count-1), xx(i))];
+    end
+end
+
+function y=getValCoef(coef, x)
+    y=coef(1).*x.^3+coef(2).*x.^2+coef(3).*x+coef(4);
+end
+
+
+

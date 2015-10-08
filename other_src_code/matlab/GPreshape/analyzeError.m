@@ -1,20 +1,20 @@
 function analyzeError(pos)
     %check data smoothing
-%     splinesCompare(pos, 1/10, 1)
+    splinesCompare(pos, 1/10, 1)
     
     %check graph of smoothing error(alpha)
-    val=[];
-    f=@(i) i;
-    int=linspace(0,1,10000/size(pos,2));
-
-    for i=int
-        val = [val, splinesCompare(pos,f(i), 0)];
-    end
-    
-    figure
-    plot(f(int), val);
-    xlabel('alpha')
-    ylabel('error')
+%     val=[];
+%     f=@(i) i;
+%     int=linspace(0,1,10000/size(pos,2));
+% 
+%     for i=int
+%         val = [val, splinesCompare(pos,f(i), 0)];
+%     end
+%     
+%     figure
+%     plot(f(int), val);
+%     xlabel('alpha')
+%     ylabel('error')
 end
 
 function ret = smoothData(nbPoint, alpha)
@@ -126,5 +126,4 @@ function splinesData = computeTrajectory(pos, alpha)
     splinesData.vect=[spline(t,x) spline(t,y)];
     splinesData.nbPoints = nbPoint;
 end
-
 
