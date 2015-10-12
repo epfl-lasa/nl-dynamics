@@ -236,11 +236,11 @@ plot(axisHandle, s.allData(1,:),s.allData(2,:),'r.');
 % plot training points
 plot(axisHandle, s.gpData(1,:),s.gpData(2,:),'go');
 
-% %drawing triangles
-% for i=1:2:size(s.trianglesData, 1)
-%     drawTriangle(s.trianglesData(i,:), 'm');
-%     drawTriangle(s.trianglesData(i+1,:), 'k');
-% end
+%drawing triangles
+for i=1:2:size(s.trianglesData, 1)
+    drawTriangle(s.trianglesData(i,:), 'm');
+    drawTriangle(s.trianglesData(i+1,:), 'k');
+end
 
 %drawing points in green
 plot(s.allData(1,:), s.allData(2,:), 'ro')
@@ -514,7 +514,9 @@ function coef = systemSolver(t1, t2, f1, f2, fp1, fp2)
      
     b=[f1;f2;fp1;fp2];
     
-    coef = inv(A)*b;
+    %A*coef = b
+    coef = A\b;
+    %coef = inv(A)*b;
 
 end
 
