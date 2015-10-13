@@ -4,7 +4,7 @@ import rospy
 import smach
 import sys
 
-
+from std_msgs.msg import String
 
 class ReadyState(smach.State):
     outcome_ready = 'ready'
@@ -14,6 +14,9 @@ class ReadyState(smach.State):
 
         smach.State.__init__(self, outcomes=ReadyState.outcomes)
 
+        topic = '/nl_command_parsed'
+        rospy.Subscriber(topic, String, self.callback, queue_size=1)
+
         pass
 
     def execute(self, userdata):
@@ -21,6 +24,10 @@ class ReadyState(smach.State):
         raw_input('Press enter to be ready...')
 
         return ReadyState.outcome_ready
+
+    def callback(self, data):
+        rospy.loginfo('Got message: {}'.format(data.data))
+
 
 class SayState(smach.State):
 
@@ -48,20 +55,24 @@ class InteractiveDemoMachine(smach.StateMachine):
         smach.StateMachine.__init__(self,
                                     outcomes=InteractiveDemoMachine.outcomes)
 
-        ready_state = ReadyState()
-        ready_name = 'READY'
-
         say_state = SayState('Hello, world')
         say_name = 'SAYING'
 
+        ready_state = ReadyState()
+        ready_name = 'READY'
 
-        ready_transitions = {ReadyState.outcome_ready: say_name}
-        say_transitions = {SayState.outcome_success: InteractiveDemoMachine.outcome_success}
+        finished_state = SayState("I am finished")
+        finished_name = 'FINISHED'
+
+        say_transitions = {SayState.outcome_success: ready_name}
+        ready_transitions = {ReadyState.outcome_ready: finished_name}
+        finished_transitions = {SayState.outcome_success: InteractiveDemoMachine.outcome_success}
 
         with self:
+            self.add(say_name, say_state, transitions=say_transitions)
             self.add(ready_name, ready_state,
                      transitions=ready_transitions)
-            self.add(say_name, say_state, transitions=say_transitions)
+            self.add(finished_name, finished_state, finished_transitions)
 
         pass
 
