@@ -2,6 +2,7 @@
 
 import rospy
 import smach
+import smach_ros
 import sys
 
 from std_msgs.msg import String
@@ -91,12 +92,16 @@ def run(arguments):
 
     machine = InteractiveDemoMachine()
 
+    # Visualize the machine.
+    machine_viz = smach_ros.IntrospectionServer(
+        'smash_server', machine, '/SM_ROOT')
+    machine_viz.start()
+
     outcome = machine.execute()
 
     rospy.loginfo('Outcome: {}'.format(outcome))
 
-
-
+    machine_viz.stop()
 
 if __name__ == '__main__':
     arguments = sys.argv[1:]  # argv[0] is the program name.
