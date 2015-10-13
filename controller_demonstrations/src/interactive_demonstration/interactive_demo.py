@@ -43,8 +43,9 @@ class SayState(smach.State):
 
     outcome_success = 'success'
     outcomes = [outcome_success]
+
     def __init__(self, message):
-        smach.State.__init__(self, outcomes=SayState.outcomes)
+        super(SayState, self).__init__(outcomes=SayState.outcomes)
         self._message = message
 
     def execute(self, user_data):
@@ -53,7 +54,7 @@ class SayState(smach.State):
         return SayState.outcome_success
 
 
-class InteractiveDemoMachine(smach.StateMachine):
+class UserInteraction(smach.StateMachine):
 
     outcome_success = 'success'
     outcome_failure = 'failure'
@@ -61,8 +62,8 @@ class InteractiveDemoMachine(smach.StateMachine):
 
     def __init__(self):
 
-        smach.StateMachine.__init__(self,
-                                    outcomes=InteractiveDemoMachine.outcomes)
+        super(UserInteraction, self).__init__(
+            outcomes=UserInteraction.outcomes)
 
         say_state = SayState('Hello, world')
         say_name = 'SAYING'
@@ -76,7 +77,7 @@ class InteractiveDemoMachine(smach.StateMachine):
         say_transitions = {SayState.outcome_success: ready_name}
         ready_transitions = {ReadyState.outcome_ready: say_name,
                              ReadyState.outcome_finished: finished_name}
-        finished_transitions = {SayState.outcome_success: InteractiveDemoMachine.outcome_success}
+        finished_transitions = {SayState.outcome_success: UserInteraction.outcome_success}
 
         with self:
             self.add(say_name, say_state, transitions=say_transitions)
@@ -87,10 +88,54 @@ class InteractiveDemoMachine(smach.StateMachine):
         pass
 
 
+class DelayState(smach.State):
+    outcome_ok = 'okay'
+    outcomes = [outcome_ok]
+
+    def __init__(self, delay):
+        super(DelayState, self).__init__(outcomes=DelayState.outcomes)
+        self._delay = delay
+
+    def execute(self, user_data):
+        rospy.loginfo('Sleeping for {} seconds...'.format(self._delay))
+        rospy.sleep(self._delay)
+        rospy.loginfo('Finished sleeping')
+        return DelayState.outcome_ok
+
+
+class DemoCollection(smach.StateMachine):
+    outcome_success = 'success'
+    outcome_failure = 'failure'
+    outcomes = [outcome_success, outcome_failure]
+
+    def __init__(self):
+
+        super(DemoCollection, self).__init__(
+            outcomes=DemoCollection.outcomes)
+
+        delay1_name = 'DELAY_1'
+        delay1_state = DelayState(1)
+
+        delay2_name = 'DELAY_2'
+        delay2_state = DelayState(2)
+
+        delay3_name = 'DELAY_3'
+        delay3_state = DelayState(3)
+
+        with self:
+            self.add(delay1_name, delay1_state,
+                     transitions={DelayState.outcome_ok: delay2_name})
+            self.add(delay2_name, delay2_state,
+                     transitions={DelayState.outcome_ok: delay3_name})
+            self.add(delay3_name, delay3_state,
+                     transitions={DelayState.outcome_ok: DemoCollection.outcome_success})
+
+
 def run(arguments):
     rospy.init_node('interactive_demo')
 
-    machine = InteractiveDemoMachine()
+    #machine = UserInteraction()
+    machine = DemoCollection()
 
     # Visualize the machine.
     machine_viz = smach_ros.IntrospectionServer(
