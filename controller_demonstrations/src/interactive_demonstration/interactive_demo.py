@@ -7,6 +7,8 @@ import sys
 
 from std_msgs.msg import String
 
+from demo_collection import DemoCollectionMachine
+
 
 class ReadyState(smach.State):
     outcome_ready = 'ready'
@@ -72,29 +74,31 @@ class UserInteraction(smach.StateMachine):
         ready_state = ReadyState()
         ready_name = 'READY'
 
+        collect_name = 'COLLECT'
+        collect_machine = DemoCollectionMachine()
+
         finished_state = SayState("I am finished")
         finished_name = 'FINISHED'
 
-        say_transitions = {SayState.outcome_success: ready_name}
-        ready_transitions = {ReadyState.outcome_ready: say_name,
-                             ReadyState.outcome_finished: finished_name}
-        finished_transitions = {SayState.outcome_success: UserInteraction.outcome_success}
-
         with self:
-            self.add(say_name, say_state, transitions=say_transitions)
+            self.add(say_name, say_state,
+                     transitions={SayState.outcome_success: ready_name})
             self.add(ready_name, ready_state,
-                     transitions=ready_transitions)
-            self.add(finished_name, finished_state, finished_transitions)
+                     transitions={ReadyState.outcome_ready: collect_name,
+                                  ReadyState.outcome_finished: finished_name})
+            self.add(collect_name, collect_machine,
+                     transitions={DemoCollectionMachine.outcome_success: say_name,  # Go back to say_state
+                                  DemoCollectionMachine.outcome_failure: UserInteraction.outcome_failure})
+            self.add(finished_name, finished_state,
+                     transitions={SayState.outcome_success: UserInteraction.outcome_success})
 
         pass
-
 
 
 def run(arguments):
     rospy.init_node('interactive_demo')
 
-    #machine = UserInteraction()
-    machine = DemoCollection()
+    machine = UserInteraction()
 
     # Visualize the machine.
     machine_viz = smach_ros.IntrospectionServer(
