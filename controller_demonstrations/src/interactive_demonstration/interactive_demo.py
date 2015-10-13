@@ -8,7 +8,8 @@ from std_msgs.msg import String
 
 class ReadyState(smach.State):
     outcome_ready = 'ready'
-    outcomes = [outcome_ready]
+    outcome_finished = 'finished'
+    outcomes = [outcome_ready, outcome_finished]
 
     def __init__(self):
 
@@ -16,17 +17,25 @@ class ReadyState(smach.State):
 
         topic = '/nl_command_parsed'
         rospy.Subscriber(topic, String, self.callback, queue_size=1)
-
-        pass
+        self._finished = False
 
     def execute(self, userdata):
         rospy.loginfo('Executing ReadyState')
         raw_input('Press enter to be ready...')
 
-        return ReadyState.outcome_ready
+        if self._finished:
+            rospy.loginfo('State machine is finished.')
+            return ReadyState.outcome_finished
+        else:
+            rospy.loginfo('The show will go on')
+            return ReadyState.outcome_ready
 
     def callback(self, data):
-        rospy.loginfo('Got message: {}'.format(data.data))
+        msg = data.data
+        rospy.loginfo('Got message: {}'.format(msg))
+
+        if 'quit' in msg or 'stop' in msg or 'done' in msg:
+            self._finished = True
 
 
 class SayState(smach.State):
@@ -37,11 +46,10 @@ class SayState(smach.State):
         smach.State.__init__(self, outcomes=SayState.outcomes)
         self._message = message
 
-    def execute(self, userdata):
+    def execute(self, user_data):
         rospy.loginfo('Executing SayState')
         print('--- {} ---'.format(self._message))
         return SayState.outcome_success
-
 
 
 class InteractiveDemoMachine(smach.StateMachine):
@@ -65,7 +73,8 @@ class InteractiveDemoMachine(smach.StateMachine):
         finished_name = 'FINISHED'
 
         say_transitions = {SayState.outcome_success: ready_name}
-        ready_transitions = {ReadyState.outcome_ready: finished_name}
+        ready_transitions = {ReadyState.outcome_ready: say_name,
+                             ReadyState.outcome_finished: finished_name}
         finished_transitions = {SayState.outcome_success: InteractiveDemoMachine.outcome_success}
 
         with self:
@@ -78,8 +87,6 @@ class InteractiveDemoMachine(smach.StateMachine):
 
 
 def run(arguments):
-    print 'Hello'
-
     rospy.init_node('interactive_demo')
 
     machine = InteractiveDemoMachine()
