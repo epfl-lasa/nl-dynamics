@@ -3,6 +3,7 @@
 import rospy
 import smach
 
+
 class DelayState(smach.State):
     outcome_ok = 'okay'
     outcomes = [outcome_ok]
@@ -18,15 +19,15 @@ class DelayState(smach.State):
         return DelayState.outcome_ok
 
 
-class DemoCollection(smach.StateMachine):
+class DemoCollectionMachine(smach.StateMachine):
     outcome_success = 'success'
     outcome_failure = 'failure'
     outcomes = [outcome_success, outcome_failure]
 
     def __init__(self):
 
-        super(DemoCollection, self).__init__(
-            outcomes=DemoCollection.outcomes)
+        super(DemoCollectionMachine, self).__init__(
+            outcomes=DemoCollectionMachine.outcomes)
 
         delay1_name = 'DELAY_1'
         delay1_state = DelayState(1)
@@ -43,7 +44,7 @@ class DemoCollection(smach.StateMachine):
             self.add(delay2_name, delay2_state,
                      transitions={DelayState.outcome_ok: delay3_name})
             self.add(delay3_name, delay3_state,
-                     transitions={DelayState.outcome_ok: DemoCollection.outcome_success})
+                     transitions={DelayState.outcome_ok: DemoCollectionMachine.outcome_success})
 
 
 if __name__ == '__main__':
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     import smach_ros
     rospy.init_node('interactive_demo')
 
-    machine = DemoCollection()
+    machine = DemoCollectionMachine()
 
     # Visualize the machine.
     machine_viz = smach_ros.IntrospectionServer(
