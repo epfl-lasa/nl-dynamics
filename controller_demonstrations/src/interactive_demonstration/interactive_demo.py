@@ -120,6 +120,10 @@ class UserInteraction(smach.StateMachine):
             self.add(ready_name, ready_state,
                      transitions={ReadyState.outcome_ready: collect_name,
                                   ReadyState.outcome_finished: finished_name})
+
+            # Here the connected state is actually a whole other
+            # StateMachine. This is valid as long as its outcomes are properly
+            # connected.
             self.add(collect_name, collect_machine,
                      transitions={DemoCollectionMachine.outcome_success: say_name,  # Go back to say_state
                                   DemoCollectionMachine.outcome_failure: UserInteraction.outcome_failure})
