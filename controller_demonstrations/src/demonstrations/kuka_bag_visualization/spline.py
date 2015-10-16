@@ -18,11 +18,9 @@ def spline3D(pos,vel):
     t = np.linspace(0,1,size)
 
     #splines axis projection calculation
-    x=spline_(t, pos[:,0], vel[:,0])
-    y=spline_(t, pos[:,1], vel[:,1])
-    z=spline_(t, pos[:,2], vel[:,2])
-
-    data.coord=[x,y,z]
+    data.coord=[spline_(t, pos[:,0], vel[:,0]),
+    			spline_(t, pos[:,1], vel[:,1]),
+    			spline_(t, pos[:,2], vel[:,2])]
 
     return data
 
