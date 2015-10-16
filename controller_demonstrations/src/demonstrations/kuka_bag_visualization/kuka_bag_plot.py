@@ -2,7 +2,7 @@
 
 import rosbag
 import numpy as np
-from spline import *
+from spline import spline3D, getPointsSpline3D
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -81,7 +81,7 @@ def load(name):
 
     return trajectory_data, original_data
     
-def plotPoints(data, name):
+def plotPoints(data, name, plot=1):
     # create new figure in 3D
     fig = plt.figure()
     ax = fig.gca(projection='3d')
@@ -101,12 +101,14 @@ def plotPoints(data, name):
 
     return ax
 
-def plotSpline3D(data,ax):
+def plotSpline3D(data,ax, factor):
+    #the factor parameter represent how much you want MORE points that were sent by the robot
+
     #calculate splines data
     splineData3D = spline3D(data.position, data.velocity)
 
     #calculate new points
-    size = max(len(data.position), len(data.velocity)) * 1
+    size = len(data.position) * factor
     t=np.linspace(0,1,size)
 
     new_pos=getPointsSpline3D(splineData3D, t)
@@ -114,34 +116,36 @@ def plotSpline3D(data,ax):
     #plot result
     ax.plot(new_pos[0], new_pos[1], new_pos[2], c='r', label='spline3D')
 
-def drawStartStop(start, stop, ax):
-
-    # plot star and triangle shape on desired points
-    ax.scatter(start[0,:], start[1,:], start[2,:], s=100, c='r', marker='*')
-    ax.scatter(stop[0,:],  stop[1,:],  stop[2,:],  s=100, c='b', marker='^')
-
     # show result
     plt.ion()
     plt.show()
 
-def analyzeData (trajectory_data, original_data, precision_factor):
+def drawStartStop(start, stop, ax):
+
+    if (len(start)>0):
+        # plot star and triangle shape on desired points
+        ax.scatter(start[0,:], start[1,:], start[2,:], s=100, c='r', marker='*')
+        ax.scatter(stop[0,:],  stop[1,:],  stop[2,:],  s=100, c='b', marker='^')
+
+        # show result
+        plt.ion()
+        plt.show()
+
+def analyzeData (trajectory_data, original_data, precision_factor, name=""):
     # trajectory_data represent the actual data of the robot, the position and the velocity of the robot for all the points
     # original_data only represent a vector from the robot to the attractor point (following the OriginalDynamics) for all the points
     # Precision factor how precise the algorithm need to be to detect some jump in the trajectory : 0 is absolute precision
 
-    # normalization of the vectors in the matrix
-    for (vect_t,vect_o) in zip(trajectory_data.velocity, original_data.velocity) :
-        vect_t = vect_t / np.linalg.norm(vect_t)
-        vect_o = vect_o / np.linalg.norm(vect_o)
-
-    # calculation of the dot product
-    dot_prod=[np.dot(trajectory, original) for (trajectory, original) in zip(trajectory_data.velocity, original_data.velocity)]
-
-    # verifying all the starts-and-stops
+    #create some usefull variables
     is_in=0
     start=[]
     stop=[]
-    for (pos, dot) in zip(trajectory_data.position, dot_prod) :
+
+    for (pos, dis_vel, vel) in zip(trajectory_data.position, trajectory_data.velocity, original_data.velocity):
+    #calculate dot product
+        dot = np.dot(dis_vel/np.linalg.norm(dis_vel), vel/np.linalg.norm(vel))
+
+    #analyse data and eventualy store new start-stop point
         if not(is_in) and dot<(1-precision_factor) :
             start.append(pos)
             is_in = 1;
@@ -156,20 +160,29 @@ def analyzeData (trajectory_data, original_data, precision_factor):
 
     return np.transpose(start), np.transpose(stop)
 
+#reflexion here : maybe the algorithm would more precise with a filter : if 2 points (start then stop) are too closed, we remove then.
+#or better : if 2 points are too closed and the dot product is not so low, keep them, but if they are closed with a high dot product remove them.
+# maybe find a formula ? 
+#this can be done with another correction-factor, maybe a factor that tell us up to how many points the start and stop is validate ? 
+#after reflexion it's quite like a lowpass filter for big amplitude wave.
+
+# another thing :  when we found a jump on the curve that is supposed to be a jump, the start and stops are in the middle of the jump, should correct it
 
 def run():
+
     tab=['2015.10.09-kuka.with.correction.01.bag',
          '2015.10.09-kuka.with.correction.02.bag',
          '2015.10.09-kuka.two.corrections.bag',
          '2015.10.09-kuka-no.correction.bag']
 
-    tab2=['2015.10.09-kuka.with.correction.01.bag']
+    tab2=['2015.10.09-kuka-no.correction.bag']
 
     #set some parameter
-    alpha = 1./100
-    precision_factor = 0.5
+    alpha = 1./100         #alpha si the coefficient of smoothness, the most it goes to zero, the less points there will remain
+    precision_factor = 0.4  #this factor is for analysis, the most it goes to 0, the sharper the analysis will be
+    factor = 30             #this factor represent how much more point than the robot gave are drawn by the spline3D
 
-    for name in tab2 :
+    for name in tab:
         # load data
         (trajectory_data, original_data) = load(name)
 
@@ -177,24 +190,50 @@ def run():
         (trajectory_data.position, trajectory_data.velocity, original_data.velocity) = (smoothData(trajectory_data.position, alpha),
                                                                                         smoothData(trajectory_data.velocity, alpha),
                                                                                         smoothData(  original_data.velocity, alpha))
-        # prepare figure and plot points
-        ax = plotPoints(trajectory_data, name + ", with alpha=" + str(alpha))
 
         # analyze data
-        (start, stop) = analyzeData(trajectory_data, original_data, precision_factor)
+        (start, stop) = analyzeData(trajectory_data, original_data, precision_factor, name)
+
+        #drawpoints (to be deleated)
+        ax = plotPoints(trajectory_data, name + ", with alpha=" + str(alpha))
 
         # drawing start-stops points (red stars for the starts and blue triangle for the stops)
         drawStartStop(start, stop, ax)
 
         #drawing splineparts
-        #plotSpline3D(trajectory_data,ax)
+        plotSpline3D(trajectory_data,ax,factor)
 
     # pause
     raw_input('press enter')
 
+###debuging function
 
+def dotProdPlot(x,y, name):
+# create new figure in 2D
+    fig = plt.figure()
+    ax = fig.gca()
 
+    # plot points and add label
+    ax.plot(x,y, c='b', label=name + " - dot product")
 
+    # label axis
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.legend()
+
+    # show result
+    plt.ion()
+    plt.show()    
+
+def test():
+    vect=[1,2,3,4,5,6,7]
+
+    print vect
+    for i in range(len(vect)) :
+        print("value before : %d" % vect[i])
+        vect[i]=0
+        print("value after : %d" %vect[i])
+    print vect
 
 
 
