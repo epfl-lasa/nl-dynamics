@@ -5,9 +5,12 @@ import smach
 import smach_ros
 import sys
 
+from sound_play.libsoundplay import SoundClient
+
 from std_msgs.msg import String
 
 from demo_collection import DemoCollectionMachine
+
 
 
 class SayState(smach.State):
@@ -22,14 +25,22 @@ class SayState(smach.State):
 
         # Make sure to specify the outcomes here.
         super(SayState, self).__init__(outcomes=SayState.outcomes)
+	
+	# Init speaker
+	self.soundhandle = SoundClient()
+       	rospy.sleep(1)
+	rospy.loginfo("going through") #TEST
 
         self._message = message  # Store the message to say later.
 
+    def speaking(self, text):
+	self.soundhandle.say(text)
+	
     def execute(self, user_data):
         # The execute function gets called when the node is active. In this
         # case, it just prints a message, sleeps.
-        print('--- {} ---'.format(self._message))
-        rospy.sleep(2)
+        
+	self.speaking(self._message)
 
         # The execute function *must* return one of its defined outcomes. Here,
         # we only have one outcome (SayState.outcome_success) so return it.
@@ -92,7 +103,7 @@ class UserInteraction(smach.StateMachine):
 
         # Create the states and give them names here. Each state (an instance of
         # the class) has an associated name (a string), used by the transitions.
-        say_state = SayState('Hello, world')
+        say_state = SayState(message='Hello, world')
         say_name = 'SAY_HELLO'
 
         ready_state = ReadyState()
@@ -103,6 +114,8 @@ class UserInteraction(smach.StateMachine):
 
         finished_state = SayState("I am finished")
         finished_name = 'SAY_FINISHED'
+        
+        speedcontrol_name="SPEED_CONTROL"
 
 
         # All states are now defined. Connect them.
@@ -129,6 +142,11 @@ class UserInteraction(smach.StateMachine):
                                   DemoCollectionMachine.outcome_failure: UserInteraction.outcome_failure})
             self.add(finished_name, finished_state,
                      transitions={SayState.outcome_success: UserInteraction.outcome_success})
+            
+            
+            #NEW
+            self.add(ready_name,ready_state, transitions={SayState.outcome_success: speedcontrol_name})
+            
         pass
 
 
