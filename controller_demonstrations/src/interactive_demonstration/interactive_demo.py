@@ -52,7 +52,8 @@ class ReadyState(smach.State):
     # This state has two possible outcomes.
     outcome_ready = 'ready'
     outcome_finished = 'finished'
-    outcomes = [outcome_ready, outcome_finished]
+    outcome_success = 'success'
+    outcomes = [outcome_ready, outcome_finished, outcome_success]
 
     def __init__(self):
         # Again, specify the outcomes.
@@ -63,7 +64,7 @@ class ReadyState(smach.State):
         rospy.Subscriber(topic, String, self.callback, queue_size=1)
 
         # Internal data.
-        self._finished = False
+        self.msg=''
 
     def execute(self, userdata):
         # This is called when the node is active. Currently it waits for the
@@ -74,20 +75,21 @@ class ReadyState(smach.State):
 
         # There are two outcomes possible from this state; always return one of
         # them.
-        if self._finished:
+        if (self.msg=='quit' or self.msg=='stop' or self.msg=='done'):
             rospy.loginfo('State machine is finished.')
             return ReadyState.outcome_finished
-        else:
+        elif (self.msg=='speed'):
+	    rospy.loginfo('We go to the beginning')
+	    return ReadyState.outcome_success
+	else:
             rospy.loginfo('The show will go on')
             return ReadyState.outcome_ready
 
     def callback(self, data):
         # This is the callback for the subscribed topic.
-        msg = data.data
-        rospy.loginfo('Got message: {}'.format(msg))
+        self.msg = data.data
+        rospy.loginfo('Got message: {}'.format(self.msg))
 
-        if 'quit' in msg or 'stop' in msg or 'done' in msg:
-            self._finished = True
 
 
 class UserInteraction(smach.StateMachine):
@@ -132,7 +134,8 @@ class UserInteraction(smach.StateMachine):
             # by *strings*, not the underlying nodes.
             self.add(ready_name, ready_state,
                      transitions={ReadyState.outcome_ready: collect_name,
-                                  ReadyState.outcome_finished: finished_name})
+                                  ReadyState.outcome_finished: finished_name,
+				  ReadyState.outcome_success: say_name})
 
             # Here the connected state is actually a whole other
             # StateMachine. This is valid as long as its outcomes are properly
@@ -145,7 +148,7 @@ class UserInteraction(smach.StateMachine):
             
             
             #NEW
-            self.add(ready_name,ready_state, transitions={SayState.outcome_success: speedcontrol_name})
+            #self.add(ready_name,ready_state, transitions={SayState.outcome_success: speedcontrol_name})
             
         pass
 
