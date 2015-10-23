@@ -9,6 +9,10 @@ import rospy
 import rosbag
 import tf_conversions
 import PyKDL
+import numpy as np
+
+from kuka_bag_visualization.kuka_bag_plot import PositionData, analyzeData
+#from kuka_bag_visualizat.spline import spline3D, getPointsSpline3D
 
 from nl_msgs.msg import CartStateStamped
 from nl_msgs.msg import AnchoredDemonstration
@@ -36,15 +40,22 @@ class CollectDemonstration(object):
     """
 
     channel = 'KUKA/CartState'
+    channel2 = 'KUKA/DesiredState'
+
 
     def __init__(self, words, num_desired_points, bag_filename):
         rospy.init_node('collect_demonstration', anonymous=True)
         rospy.Subscriber(CollectDemonstration.channel, CartStateStamped,
                          self.callback_state)
+        rospy.Subscriber(CollectDemonstration.channel2, CartStateStamped,
+                         self.callback_desired)
 
         self._num_demo_points = 0
         self._demonstration_anchor = None
         self._demonstration_vector = []
+
+        self._num_velocity_points = 0
+        self._velocity_vector = []
 
         self._words = words
         self._num_desired_points = num_desired_points
@@ -55,21 +66,33 @@ class CollectDemonstration(object):
         rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
     def do(self, discard_static_points, plot=False):
-        rospy.loginfo('Listening to messages on {} channel'.format(
-            CollectDemonstration.channel))
+        rospy.loginfo('Listening to messages on {} {} channels'.format(
+            CollectDemonstration.channel, CollectDemonstration.channel2))
         # Spin but do not catch keyboard interrupt exception -- just move onto
         # processing & saving the demonstration.
         rospy.spin()
 
+        # here the analysis begin, data are stored
+
+        #size checking
+        if not self._num_demo_points == self._num_velocity_points:
+            rospy.logerr('size are not the same, taking the smallest one')
+            self._num_demo_points = min(self._num_demo_points, self._num_velocity_points)
+            self._num_velocity_points = self._num_demo_points
+            self._demonstration_vector = self._demonstration_vector[:self._num_demo_points]
+            self._velocity_vector = self._velocity_vector[:self._num_velocity_points]
+
         rospy.loginfo('Finished collecting demonstration, have {} points'.format(
             self._num_demo_points))
 
-        if not self._demonstration_anchor or not self._demonstration_vector:
+        # checking if the program catch some data
+        if not self._demonstration_anchor or len(self._demonstration_vector) == 0:
             rospy.logerr('No training data collected, doing nothing.')
             return
 
         demonstration_data = {'anchor': self._demonstration_anchor,
-                              'corrections': self._demonstration_vector}
+                              'corrections': self._demonstration_vector,
+                              'desired': self._velocity_vector}
 
         (processed_anchor, processed_data) = self.process_demonstration(
             demonstration_data, discard_static_points, plot)
@@ -106,14 +129,18 @@ class CollectDemonstration(object):
         if discard_static_points:
             # Start with the anchor as a datapoint to keep so that the first
             # point is (0, 0, 0).
-            data_keep = [demonstration_data['anchor']]
-            for data in demonstration_data['corrections']:
+            #data_keep = [demonstration_data['anchor']]
+            data_keep = [demonstration_data['corrections'][0]]
+            vel_keep = [demonstration_data['desired'][0]]
+            for (data, ori_vel) in zip(demonstration_data['corrections'], demonstration_data['desired']):
                 dist = self.dist_from_anchor(data)
                 if dist > self.MOTION_DISTANCE_THRESHOLD:
                     data_keep.append(data)
+                    vel_keep.append(ori_vel)
             rospy.loginfo('Discarded {} non-moving data points from dataset.'.
                           format(num_corrections - len(data_keep)))
             demonstration_data['corrections'] = data_keep
+            demonstration_data['desired'] = vel_keep
 
         num_corrections = len(demonstration_data['corrections'])  # Update number.
         rospy.loginfo('Processing {} demonstrations. Downsampling to {}.'.
@@ -124,20 +151,55 @@ class CollectDemonstration(object):
         # truncate anything extra (only do this with enough data points).
         every_nth = num_corrections / self._num_desired_points
         if every_nth > 1:
+            # take data points every 'evry_nth'
             downsampled = demonstration_data['corrections'][::every_nth]
+            downsampled_vel = demonstration_data['desired'][::every_nth]
+            # truncate 
             downsampled = downsampled[:self._num_desired_points]
+            downsampled_vel = downsampled_vel[:self._num_desired_points]
         else:
             # There will be at least one point.
             downsampled = demonstration_data['corrections']
+            downsampled_vel = demonstration_data['desired']
+
+        # converting data to the good type (this can be resolve by upgrading the analyseData function)
+        trajectory = PositionData()
+        original_D = PositionData()
+
+        trajectory.position = np.transpose([[f.pose.position.x for f in downsampled],
+                                            [f.pose.position.y for f in downsampled],
+                                            [f.pose.position.z for f in downsampled]])
+        trajectory.velocity = np.transpose([[f.twist.linear.x for f in downsampled],
+                                            [f.twist.linear.y for f in downsampled],
+                                            [f.twist.linear.z for f in downsampled]])
+
+        original_D.velocity = np.transpose([[f.twist.linear.x for f in downsampled_vel],
+                                            [f.twist.linear.y for f in downsampled_vel],
+                                            [f.twist.linear.z for f in downsampled_vel]])
+
+        # search for start and stop
+        (start, stop) = analyzeData(trajectory, original_D, 0.4, 'index') 
+
+        # keep only data between start-stop points
+        if len(start) == 0:
+            rospy.loginfo('no start and stop found, keeping old datas')
+            newData=downsampled
+        else:
+            #newData=[ downsampled[sta:sto] for (sta, sto) in zip(start, stop) ]   :(
+            newData=[]
+            for (sta, sto) in zip(start, stop):
+                newData.extend(downsampled[sta:sto])
 
         # Subtract the pose of the anchor from all downsampled points.
-        anchor = demonstration_data['anchor']
+        # anchor = demonstration_data['anchor']
+        anchor = newData[0]        # anchor is no longer this point but the first start point
         rospy.loginfo('Removing anchor ({:.2f} {:.2f} {:.2f}) from {} data points'.
                       format(anchor.pose.position.x,
                              anchor.pose.position.y,
                              anchor.pose.position.z,
                              len(downsampled)))
-        (anchor_new, corrections_new) = self.remove_anchor_pose(anchor, downsampled)
+        (anchor_new, corrections_new) = self.remove_anchor_pose(anchor, newData)
+        # corrections_velocity = downsampled_vel
 
         if plot:
             import matplotlib.pyplot as plt
@@ -165,12 +227,12 @@ class CollectDemonstration(object):
             ax.set_ylabel('Y axis')
             ax.set_zlabel('Z axis')
             ax.axis('equal')
+            plt.ion()
             plt.show()
             pass
 
         # Note: if you need the header time:
         # times = [x.header.stamp.to_time() for x in demonstration_data['corrections']]
-
 
         return (anchor_new, corrections_new)
 
@@ -239,9 +301,9 @@ class CollectDemonstration(object):
 
         return delta.p.Norm()
 
-
     def callback_state(self, data):
 
+        # set the anchor position, the starting point
         if not self._demonstration_anchor:
             self._demonstration_anchor = data
             rospy.loginfo('Received demonstration anchor {} {} {}'.format(
@@ -255,6 +317,17 @@ class CollectDemonstration(object):
         if self._num_demo_points % 50 == 0:
             rospy.loginfo('Got demonstration {} \t d={:.2f}'.format(
                 self._num_demo_points, self.dist_from_anchor(data)))
+
+
+    def callback_desired(self, data):
+        self._num_velocity_points += 1
+        self._velocity_vector.append(data)
+
+        if self._num_velocity_points % 50 == 0:
+            rospy.loginfo('Got desired velocity {}'.format(
+                self._num_velocity_points))
+
+
 
 def run(arguments):
     parser = argparse.ArgumentParser(
@@ -278,13 +351,14 @@ def run(arguments):
                         help='Plot demonstration (default=False).')
     args = parser.parse_args(arguments)
 
-
     demonstrator = CollectDemonstration(args.words, args.num, args.output)
-
     demonstrator.do(args.discard_static_points, args.plot)
+
+    raw_input('press enter')
 
     return
 
 if __name__ == '__main__':
     arguments = sys.argv[1:]  # argv[0] is the program name.
+    print 'ello'
     run(arguments)
