@@ -18,7 +18,8 @@ class SayState(smach.State):
     # be unique names.
 
     outcome_success = 'success'
-    outcomes = [outcome_success]
+    outcome_askingspeed = 'askingspeed' 
+    outcomes = [outcome_success, outcome_askingspeed]
 
     def __init__(self, message):
         # The state initialization can store information.
@@ -44,7 +45,10 @@ class SayState(smach.State):
 
         # The execute function *must* return one of its defined outcomes. Here,
         # we only have one outcome (SayState.outcome_success) so return it.
-        return SayState.outcome_success
+	if (self._message=='askingspeed'):
+		return SayState.outcome_askingspeed
+	else:
+        	return SayState.outcome_success
 
 
 class ReadyState(smach.State):
@@ -78,9 +82,9 @@ class ReadyState(smach.State):
         if (self.msg=='quit' or self.msg=='stop' or self.msg=='done'):
             rospy.loginfo('State machine is finished.')
             return ReadyState.outcome_finished
-        elif (self.msg=='speed'):
-	    rospy.loginfo('We go to the beginning')
-	    return ReadyState.outcome_success
+	elif (self.msg=="finish"):
+	    rospy.loginfo('What a success')
+	    return ReadyStat.outcome_success
 	else:
             rospy.loginfo('The show will go on')
             return ReadyState.outcome_ready
@@ -117,14 +121,16 @@ class UserInteraction(smach.StateMachine):
         finished_state = SayState("I am finished")
         finished_name = 'SAY_FINISHED'
         
-        speedcontrol_name="SPEED_CONTROL"
+       	askingspeed_state = SayState('At which speed do you want me to go ?')
+	askingspeed_name = 'ASKING_SPEED'
 
 
         # All states are now defined. Connect them.
         with self:
             # The first state added is the initial state.
             self.add(say_name, say_state,
-                     transitions={SayState.outcome_success: ready_name})
+                     transitions={SayState.outcome_success: ready_name,
+				  SayState.outcome_askingspeed: askingspeed_name})
 
             # For each state, all connections must be mapped to another
             # state. In this example, the ready outcome from ReadyState goes to
@@ -148,7 +154,8 @@ class UserInteraction(smach.StateMachine):
             
             
             #NEW
-            #self.add(ready_name,ready_state, transitions={SayState.outcome_success: speedcontrol_name})
+            self.add(askingspeed_name,askingspeed_state, 
+		     transitions={SayState.outcome_askingspeed: say_name})
             
         pass
 
