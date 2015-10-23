@@ -158,7 +158,7 @@ class UserInteraction(smach.StateMachine):
             
             #NEW
             self.add(askingspeed_name,askingspeed_state, 
-		     transitions={ReadyState.outcome_askingspeed: say_name})
+		     transitions={SayState.outcome_askingspeed: ready_name})
             
         pass
 
