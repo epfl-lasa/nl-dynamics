@@ -136,34 +136,49 @@ def drawStartStop(start, stop, ax):
         plt.show()
 
 
-def analyzeData(trajectory_data, original_data, precision_factor, name=""):
+def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_type='point'):
     # trajectory_data represent the actual data of the robot, the position and the velocity of the robot for all the points
     # original_data only represent a vector from the robot to the attractor point (following the OriginalDynamics) for all the points
     # Precision factor how precise the algorithm need to be to detect some jump in the trajectory : 0 is absolute precision
+    # return_type is the type of return, can be 'point' for an array of start and stop coord, can also be 'index', for an array of index
+
 
     #create some usefull variables
     is_in = 0
     start = []
     stop = []
+    index_start = []
+    index_stop = []
 
-    for (pos, dis_vel, vel) in zip(trajectory_data.position, trajectory_data.velocity, original_data.velocity):
+    for i,(pos, dis_vel, vel) in enumerate(zip(trajectory_data.position, trajectory_data.velocity, original_data.velocity)):
     #calculate dot product
         dot = np.dot(dis_vel/np.linalg.norm(dis_vel), vel/np.linalg.norm(vel))
 
     #analyse data and eventualy store new start-stop point
         if not(is_in) and dot < (1-precision_factor):
             start.append(pos)
+            index_start.append(i)
             is_in = 1
 
         elif is_in and dot >= (1-precision_factor):
             stop.append(pos)
+            index_stop.append(i)
             is_in = 0
 
     # in case of there weren't the last stop
     if is_in:
         stop.append(trajectory_data.position[-1])
+        index_stop.append(i)
 
-    return np.transpose(start), np.transpose(stop)
+    if return_type == 'point':
+        return np.transpose(start), np.transpose(stop)
+    elif return_type == 'index':
+        return index_start, index_stop
+
+    else:
+        rospy.logerr("error in function analyzeData, return_type is wrong")
+        return 0,0
+
 
 #reflexion here : maybe the algorithm would more precise with a filter : if 2 points (start then stop) are too closed, we remove then.
 #or better : if 2 points are too closed and the dot product is not so low, keep them, but if they are closed with a high dot product remove them.
@@ -276,7 +291,7 @@ def run():
     precision_factor = 0.4  # this factor is for analysis, the most it goes to 0, the sharper the analysis will be
     factor = 30             # this factor represent how much more point than the robot gave are drawn by the spline3D
 
-    for name in tab:
+    for name in tab3:
         # load data
         (trajectory_data, original_data) = load(name)
 
@@ -286,7 +301,7 @@ def run():
                                                                                         smoothData(original_data.velocity, alpha))
 
         # analyze data
-        (start, stop) = analyzeData(trajectory_data, original_data, precision_factor, name)
+        (start, stop) = analyzeData(trajectory_data, original_data, precision_factor)
 
         #drawpoints (to be deleated)
         ax = plotPoints(trajectory_data, name + ", with alpha=" + str(alpha))
