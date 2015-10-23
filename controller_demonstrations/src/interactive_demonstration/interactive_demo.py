@@ -57,7 +57,8 @@ class ReadyState(smach.State):
     outcome_ready = 'ready'
     outcome_finished = 'finished'
     outcome_success = 'success'
-    outcomes = [outcome_ready, outcome_finished, outcome_success]
+    outcome_askingspeed = 'askingspeed'
+    outcomes = [outcome_ready, outcome_finished, outcome_success, outcome_askingspeed]
 
     def __init__(self):
         # Again, specify the outcomes.
@@ -84,7 +85,9 @@ class ReadyState(smach.State):
             return ReadyState.outcome_finished
 	elif (self.msg=="finish"):
 	    rospy.loginfo('What a success')
-	    return ReadyStat.outcome_success
+	    return ReadyState.outcome_success
+	elif (self.msg=='askingspeed'):
+	    return ReadyState.outcome_askingspeed
 	else:
             rospy.loginfo('The show will go on')
             return ReadyState.outcome_ready
@@ -129,8 +132,7 @@ class UserInteraction(smach.StateMachine):
         with self:
             # The first state added is the initial state.
             self.add(say_name, say_state,
-                     transitions={SayState.outcome_success: ready_name,
-				  SayState.outcome_askingspeed: askingspeed_name})
+                     transitions={SayState.outcome_success: ready_name})
 
             # For each state, all connections must be mapped to another
             # state. In this example, the ready outcome from ReadyState goes to
@@ -141,7 +143,8 @@ class UserInteraction(smach.StateMachine):
             self.add(ready_name, ready_state,
                      transitions={ReadyState.outcome_ready: collect_name,
                                   ReadyState.outcome_finished: finished_name,
-				  ReadyState.outcome_success: say_name})
+				  ReadyState.outcome_success: say_name,
+				  ReadyState.outcome_askingspeed: askingspeed_name})
 
             # Here the connected state is actually a whole other
             # StateMachine. This is valid as long as its outcomes are properly
@@ -155,7 +158,7 @@ class UserInteraction(smach.StateMachine):
             
             #NEW
             self.add(askingspeed_name,askingspeed_state, 
-		     transitions={SayState.outcome_askingspeed: say_name})
+		     transitions={ReadyState.outcome_askingspeed: say_name})
             
         pass
 
