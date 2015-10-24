@@ -16,11 +16,65 @@ class Spline3D:
         self.coord = [Spline(), Spline(), Spline()]
 
 
-def spline3D(pos, vel):
+def spline3D(data):
+    #data is a KUKA/CartStamped structur:
+    # data = array /
+                    # header
+                    #   seq
+                    #   stamp
+                    #     secs
+                    #     nsecs
+                    #   frame_id
+                    # pose
+                    #   position
+                    #     x
+                    #     y
+                    #     z
+                    #   orientation
+                    #     x
+                    #     y
+                    #     z
+                    #     w
+                    # twist
+                    #   linear
+                    #     x
+                    #     y
+                    #     z
+                    #   angular
+                    #     x
+                    #     y
+                    #     z
+                    # wrench
+                    #   force
+                    #     x
+                    #     y
+                    #     z
+                    #   torque
+                    #     x
+                    #     y
+                    #     z
+
     # creating data output
-    size = len(pos)
+    spline_data = Spline3D()
+    t = np.linspace(0, 1, len(data))
+
+    #splines axis projection calculation
+    spline_data.coord[0] = spline_(t, [d.pose.position.x for d in data],
+                                      [d.twist.linear.x for d in data])
+
+    spline_data.coord[1] = spline_(t, [d.pose.position.y for d in data],
+                                      [d.twist.linear.y for d in data])
+
+    spline_data.coord[2] = spline_(t, [d.pose.position.z for d in data],
+                                      [d.twist.linear.z for d in data])
+
+    return spline_data
+
+
+def spline3Dvect(pos, vel):
+    # creating data output
     data = Spline3D()
-    t = np.linspace(0, 1, size)
+    t = np.linspace(0, 1, len(pos))
 
     #splines axis projection calculation
     data.coord[0] = spline_(t, pos[:, 0], vel[:, 0])

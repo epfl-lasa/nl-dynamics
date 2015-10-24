@@ -11,8 +11,8 @@ import tf_conversions
 import PyKDL
 import numpy as np
 
-from kuka_bag_visualization.kuka_bag_plot import PositionData, analyzeData
-#from kuka_bag_visualizat.spline import spline3D, getPointsSpline3D
+from kuka_bag_visualization.kuka_bag_plot import analyzeData, forcePlot
+from kuka_bag_visualization.spline import spline3D, getPointsSpline3D
 
 from nl_msgs.msg import CartStateStamped
 from nl_msgs.msg import AnchoredDemonstration
@@ -41,7 +41,6 @@ class CollectDemonstration(object):
 
     channel = 'KUKA/CartState'
     channel2 = 'KUKA/DesiredState'
-
 
     def __init__(self, words, num_desired_points, bag_filename):
         rospy.init_node('collect_demonstration', anonymous=True)
@@ -154,7 +153,7 @@ class CollectDemonstration(object):
             # take data points every 'evry_nth'
             downsampled = demonstration_data['corrections'][::every_nth]
             downsampled_vel = demonstration_data['desired'][::every_nth]
-            # truncate 
+            # truncate
             downsampled = downsampled[:self._num_desired_points]
             downsampled_vel = downsampled_vel[:self._num_desired_points]
         else:
@@ -162,33 +161,24 @@ class CollectDemonstration(object):
             downsampled = demonstration_data['corrections']
             downsampled_vel = demonstration_data['desired']
 
-        # converting data to the good type (this can be resolve by upgrading the analyseData function)
-        trajectory = PositionData()
-        original_D = PositionData()
-
-        trajectory.position = np.transpose([[f.pose.position.x for f in downsampled],
-                                            [f.pose.position.y for f in downsampled],
-                                            [f.pose.position.z for f in downsampled]])
-        trajectory.velocity = np.transpose([[f.twist.linear.x for f in downsampled],
-                                            [f.twist.linear.y for f in downsampled],
-                                            [f.twist.linear.z for f in downsampled]])
-
-        original_D.velocity = np.transpose([[f.twist.linear.x for f in downsampled_vel],
-                                            [f.twist.linear.y for f in downsampled_vel],
-                                            [f.twist.linear.z for f in downsampled_vel]])
-
         # search for start and stop
-        (start, stop) = analyzeData(trajectory, original_D, 0.4, 'index') 
+        (start, stop) = analyzeData(downsampled, downsampled_vel, 0.4, 'index')
+        
+        #check the force applied on the kuka robot
+        #forcePlot(downsampled)
 
         # keep only data between start-stop points
         if len(start) == 0:
             rospy.loginfo('no start and stop found, keeping old datas')
-            newData=downsampled
+            newData = downsampled
+            listData = [downsampled]
         else:
             #newData=[ downsampled[sta:sto] for (sta, sto) in zip(start, stop) ]   :(
-            newData=[]
+            newData = []
+            listData = []
             for (sta, sto) in zip(start, stop):
-                newData.extend(downsampled[sta:sto])
+                newData.extend(downsampled[sta:sto+1])
+                listData.append(downsampled[sta:sto+1])
 
         # Subtract the pose of the anchor from all downsampled points.
         # anchor = demonstration_data['anchor']
@@ -206,22 +196,39 @@ class CollectDemonstration(object):
             from mpl_toolkits.mplot3d import Axes3D
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
+
+            #plottin old position
             original_x = [f.pose.position.x for f in downsampled]
             original_y = [f.pose.position.y for f in downsampled]
             original_z = [f.pose.position.z for f in downsampled]
 
-            shifted_x = [f.pose.position.x for f in corrections_new]
-            shifted_y = [f.pose.position.y for f in corrections_new]
-            shifted_z = [f.pose.position.z for f in corrections_new]
+            ax.scatter(original_x, original_y, original_z, c='r', zorder=2)
 
-            ax.scatter(original_x, original_y, original_z, c='r')
-            ax.scatter(shifted_x, shifted_y, shifted_z, c='g')
+            # plotting new position
+            (temp, downsampled) = self.remove_anchor_pose(anchor, downsampled)
+
+            shifted_x = [f.pose.position.x for f in downsampled]
+            shifted_y = [f.pose.position.y for f in downsampled]
+            shifted_z = [f.pose.position.z for f in downsampled]
+
+            ax.scatter(shifted_x, shifted_y, shifted_z, c='b', zorder=2)
+
+            #plotting new compute spline position
+            t = np.linspace(0, 1, 500)
+            for dat in listData:
+                (temp, dat) = self.remove_anchor_pose(anchor, dat)
+                [xx, yy, zz] = getPointsSpline3D(spline3D(dat), t)
+                ax.plot(xx, yy, zz, c='g', lw=3, zorder=3)
+
+            #plotting anchor old position in a black point
             ax.scatter(anchor.pose.position.x, anchor.pose.position.y,
-                       anchor.pose.position.z, c='k')
+                       anchor.pose.position.z, c='k', zorder=2)
+
+            #plotting anchor new position in a black point
             ax.scatter(anchor_new.pose.position.x,
                        anchor_new.pose.position.y,
-                       anchor_new.pose.position.z, c='k')
-            ax.scatter(0, 0, 0, c='r')
+                       anchor_new.pose.position.z, c='k', zorder=2)
+            ax.scatter(0, 0, 0, c='r', zorder=2)
 
             ax.set_xlabel('X axis')
             ax.set_ylabel('Y axis')
@@ -318,7 +325,6 @@ class CollectDemonstration(object):
             rospy.loginfo('Got demonstration {} \t d={:.2f}'.format(
                 self._num_demo_points, self.dist_from_anchor(data)))
 
-
     def callback_desired(self, data):
         self._num_velocity_points += 1
         self._velocity_vector.append(data)
@@ -327,6 +333,8 @@ class CollectDemonstration(object):
             rospy.loginfo('Got desired velocity {}'.format(
                 self._num_velocity_points))
 
+    def callback_interrupt(self, data):
+        rospy.signal_shutdown('enter pressed')
 
 
 def run(arguments):
@@ -357,6 +365,7 @@ def run(arguments):
     raw_input('press enter')
 
     return
+
 
 if __name__ == '__main__':
     arguments = sys.argv[1:]  # argv[0] is the program name.

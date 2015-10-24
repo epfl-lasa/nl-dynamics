@@ -8,12 +8,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-class PositionData:
-    def __init__(self):
-        self.position = []
-        self.velocity = []
-
-
 def getSmoothDataIndex(nb_points, alpha):
 # return a vector of the index of the new point
     if nb_points*alpha < 2:
@@ -25,7 +19,7 @@ def getSmoothDataIndex(nb_points, alpha):
 
 def smoothData(tab, alpha):
     t = getSmoothDataIndex(len(tab), alpha)
-    return tab[t]
+    return [tab[i] for i in t]
 
 
 def load(name):
@@ -36,61 +30,39 @@ def load(name):
 
     # The rosbag tells us the topic, message data (what we want), and time.
     [topics, msgs, times] = zip(*stuff)
+    trajectory_data = msgs
 
     print("Have a trajectory with " + str(len(msgs)) + " data points")
-
-    # create output structure
-    trajectory_data = PositionData()
-    original_data = PositionData()
-
-    # Extract x/y/z coordinates of the position and the linear velocity
-    # between each point
-    trajectory_data.position = np.transpose([[msg.pose.position.x for msg in msgs],
-                                             [msg.pose.position.y for msg in msgs],
-                                             [msg.pose.position.z for msg in msgs]])
-    trajectory_data.velocity = np.transpose([[msg.twist.linear.x for msg in msgs],
-                                             [msg.twist.linear.y for msg in msgs],
-                                             [msg.twist.linear.z for msg in msgs]])
 
     # Extract x/y/z coordinates of the original Dynamic velocity
     gen = bag.read_messages(topics=['/KUKA/DesiredState'])
     stuff = list(gen)
     [topics, msgs, times] = zip(*stuff)
-    original_data.velocity = np.transpose([[msg.twist.linear.x for msg in msgs],
-                                           [msg.twist.linear.y for msg in msgs],
-                                           [msg.twist.linear.z for msg in msgs]])
+    original_data = msgs
 
     # checking length
-    lenPos = len(trajectory_data.position)
-    lenVel = len(trajectory_data.velocity)
-    lenOri = len(original_data.velocity)
+    lenPos = len(trajectory_data)
+    lenOri = len(original_data)
 
-    if lenPos != lenVel:
-        print("WARNING, trajectory position and velocity don't have the same length")
-        lenPos = min(lenPos, lenVel)
-        lenVel = lenPos
-        trajectory_data.position = trajectory_data.position[range(lenPos)]
-        trajectory_data.velocity = trajectory_data.velocity[range(lenVel)]
-
-    if lenVel != lenOri:
-        print("WARNING, trajectory position/velocity and original velocity don't have the same length")
-        lenVel = min(lenVel, lenOri)
-        lenOri = lenVel
-        lenPos = lenVel
-        trajectory_data.position = trajectory_data.position[range(lenPos)]
-        trajectory_data.velocity = trajectory_data.velocity[range(lenVel)]
-        original_data.velocity = original_data.velocity[range(lenOri)]
+    if lenPos != lenOri:
+        print("WARNING, trajectory and Desired_Velocity don't have the same length")
+        lenPos = min(lenPos, lenOri)
+        lenOri = lenPos
+        trajectory_data = trajectory_data[:lenPos]
+        original_data = original_data[:lenPos]
 
     return trajectory_data, original_data
 
 
-def plotPoints(data, name, plot=1):
+def plotPoints(data, name):
     # create new figure in 3D
     fig = plt.figure()
     ax = fig.gca(projection='3d')
 
     # plot points and add label
-    ax.plot(data.position[:, 0], data.position[:, 1], data.position[:, 2], c='b', label=name)
+    ax.plot([d.pose.position.x for d in data[:]],
+            [d.pose.position.y for d in data[:]],
+            [d.pose.position.z for d in data[:]], c='b', label=name)
 
     # label axis
     ax.set_xlabel('x')
@@ -106,13 +78,13 @@ def plotPoints(data, name, plot=1):
 
 
 def plotSpline3D(data, ax, factor):
-    #the factor parameter represent how much you want MORE points that were sent by the robot
+    #the factor parameter represent how much you want MORE points that are being in data
 
     #calculate splines data
-    splineData3D = spline3D(data.position, data.velocity)
+    splineData3D = spline3D(data)
 
     #calculate new points
-    size = len(data.position) * factor
+    size = len(data) * factor
     t = np.linspace(0, 1, size)
 
     new_pos = getPointsSpline3D(splineData3D, t)
@@ -142,7 +114,6 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
     # Precision factor how precise the algorithm need to be to detect some jump in the trajectory : 0 is absolute precision
     # return_type is the type of return, can be 'point' for an array of start and stop coord, can also be 'index', for an array of index
 
-
     #create some usefull variables
     is_in = 0
     start = []
@@ -150,8 +121,12 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
     index_start = []
     index_stop = []
 
-    for i,(pos, dis_vel, vel) in enumerate(zip(trajectory_data.position, trajectory_data.velocity, original_data.velocity)):
+    for i, (tra, ori) in enumerate(zip(trajectory_data, original_data)):
     #calculate dot product
+        pos = [tra.pose.position.x, tra.pose.position.y, tra.pose.position.z]
+        dis_vel = [tra.twist.linear.x, tra.twist.linear.y, tra.twist.linear.z]
+        vel = [ori.twist.linear.x, ori.twist.linear.y, ori.twist.linear.z]
+
         dot = np.dot(dis_vel/np.linalg.norm(dis_vel), vel/np.linalg.norm(vel))
 
     #analyse data and eventualy store new start-stop point
@@ -167,7 +142,8 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
 
     # in case of there weren't the last stop
     if is_in:
-        stop.append(trajectory_data.position[-1])
+        pos = trajectory_data[-1].pose.position
+        stop.append([pos.x, pos.y, pos.z])
         index_stop.append(i)
 
     if return_type == 'point':
@@ -177,7 +153,7 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
 
     else:
         rospy.logerr("error in function analyzeData, return_type is wrong")
-        return 0,0
+        return 0, 0
 
 
 #reflexion here : maybe the algorithm would more precise with a filter : if 2 points (start then stop) are too closed, we remove then.
@@ -189,6 +165,25 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
 #another thing :  when we found a jump on the curve that is supposed to be a jump, the start and stops are in the middle of the jump, should correct it
 
 #another thing, frequency analysis ??
+
+
+def forcePlot(data):
+    force_try = [np.sqrt(f.wrench.force.x**2 + f.wrench.force.y**2 + f.wrench.force.z**2) for f in data]
+
+    fig = plt.figure()
+    ax = fig.gca()
+
+    # plot points and add label
+    ax.plot(range(len(force_try)), force_try, c='b', label="force_try")
+
+    # label axis
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.legend()
+
+    # show result
+    plt.ion()
+    plt.show()
 
 
 def dotProdPlot(vel1, vel2, name):
@@ -205,69 +200,6 @@ def dotProdPlot(vel1, vel2, name):
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.legend()
-
-    # show result
-    plt.ion()
-    plt.show()
-
-    # first fft
-    fourrier = np.fft.fft(dot_prod)
-
-    fourrier1 = []
-    fourrier2 = []
-    fourrier3 = []
-    fourrier4 = []
-
-    #creation of a perfect low pass filter of 20%
-    percentl = 30
-    filtre = [1 for i in range(percentl * len(fourrier) / 100)]
-    filtre.extend([0 for i in range(len(fourrier) - len(filtre))])
-    fourrier1 = np.array(fourrier) * np.array(filtre)
-
-    #creation of a highpass filter of 20%
-    percenth = 30
-    filtre = [0 for i in range((100-percenth) * len(fourrier) / 100)]
-    filtre.extend([1 for i in range(len(fourrier) - len(filtre))])
-    fourrier2 = np.array(fourrier) * np.array(filtre)
-
-    #creation of a pass anti bande filter of 10% - 10%
-    percentb1 = 3
-    percentb2 = 30
-    filtre = [1 for i in range(percentb1 * len(fourrier) / 100)]
-    filtre.extend([0 for i in range((100-percentb1-percentb2) * len(fourrier) / 100)])
-    filtre.extend([1 for i in range(len(fourrier) - len(filtre))])
-    fourrier3 = np.array(fourrier) * np.array(filtre)
-
-    #creation of a pass bande filter of 10% - 10%
-    percentb3 = 10
-    percentb4 = 90
-    filtre = [0 for i in range(percentb3 * len(fourrier) / 100)]
-    filtre.extend([1 for i in range((100-percentb3-percentb4) * len(fourrier) / 100)])
-    filtre.extend([0 for i in range(len(fourrier) - len(filtre))])
-    fourrier4 = np.array(fourrier) * np.array(filtre)
-
-    #fourrier = np.imag(fourrier)
-    fourrier = np.fft.ifft(fourrier)
-    fourrier1 = np.fft.ifft(fourrier1)
-    fourrier2 = np.fft.ifft(fourrier2)
-    fourrier3 = np.fft.ifft(fourrier3)
-    fourrier4 = np.fft.ifft(fourrier4)
-
-    # create new figure in 2D
-    fig2 = plt.figure()
-    ax2 = fig2.gca()
-
-    # plot points and add label
-    ax2.plot(range(len(dot_prod)), dot_prod, c='b', label=name + " - normal")
-    ax2.plot(range(len(fourrier1)), fourrier1, c='r', label=name + " - lowpassfilter " + str(percentl)+"%")
-    ax2.plot(range(len(fourrier2)), fourrier2, c='g', label=name + " - highpassfilter " + str(percenth)+"%")
-    ax2.plot(range(len(fourrier3)), fourrier3, c='k', label=name + " - antibandepassfilter " + str(percentb1) + "% low and" + str(percentb2) + "% high")
-    ax2.plot(range(len(fourrier4)), fourrier3, c='m', label=name + " - bandepassfilter " + str(percentb3) + "% low and" + str(percentb4) + "% high")
-
-    # label axis
-    ax2.set_xlabel('x')
-    ax2.set_ylabel('y')
-    ax2.legend()
 
     # show result
     plt.ion()
@@ -295,10 +227,8 @@ def run():
         # load data
         (trajectory_data, original_data) = load(name)
 
-        #smooth data
-        (trajectory_data.position, trajectory_data.velocity, original_data.velocity) = (smoothData(trajectory_data.position, alpha),
-                                                                                        smoothData(trajectory_data.velocity, alpha),
-                                                                                        smoothData(original_data.velocity, alpha))
+        (trajectory_data, original_data) = (smoothData(trajectory_data, alpha),
+                                            smoothData(original_data, alpha))
 
         # analyze data
         (start, stop) = analyzeData(trajectory_data, original_data, precision_factor)
