@@ -17,9 +17,8 @@ class SayState(smach.State):
     # A state in the state machine can have multiple outcomes. The outcomes must
     # be unique names.
 
-    outcome_success = 'success'
-    outcome_askingspeed = 'askingspeed' 
-    outcomes = [outcome_success, outcome_askingspeed]
+    outcome_success = 'success' 
+    outcomes = [outcome_success]
 
     def __init__(self, message):
         # The state initialization can store information.
@@ -42,13 +41,12 @@ class SayState(smach.State):
         # case, it just prints a message, sleeps.
         
 	self.speaking(self._message)
+	rospy.loginfo(self._message)
 
         # The execute function *must* return one of its defined outcomes. Here,
         # we only have one outcome (SayState.outcome_success) so return it.
-	if (self._message=='askingspeed'):
-		return SayState.outcome_askingspeed
-	else:
-        	return SayState.outcome_success
+	
+        return SayState.outcome_success
 
 
 class ReadyState(smach.State):
@@ -97,8 +95,29 @@ class ReadyState(smach.State):
         self.msg = data.data
         rospy.loginfo('Got message: {}'.format(self.msg))
 
+class ChangeSpeed(smach.State):
+	outcome_speedchanged = 'speedchanged'
+	outcomes=[outcome_speedchanged]
+	def __init__(self):
+		#specify the outcomes
+		smach.State.__init__(self, outcomes=ChangeSpeed.outcomes)
+		#Subscribe to a Topic
+		topic = '/nl_command_parsed'
+		rospy.Subscriber(topic, String, self.callback, queue_size=1)
+		#internal data
+		self.msg=''
 
+	def execute(self, userdata):
+		rospy.loginfo('Executing ChangeSpeed')
+		raw_input('Press enter to be ready...')
+		#Will change the speed of the robot
+		self.new_speed = self.msg
+		return ChangeSpeed.outcome_speedchanged #What will it really return ? May a put the new speed in this return and acces it in an other class ? Or should I change directly in this class ?
 
+	def callback(self, data):
+		self.msg=data.data
+		rospy.loginfo('New speed is %s', data.data)
+		
 class UserInteraction(smach.StateMachine):
 
     # A state machine similarly has possible outcomes.
@@ -112,8 +131,8 @@ class UserInteraction(smach.StateMachine):
 
         # Create the states and give them names here. Each state (an instance of
         # the class) has an associated name (a string), used by the transitions.
-        say_state = SayState(message='Hello, world')
-        say_name = 'SAY_HELLO'
+        hw_state = SayState(message='Hello, world')
+        hw_name = 'SAY_HW'
 
         ready_state = ReadyState()
         ready_name = 'READY'
@@ -127,39 +146,51 @@ class UserInteraction(smach.StateMachine):
        	askingspeed_state = SayState('At which speed do you want me to go ?')
 	askingspeed_name = 'ASKING_SPEED'
 
+	speedchanged_state = ChangeSpeed()
+	speedchanged_name = 'CHANGED_SPEED'
 
-        # All states are now defined. Connect them.
+	validatespeed_state = SayState('New Velocity implemented')
+	validatespeed_name = 'VALIDATE_SPEED'
+
+      	# All states are now defined. Connect them.
         with self:
-            # The first state added is the initial state.
-            self.add(say_name, say_state,
-                     transitions={SayState.outcome_success: ready_name})
+            	# The first state added is the initial state.
+            	self.add(hw_name, hw_state,
+                     	transitions={SayState.outcome_success: ready_name})
 
-            # For each state, all connections must be mapped to another
-            # state. In this example, the ready outcome from ReadyState goes to
-            # the collect node (identified by collect_name), and the finshed
-            # outcome goes to the SAY_FINISHED node (again, identified by its
-            # name). It's important to remember that all transitions are defined
-            # by *strings*, not the underlying nodes.
-            self.add(ready_name, ready_state,
-                     transitions={ReadyState.outcome_ready: collect_name,
-                                  ReadyState.outcome_finished: finished_name,
-				  ReadyState.outcome_success: say_name,
+            	# For each state, all connections must be mapped to another
+            	# state. In this example, the ready outcome from ReadyState goes to
+            	# the collect node (identified by collect_name), and the finshed
+            	# outcome goes to the SAY_FINISHED node (again, identified by its
+            	# name). It's important to remember that all transitions are defined
+            	# by *strings*, not the underlying nodes.
+            	self.add(ready_name, ready_state,
+                     	transitions={ReadyState.outcome_ready: collect_name,
+                          	  ReadyState.outcome_finished: finished_name,
+				  ReadyState.outcome_success: hw_name,
 				  ReadyState.outcome_askingspeed: askingspeed_name})
 
-            # Here the connected state is actually a whole other
-            # StateMachine. This is valid as long as its outcomes are properly
-            # connected.
-            self.add(collect_name, collect_machine,
-                     transitions={DemoCollectionMachine.outcome_success: say_name,  # Go back to say_state
-                                  DemoCollectionMachine.outcome_failure: UserInteraction.outcome_failure})
-            self.add(finished_name, finished_state,
-                     transitions={SayState.outcome_success: UserInteraction.outcome_success})
+            	# Here the connected state is actually a whole other
+            	# StateMachine. This is valid as long as its outcomes are properly
+            	# connected.
+            	self.add(collect_name, collect_machine,
+                     	transitions={DemoCollectionMachine.outcome_success: hw_name,  # Go back to hello world
+                                     DemoCollectionMachine.outcome_failure: UserInteraction.outcome_failure})
+
+            	self.add(finished_name, finished_state,
+                     	transitions={SayState.outcome_success: UserInteraction.outcome_success})
             
             
-            #NEW
-            self.add(askingspeed_name,askingspeed_state, 
-		     transitions={SayState.outcome_askingspeed: ready_name})
-            
+            	#NEW
+            	self.add(askingspeed_name,askingspeed_state, 
+		     	transitions={SayState.outcome_success: speedchanged_name})
+
+		self.add(speedchanged_name, speedchanged_state,
+			transitions={ChangeSpeed.outcome_speedchanged: validatespeed_name})
+
+		self.add(validatespeed_name, validatespeed_state,
+			transitions={SayState.outcome_success: hw_name})
+           
         pass
 
 
