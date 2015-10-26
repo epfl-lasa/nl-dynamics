@@ -56,7 +56,8 @@ class ReadyState(smach.State):
     outcome_finished = 'finished'
     outcome_success = 'success'
     outcome_askingspeed = 'askingspeed'
-    outcomes = [outcome_ready, outcome_finished, outcome_success, outcome_askingspeed]
+    outcome_askcommand = 'askcommand'
+    outcomes = [outcome_ready, outcome_finished, outcome_success, outcome_askingspeed, outcome_askcommand]
 
     def __init__(self):
         # Again, specify the outcomes.
@@ -86,6 +87,8 @@ class ReadyState(smach.State):
 	    return ReadyState.outcome_success
 	elif (self.msg=='askingspeed'):
 	    return ReadyState.outcome_askingspeed
+	elif (self.msg=='command'):
+	    return ReadyState.outcome_askcommand
 	else:
             rospy.loginfo('The show will go on')
             return ReadyState.outcome_ready
@@ -106,17 +109,51 @@ class ChangeSpeed(smach.State):
 		rospy.Subscriber(topic, String, self.callback, queue_size=1)
 		#internal data
 		self.msg=''
+		self.speed_integer=None
+        
+        # This method does not change the class members directly.
+        def string_to_number(self, msg):
+                a=dict(one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8, nine=9, ten=10)
+                if (msg in a.keys()):           #empty string is checked here and if the number is in the string also        
+                        new_speed = a.get(msg)
+                        return new_speed
+                else:   return None
+        
 
 	def execute(self, userdata):
 		rospy.loginfo('Executing ChangeSpeed')
-		raw_input('Press enter to be ready...')
 		#Will change the speed of the robot
-		self.new_speed = self.msg
-		return ChangeSpeed.outcome_speedchanged #What will it really return ? May a put the new speed in this return and acces it in an other class ? Or should I change directly in this class ?
+		while (self.speed_integer==None):		
+		        self.speed_integer=string_to_number(self.msg) #HAVE TO PUBLISH TO ROBOT TO CHANGE SPEED
+		        rospy.sleep(0.1)
+		rospy.loginfo('New Speed is %s', self.speed_integer)
+		return ChangeSpeed.outcome_speedchanged 
 
 	def callback(self, data):
-		self.msg=data.data
-		rospy.loginfo('New speed is %s', data.data)
+		self.msg=data.data #data.data == self.msg de ReadyState
+		rospy.loginfo('I am ChangeSpeed')
+		
+class GetCommand(smach.State):
+        outcome_getcommand = 'getcommand'
+        outcomes=[outcome_getcommand]
+        def __init__(self):
+                #specify the outcomes
+                smach.State.__init__(self, outcomes=GetCommand.outcomes)
+		#Subscribe to a Topic
+		topic = '/nl_command_parsed'
+		rospy.Subscriber(topic, String, self.callback, queue_size=1)
+		#internal data
+		self.msg=''
+		a=dict(faster=1, right=2, left=3, slower=4)
+	        
+	def execute(self, userdata):
+	        rospy.loginfo('In the execute')
+	        return GetCommand.outcome_getcommand
+	        #Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it  
+	        
+        def callback(self, data):
+                self.msg=data.data
+                rospy.loginfo('I am in GetCommand')
 		
 class UserInteraction(smach.StateMachine):
 
@@ -152,6 +189,19 @@ class UserInteraction(smach.StateMachine):
 	validatespeed_state = SayState('New Velocity implemented')
 	validatespeed_name = 'VALIDATE_SPEED'
 
+	askcommand_state = SayState('Which command would you like me to do ?')
+	askcommand_name = 'ASK_COMMAND'
+	
+	getcommand_state = GetCommand()
+	getcommand_name = 'GET_COMMAND'
+	
+	commanddone_state = SayState('Okay I have done your command')
+	commanddone_name = 'COMMAND_DONE'
+	
+	# For executing commands, assume there exists a list of all the 
+	# available commands the robot can execute: you can define this
+	# for yourself in the constructor.
+
       	# All states are now defined. Connect them.
         with self:
             	# The first state added is the initial state.
@@ -166,9 +216,10 @@ class UserInteraction(smach.StateMachine):
             	# by *strings*, not the underlying nodes.
             	self.add(ready_name, ready_state,
                      	transitions={ReadyState.outcome_ready: collect_name,
-                          	  ReadyState.outcome_finished: finished_name,
-				  ReadyState.outcome_success: hw_name,
-				  ReadyState.outcome_askingspeed: askingspeed_name})
+                          	ReadyState.outcome_finished: finished_name,
+				ReadyState.outcome_success: hw_name,
+				ReadyState.outcome_askingspeed: askingspeed_name,
+				ReadyState.outcome_askcommand: askcommand_name})
 
             	# Here the connected state is actually a whole other
             	# StateMachine. This is valid as long as its outcomes are properly
@@ -182,6 +233,7 @@ class UserInteraction(smach.StateMachine):
             
             
             	#NEW
+			#Changing Speed States
             	self.add(askingspeed_name,askingspeed_state, 
 		     	transitions={SayState.outcome_success: speedchanged_name})
 
@@ -190,6 +242,16 @@ class UserInteraction(smach.StateMachine):
 
 		self.add(validatespeed_name, validatespeed_state,
 			transitions={SayState.outcome_success: hw_name})
+
+		#Giving a command to do States
+                self.add(askcommand_name, askcommand_state,
+			transitions={SayState.outcome_success: getcommand_name})
+			
+		self.add(getcommand_name, getcommand_state,
+		        transitions={GetCommand.outcome_getcommand: commanddone_name})
+		        
+	        self.add(commanddone_name, commanddone_state,
+	                transitions={SayState.outcome_success: hw_name})
            
         pass
 
