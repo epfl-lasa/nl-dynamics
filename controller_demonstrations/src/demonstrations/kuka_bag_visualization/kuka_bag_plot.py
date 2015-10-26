@@ -166,6 +166,50 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
 
 #another thing, frequency analysis ??
 
+def analyzeData_force(trajectory_data, precision_factor=0.4, return_type='point'):
+    # trajectory_data represent the actual data of the robot, the position and the velocity of the robot for all the points
+    # original_data only represent a vector from the robot to the attractor point (following the OriginalDynamics) for all the points
+    # Precision factor how precise the algorithm need to be to detect some jump in the trajectory : 0 is absolute precision
+    # return_type is the type of return, can be 'point' for an array of start and stop coord, can also be 'index', for an array of index
+
+    #create some usefull variables
+    threshold = 10
+    is_in = 0
+    start = []
+    stop = []
+    index_start = []
+    index_stop = []
+
+    for i, tra in enumerate(trajectory_data):
+    #calculate norm
+        norm_force = np.sqrt(tra.wrench.force.x**2 + tra.wrench.force.y**2 + tra.wrench.force.z**2)
+        pos = [tra.pose.position.x, tra.pose.position.y, tra.pose.position.z]
+
+    #analyse data and eventualy store new start-stop point
+        if not(is_in) and norm_force > threshold - precision_factor:
+            start.append(pos)
+            index_start.append(i)
+            is_in = 1
+
+        elif is_in and norm_force < threshold + precision_factor:
+            stop.append(pos)
+            index_stop.append(i)
+            is_in = 0
+
+    # in case of there weren't the last stop
+    if is_in:
+        pos = trajectory_data[-1].pose.position
+        stop.append([pos.x, pos.y, pos.z])
+        index_stop.append(i)
+
+    if return_type == 'point':
+        return np.transpose(start), np.transpose(stop)
+    elif return_type == 'index':
+        return index_start, index_stop
+    else:
+        rospy.logerr("error in function analyzeData, return_type is wrong")
+        return 0, 0
+
 
 def forcePlot(data):
     force_try = [np.sqrt(f.wrench.force.x**2 + f.wrench.force.y**2 + f.wrench.force.z**2) for f in data]
@@ -178,7 +222,7 @@ def forcePlot(data):
 
     # label axis
     ax.set_xlabel('x')
-    ax.set_ylabel('y')
+    ax.set_ylabel('norm of the force applied on the robot')
     ax.legend()
 
     # show result
