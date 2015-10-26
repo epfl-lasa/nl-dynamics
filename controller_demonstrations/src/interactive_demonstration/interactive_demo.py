@@ -147,9 +147,9 @@ class GetCommand(smach.State):
 		a=dict(faster=1, right=2, left=3, slower=4)
 	        
 	def execute(self, userdata):
-	        rospy.loginfo('In the execute')
-	        return GetCommand.outcome_getcommand
-	        #Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it  
+	        #Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it 
+	        #Should I make the check before 'if the command exist' ? And so implement the dictionnary when I teach a new command ?
+	        return GetCommand.outcome_getcommand 
 	        
         def callback(self, data):
                 self.msg=data.data
