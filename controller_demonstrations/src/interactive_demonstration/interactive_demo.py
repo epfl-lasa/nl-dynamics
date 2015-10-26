@@ -113,13 +113,22 @@ class ChangeSpeed(smach.State):
         
         # This method does not change the class members directly.
         def string_to_number(self, msg):
-                a=dict(one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8, nine=9, ten=10)
-                if (msg in a.keys()):           #empty string is checked here and if the number is in the string also        
+                a=dict(one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8, nine=9, ten=10, eleven=11)
+                
+                #Added Part Monday night
+                b=-1
+                msg_split=msg.split()
+                length_msg=len(msg_split)
+                for i in range(length_msg):
+                        if(msg_split[i] in a.keys()):
+                                b=i 
+                #end added part
+                if (b>=0):           #empty string is checked here and if the number is in the string also        
                         new_speed = a.get(msg)
                         return new_speed
                 else:   return None
         
-
+sp
 	def execute(self, userdata):
 		rospy.loginfo('Executing ChangeSpeed')
 		#Will change the speed of the robot
