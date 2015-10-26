@@ -117,18 +117,17 @@ class ChangeSpeed(smach.State):
                 
                 #Added Part Monday night
                 b=-1
-                msg_split=msg.split()
-                length_msg=len(msg_split)
-                for i in range(length_msg):
-                        if(msg_split[i] in a.keys()):
-                                b=i 
+                msg_split=msg.split()   #Separe la string par mot (separateur *espace*
+                length_msg=len(msg_split)       # Retourne le nombre de mots dans la string
+                for i in range(length_msg):     # Parcoure chaque mot
+                        if(msg_split[i] in a.keys()):   # Si un des mots est dans la string msg
+                                b=i                     # Alors il donne la place du mot dans la string
                 #end added part
                 if (b>=0):           #empty string is checked here and if the number is in the string also        
-                        new_speed = a.get(msg)
+                        new_speed = a.get(msg_split[b]) #new_speed va contenir la valeur du dictionnaire se trouvant à la position b
                         return new_speed
                 else:   return None
         
-sp
 	def execute(self, userdata):
 		rospy.loginfo('Executing ChangeSpeed')
 		#Will change the speed of the robot
