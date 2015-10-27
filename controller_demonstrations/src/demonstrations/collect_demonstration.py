@@ -11,7 +11,7 @@ import tf_conversions
 import PyKDL
 import numpy as np
 
-from kuka_bag_visualization.kuka_bag_plot import analyzeData, forcePlot
+from kuka_bag_visualization.kuka_bag_plot import analyzeData, analyzeData_force, forcePlot
 from kuka_bag_visualization.spline import spline3D, getPointsSpline3D
 
 from nl_msgs.msg import CartStateStamped
@@ -29,7 +29,7 @@ class CollectDemonstration(object):
     Note we use rosbag as a storage because it's convenient, we won't actually
     play back the rosbag file.
 
-    While collecting demonstrations, use <Ctrl+C> to end the demonstrations,
+    While collecting demonstrations, use <Enter> to end the demonstrations,
     which automatically moves to the next phase.
 
     Options:
@@ -41,6 +41,7 @@ class CollectDemonstration(object):
 
     channel = 'KUKA/CartState'
     channel2 = 'KUKA/DesiredState'
+    
 
     def __init__(self, words, num_desired_points, bag_filename):
         rospy.init_node('collect_demonstration', anonymous=True)
@@ -62,6 +63,8 @@ class CollectDemonstration(object):
 
         self.MOTION_DISTANCE_THRESHOLD = 1e-3
 
+        self._collecting_data = True
+
         rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
     def do(self, discard_static_points, plot=False):
@@ -69,7 +72,9 @@ class CollectDemonstration(object):
             CollectDemonstration.channel, CollectDemonstration.channel2))
         # Spin but do not catch keyboard interrupt exception -- just move onto
         # processing & saving the demonstration.
-        rospy.spin()
+        #rospy.spin()
+        raw_input('press enter when data-collecting is finished')
+        self._collecting_data = False
 
         # here the analysis begin, data are stored
 
@@ -162,10 +167,8 @@ class CollectDemonstration(object):
             downsampled_vel = demonstration_data['desired']
 
         # search for start and stop
-        (start, stop) = analyzeData(downsampled, downsampled_vel, 0.4, 'index')
-        
-        #check the force applied on the kuka robot
-        #forcePlot(downsampled)
+        (start, stop) = analyzeData (downsampled, downsampled_vel, 0.4, 'index')
+        #(start, stop) = analyzeData_force(downsampled, 0.4, 'index')
 
         # keep only data between start-stop points
         if len(start) == 0:
@@ -173,7 +176,7 @@ class CollectDemonstration(object):
             newData = downsampled
             listData = [downsampled]
         else:
-            #newData=[ downsampled[sta:sto] for (sta, sto) in zip(start, stop) ]   :(
+            #newData=[ downsampled[sta:sto] for (sta, sto) in zip(start, stop) ]   doesn't work, need a real for-loop :(
             newData = []
             listData = []
             for (sta, sto) in zip(start, stop):
@@ -237,6 +240,9 @@ class CollectDemonstration(object):
             plt.ion()
             plt.show()
             pass
+
+        #raw_input('press enter')
+        #forcePlot(downsampled)
 
         # Note: if you need the header time:
         # times = [x.header.stamp.to_time() for x in demonstration_data['corrections']]
@@ -310,6 +316,9 @@ class CollectDemonstration(object):
 
     def callback_state(self, data):
 
+        if not self._collecting_data:
+            return
+
         # set the anchor position, the starting point
         if not self._demonstration_anchor:
             self._demonstration_anchor = data
@@ -326,15 +335,16 @@ class CollectDemonstration(object):
                 self._num_demo_points, self.dist_from_anchor(data)))
 
     def callback_desired(self, data):
+
+        if not self._collecting_data:
+            return
+
         self._num_velocity_points += 1
         self._velocity_vector.append(data)
 
         if self._num_velocity_points % 50 == 0:
             rospy.loginfo('Got desired velocity {}'.format(
                 self._num_velocity_points))
-
-    def callback_interrupt(self, data):
-        rospy.signal_shutdown('enter pressed')
 
 
 def run(arguments):
