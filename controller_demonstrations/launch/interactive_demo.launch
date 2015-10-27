@@ -21,8 +21,7 @@
 
 
 	<!-- subscribe to /audio ROS messages -->
-	<node name="recognizer" pkg="pocketsphinx" type="recognizer.py" output="screen"
-			if="false">
+	<node name="recognizer" pkg="pocketsphinx" type="recognizer.py">
 		<param name="lm" value="$(find controller_demonstrations)/language_models/robot_control.lm" />
 		<param name="dict" value="$(find controller_demonstrations)/language_models/robot_control.dic" />
 		<param name="audio_msg_topic" value="/audio" />
