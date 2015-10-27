@@ -27,9 +27,6 @@ class SayState(smach.State):
         # Init speaker
 
         self.soundhandle = SoundClient()
-        rospy.sleep(1)
-        rospy.loginfo("going through")  # TEST
-
         self._message = message  # Store the message to say later.
 
     def speaking(self, text):
