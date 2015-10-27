@@ -164,8 +164,6 @@ class CollectDemonstration(object):
             listData = [[]]
             anchor = downsampled[0]
         else:
-            anchor = newData[0]      # anchor is no longer the first given point but the first start point
-
             #newData=[ downsampled[sta:sto] for (sta, sto) in zip(start, stop) ]   doesn't work, need a real for-loop :(
             newData = []        # list of correction points
                                 #   e.g : [1,2,3,8,9,10,67,68,69,70,71]
@@ -179,6 +177,8 @@ class CollectDemonstration(object):
                 #adding data in 2 differents way
                 newData.extend(temp)
                 listData.append(temp)
+
+            anchor = newData[0]      # anchor is no longer the first given point but the first start point
 
         # Subtract the pose of the anchor from all downsampled points.
         rospy.loginfo('Removing anchor ({:.2f} {:.2f} {:.2f}) from {} data points'.
@@ -214,11 +214,12 @@ class CollectDemonstration(object):
             ax.scatter(shifted_x, shifted_y, shifted_z, c='b', zorder=2)
 
             #plotting new compute spline position
-            t = np.linspace(0, 1, self._num_desired_points)
-            for dat in listData:
-                (temp, dat) = self.remove_anchor_pose(anchor, dat)
-                [xx, yy, zz] = getPointsSpline3D(spline3D(dat), t)
-                ax.plot(xx, yy, zz, c='g', lw=3, zorder=3)
+            if len(newData):
+                t = np.linspace(0, 1, self._num_desired_points)
+                for dat in listData:
+                    (temp, dat) = self.remove_anchor_pose(anchor, dat)
+                    [xx, yy, zz] = getPointsSpline3D(spline3D(dat), t)
+                    ax.plot(xx, yy, zz, c='g', lw=3, zorder=3)
 
             #plotting anchor old position in a black point
             ax.scatter(anchor.pose.position.x, anchor.pose.position.y,
