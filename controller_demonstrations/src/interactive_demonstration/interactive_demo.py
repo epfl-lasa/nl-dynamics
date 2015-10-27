@@ -143,8 +143,8 @@ class ChangeSpeed(smach.State):
 		
 class GetCommand(smach.State):
         outcome_getcommand = 'getcommand'
-        outcome_success = 'success'
-        outcomes=[outcome_getcommand, outcome_success]
+        outcome_unknowncommand = 'unknowncommand'
+        outcomes=[outcome_getcommand, outcome_unknowncommand]
         
         def __init__(self):
             #specify the outcomes
@@ -165,8 +165,7 @@ class GetCommand(smach.State):
                     b=i                     # Alors il donne la place du mot dans la string
                 #end added part
                 if (b>=0):           #empty string is checked here and if the number is in the string also        
-                    new_speed = a.get(msg_split[b]) #new_speed va contenir la valeur du dictionnaire se trouvant a la position b
-                    return True
+                    self.cmd = msg_split[b] #contient le mot qui est dans le dictionnaire
                 else:
                    return False
 
@@ -175,7 +174,7 @@ class GetCommand(smach.State):
                 return GetCommand.outcome_getcommand
             else:
                 rospy.loginfo('This command does not exist yet.') ##May I call the SayState in the getCommand State, or should redefine it in this stat ?
-                return GetCommand.outcome_success
+                return GetCommand.outcome_unknowncommand
 
 	        #Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it 
 	        #Should I make the check before 'if the command exist' ? And so implement the dictionnary when I teach a new command ?
@@ -210,23 +209,26 @@ class UserInteraction(smach.StateMachine):
         finished_name = 'SAY_FINISHED'
         
        	askingspeed_state = SayState('At which speed do you want me to go ?')
-	askingspeed_name = 'ASKING_SPEED'
+        askingspeed_name = 'ASKING_SPEED'
 
-	speedchanged_state = ChangeSpeed()
-	speedchanged_name = 'CHANGED_SPEED'
+        speedchanged_state = ChangeSpeed()
+        speedchanged_name = 'CHANGED_SPEED'
 
-	validatespeed_state = SayState('New Velocity implemented')
-	validatespeed_name = 'VALIDATE_SPEED'
+        validatespeed_state = SayState('New Velocity implemented')
+        validatespeed_name = 'VALIDATE_SPEED'
 
-	askcommand_state = SayState('Which command would you like me to do ?')
-	askcommand_name = 'ASK_COMMAND'
+        askcommand_state = SayState('Which command would you like me to do ?')
+        askcommand_name = 'ASK_COMMAND'
 	
-	getcommand_state = GetCommand()
-	getcommand_name = 'GET_COMMAND'
+        getcommand_state = GetCommand()
+        getcommand_name = 'GET_COMMAND'
 	
-	commanddone_state = SayState('Okay I have done your command')
-	commanddone_name = 'COMMAND_DONE'
-	
+        commanddone_state = SayState('Okay I have done your command')
+        commanddone_name = 'COMMAND_DONE'
+
+        unknowncommand_state = SayState('Unknown Command')
+        unknowncommand_name = 'UNKNOWN_COMMAND'
+
 	# For executing commands, assume there exists a list of all the 
 	# available commands the robot can execute: you can define this
 	# for yourself in the constructor.
@@ -278,7 +280,10 @@ class UserInteraction(smach.StateMachine):
 			
                 self.add(getcommand_name, getcommand_state,
                         transitions={GetCommand.outcome_getcommand: commanddone_name,
-                                    GetCommand.outcome_success: hw_name})
+                                    GetCommand.outcome_unknowncommand: unknowncommand_name})
+
+                self.add(unknowncommand_name, unknowncommand_state,
+                        transitions={SayState.outcome_success: hw_name})
 		        
                 self.add(commanddone_name, commanddone_state,
                         transitions={SayState.outcome_success: hw_name})
