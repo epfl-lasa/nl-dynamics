@@ -124,7 +124,7 @@ class ChangeSpeed(smach.State):
                                 b=i                     # Alors il donne la place du mot dans la string
                 #end added part
                 if (b>=0):           #empty string is checked here and if the number is in the string also        
-                        new_speed = a.get(msg_split[b]) #new_speed va contenir la valeur du dictionnaire se trouvant à la position b
+                        new_speed = a.get(msg_split[b]) #new_speed va contenir la valeur du dictionnaire se trouvant a la position b
                         return new_speed
                 else:   return None
         
