@@ -41,7 +41,6 @@ class CollectDemonstration(object):
 
     channel = 'KUKA/CartState'
     channel2 = 'KUKA/DesiredState'
-    
 
     def __init__(self, words, num_desired_points, bag_filename):
         rospy.init_node('collect_demonstration', anonymous=True)
@@ -151,48 +150,45 @@ class CollectDemonstration(object):
                       format(num_corrections,
                              min(self._num_desired_points, num_corrections)))
 
-        # Downsample the data. For now, just take every Nth piece of data, and
-        # truncate anything extra (only do this with enough data points).
-        every_nth = num_corrections / self._num_desired_points
-        if every_nth > 1:
-            # take data points every 'evry_nth'
-            downsampled = demonstration_data['corrections'][::every_nth]
-            downsampled_vel = demonstration_data['desired'][::every_nth]
-            # truncate
-            downsampled = downsampled[:self._num_desired_points]
-            downsampled_vel = downsampled_vel[:self._num_desired_points]
-        else:
-            # There will be at least one point.
-            downsampled = demonstration_data['corrections']
-            downsampled_vel = demonstration_data['desired']
+        downsampled = demonstration_data['corrections'][:]
+        downsampled_vel = demonstration_data['desired'][:]
 
         # search for start and stop
-        (start, stop) = analyzeData (downsampled, downsampled_vel, 0.4, 'index')
+        (start, stop) = analyzeData(downsampled, downsampled_vel, 0.4, 'index')
         #(start, stop) = analyzeData_force(downsampled, 0.4, 'index')
 
         # keep only data between start-stop points
         if len(start) == 0:
-            rospy.loginfo('no start and stop found, keeping old datas')
-            newData = downsampled
-            listData = [downsampled]
-        else:
-            #newData=[ downsampled[sta:sto] for (sta, sto) in zip(start, stop) ]   doesn't work, need a real for-loop :(
+            rospy.loginfo('no correction found')
             newData = []
-            listData = []
+            listData = [[]]
+            anchor = downsampled[0]
+        else:
+            anchor = newData[0]      # anchor is no longer the first given point but the first start point
+
+            #newData=[ downsampled[sta:sto] for (sta, sto) in zip(start, stop) ]   doesn't work, need a real for-loop :(
+            newData = []        # list of correction points
+                                #   e.g : [1,2,3,8,9,10,67,68,69,70,71]
+            listData = []       # list of list of point for the different conrrection
+                                #   e.g : [ [1,2,3], [8,9,10], [67,68,69,70,71] ]
+
             for (sta, sto) in zip(start, stop):
-                newData.extend(downsampled[sta:sto+1])
-                listData.append(downsampled[sta:sto+1])
+                #downsampling data
+                temp = downsampling(downsampled[sta:sto+1], self._num_desired_points)
+
+                #adding data in 2 differents way
+                newData.extend(temp)
+                listData.append(temp)
 
         # Subtract the pose of the anchor from all downsampled points.
-        # anchor = demonstration_data['anchor']
-        anchor = newData[0]        # anchor is no longer this point but the first start point
         rospy.loginfo('Removing anchor ({:.2f} {:.2f} {:.2f}) from {} data points'.
                       format(anchor.pose.position.x,
                              anchor.pose.position.y,
                              anchor.pose.position.z,
                              len(downsampled)))
+
+        # return of the function
         (anchor_new, corrections_new) = self.remove_anchor_pose(anchor, newData)
-        # corrections_velocity = downsampled_vel
 
         if plot:
             import matplotlib.pyplot as plt
@@ -200,24 +196,25 @@ class CollectDemonstration(object):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
 
-            #plottin old position
-            original_x = [f.pose.position.x for f in downsampled]
-            original_y = [f.pose.position.y for f in downsampled]
-            original_z = [f.pose.position.z for f in downsampled]
+            # downsampling data for a better visibility
+            original_x = downsampling([f.pose.position.x for f in downsampled], self._num_desired_points)
+            original_y = downsampling([f.pose.position.y for f in downsampled], self._num_desired_points)
+            original_z = downsampling([f.pose.position.z for f in downsampled], self._num_desired_points)
 
             ax.scatter(original_x, original_y, original_z, c='r', zorder=2)
 
             # plotting new position
             (temp, downsampled) = self.remove_anchor_pose(anchor, downsampled)
 
-            shifted_x = [f.pose.position.x for f in downsampled]
-            shifted_y = [f.pose.position.y for f in downsampled]
-            shifted_z = [f.pose.position.z for f in downsampled]
+            # downsampling data for a better visibility
+            shifted_x = downsampling([f.pose.position.x for f in downsampled], self._num_desired_points)
+            shifted_y = downsampling([f.pose.position.y for f in downsampled], self._num_desired_points)
+            shifted_z = downsampling([f.pose.position.z for f in downsampled], self._num_desired_points)
 
             ax.scatter(shifted_x, shifted_y, shifted_z, c='b', zorder=2)
 
             #plotting new compute spline position
-            t = np.linspace(0, 1, 500)
+            t = np.linspace(0, 1, self._num_desired_points)
             for dat in listData:
                 (temp, dat) = self.remove_anchor_pose(anchor, dat)
                 [xx, yy, zz] = getPointsSpline3D(spline3D(dat), t)
@@ -347,6 +344,15 @@ class CollectDemonstration(object):
                 self._num_velocity_points))
 
 
+def downsampling(list_, nb_element_to_keep):
+    # downsample data by keeping only nb_element_to_keep linearly in the tab
+    if nb_element_to_keep > len(list_):
+        return list_
+
+    t = np.linspace(0, len(list_)-1, nb_element_to_keep).astype(int)
+    return np.array(list_)[t]
+
+
 def run(arguments):
     parser = argparse.ArgumentParser(
         description=('Collect demonstrations from the robot. Specify the words '
@@ -354,7 +360,7 @@ def run(arguments):
     parser.add_argument('--output', default='out.bag', metavar='output_filename',
                         help='Filename of output bag file (default=out.bag).')
     parser.add_argument('--num', default=50, type=int,
-                        help='Number of demonstration points to store (default=50).')
+                        help='Number of demonstration points to store for each corrections (default=50).')
     parser.add_argument('words', default='default', metavar='words',
                         nargs='+',
                         help='Demonstration word(s), required.')
