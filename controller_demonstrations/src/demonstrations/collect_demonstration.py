@@ -71,9 +71,9 @@ class CollectDemonstration(object):
             CollectDemonstration.channel, CollectDemonstration.channel2))
         # Spin but do not catch keyboard interrupt exception -- just move onto
         # processing & saving the demonstration.
-        #rospy.spin()
-        raw_input('press enter when data-collecting is finished')
-        self._collecting_data = False
+        rospy.spin()
+        #raw_input('press enter when data-collecting is finished')
+        #self._collecting_data = False
 
         # here the analysis begin, data are stored
 
@@ -219,7 +219,11 @@ class CollectDemonstration(object):
                 for dat in listData:
                     (temp, dat) = self.remove_anchor_pose(anchor, dat)
                     [xx, yy, zz] = getPointsSpline3D(spline3D(dat), t)
-                    ax.plot(xx, yy, zz, c='g', lw=3, zorder=3)
+                    ax.plot(xx, yy, zz, c='g', lw=3, zorder=4)
+
+            #display a star at the beggining
+            ax.scatter(shifted_x[0], shifted_y[0], shifted_z[0], s=150, c='r', marker='*', zorder=3)
+            ax.scatter(original_x[0], original_y[0], original_z[0], s=150, c='b', marker='*', zorder=3)
 
             #plotting anchor old position in a black point
             ax.scatter(anchor.pose.position.x, anchor.pose.position.y,
@@ -343,6 +347,14 @@ class CollectDemonstration(object):
         if self._num_velocity_points % 50 == 0:
             rospy.loginfo('Got desired velocity {}'.format(
                 self._num_velocity_points))
+
+        # automatic stop when collecting data
+        if np.sqrt(data.twist.linear.x**2 + data.twist.linear.y**2 + data.twist.linear.z**2) < 0.18:
+            # the norm of the desired velocity is quite exactly 0.20 all the time, exept when it reaching the attractve point,
+            #   so when it goes under 0.20, we can detect that we are getting close to the final point. why 0.18 ?
+            #   because by stopping in an early we cut all the last point off and at the same time, get ride of all the
+            #   start-stop parasite point at the end of the curve. The 0.18 represent the sphere cut.
+            rospy.signal_shutdown('last point reach, starting analyse')
 
 
 def downsampling(list_, nb_element_to_keep):
