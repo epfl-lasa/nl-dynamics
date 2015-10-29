@@ -176,15 +176,15 @@ class GetCommand(smach.State):
 
         # TODO later: after 10 seconds in this state, return outcome_unknowncommand
         begin=time.time()
+        end=0
         while ((begin+10)>end):
             if (self.msg != ''):
-                if (self.command_in_dictionnary(self.msg):
+                if (self.command_in_dictionnary(self.msg)):
                     rospy.loginfo('This command exist yet.')
                     return GetCommand.outcome_getcommand
-                elif (Time>10sec):
-                    rospy.loginfo('This command does not exist yet.')  ##May I call the SayState in the getCommand State, or should redefine it in this stat ?
-                    return GetCommand.outcome_unknowncommand
             end=time.time()
+        rospy.loginfo('This command does not exist yet.')  ##May I call the SayState in the getCommand State, or should redefine it in this stat ?
+        return GetCommand.outcome_unknowncommand
 
                     # Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it
                     # Should I make the check before 'if the command exist' ? And so implement the dictionnary when I teach a new command ?
