@@ -4,6 +4,7 @@ import rospy
 import smach
 import smach_ros
 import sys
+import time
 
 from sound_play.libsoundplay import SoundClient
 
@@ -83,7 +84,7 @@ class ReadyState(smach.State):
                 return ReadyState.outcome_askingspeed
             elif (self.msg == 'command'):
                 return ReadyState.outcome_askcommand
-            else:
+            elif (self.msg == 'collect'):
                 rospy.loginfo('The show will go on')
                 return ReadyState.outcome_ready
 
@@ -164,23 +165,26 @@ class GetCommand(smach.State):
 
         if (b >= 0):  # empty string is checked here and if the number is in the string also
             cmd = msg_split[b]  # contient le mot qui est dans le dictionnaire
-            rospy.loginfo('my command is ')
             return True
         else:
-            rospy.loginfo('command unknown')
             return False
 
     def execute(self, userdata):
-        a=False
-        while True:
-            a=self.command_in_dictionnary
+        # Assumption for now: wait until the user provides *one* of the available commands. Stay in this state until this is true.
+        # We only return from this state once the user has provided a known command. 
+        # TODO: LOGINFO for the command type.
+
+        # TODO later: after 10 seconds in this state, return outcome_unknowncommand
+        begin=time.time()
+        while ((begin+10)>end):
             if (self.msg != ''):
-                if (a):
+                if (self.command_in_dictionnary(self.msg):
                     rospy.loginfo('This command exist yet.')
                     return GetCommand.outcome_getcommand
-                else:
+                elif (Time>10sec):
                     rospy.loginfo('This command does not exist yet.')  ##May I call the SayState in the getCommand State, or should redefine it in this stat ?
                     return GetCommand.outcome_unknowncommand
+            end=time.time()
 
                     # Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it
                     # Should I make the check before 'if the command exist' ? And so implement the dictionnary when I teach a new command ?
