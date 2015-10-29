@@ -11,10 +11,16 @@ class TestCommandInDictionnary(unittest.TestCase):
 
     def test_one(self):
         ret = self.in_dictionnary.command_in_dictionnary('one')
+        self.assertEqual(False, ret)
+    def test_in_dictionnary(self):
+        ret = self.in_dictionnary.command_in_dictionnary('faster')
         self.assertEqual(True, ret)
-
-
-
+    def test_in_sentence(self):
+        ret = self.in_dictionnary.command_in_dictionnary('Go faster please !')
+        self.assertEqual(True, ret)
+    def test_empty(self):
+        ret = self.in_dictionnary.command_in_dictionnary('')
+        self.assertEqual(False, ret)
 
 if __name__ == '__main__':
     unittest.main()

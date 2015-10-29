@@ -37,7 +37,7 @@ class SayState(smach.State):
         # case, it just prints a message, sleeps.
         self.speaking(self._message)
         rospy.loginfo(self._message)
-
+        rospy.sleep(2)
         # The execute function *must* return one of its defined outcomes. Here,
         # we only have one outcome (SayState.outcome_success) so return it.
         return SayState.outcome_success
@@ -69,23 +69,23 @@ class ReadyState(smach.State):
         # user to press enter.
 
         rospy.loginfo('Executing ReadyState')
-        raw_input('Press enter to be ready...')
 
+        while True :
         # There are two outcomes possible from this state; always return one of
         # them.
-        if (self.msg == 'quit' or self.msg == 'stop' or self.msg == 'done'):
-            rospy.loginfo('State machine is finished.')
-            return ReadyState.outcome_finished
-        elif (self.msg == "finish"):
-            rospy.loginfo('What a success')
-            return ReadyState.outcome_success
-        elif (self.msg == 'askingspeed'):
-            return ReadyState.outcome_askingspeed
-        elif (self.msg == 'command'):
-            return ReadyState.outcome_askcommand
-        else:
-            rospy.loginfo('The show will go on')
-            return ReadyState.outcome_ready
+            if (self.msg == 'quit' or self.msg == 'stop' or self.msg == 'done'):
+                rospy.loginfo('State machine is finished.')
+                return ReadyState.outcome_finished
+            elif (self.msg == "finish"):
+                rospy.loginfo('What a success')
+                return ReadyState.outcome_success
+            elif (self.msg == 'askingspeed'):
+                return ReadyState.outcome_askingspeed
+            elif (self.msg == 'command'):
+                return ReadyState.outcome_askcommand
+            else:
+                rospy.loginfo('The show will go on')
+                return ReadyState.outcome_ready
 
     def callback(self, data):
         # This is the callback for the subscribed topic.
@@ -105,7 +105,7 @@ class ChangeSpeed(smach.State):
         rospy.Subscriber(topic, String, self.callback, queue_size=1)
         # internal data
         self.msg = ''
-        self.speed_integer = None
+        
 
         # This method does not change the class members directly.
 
@@ -113,16 +113,13 @@ class ChangeSpeed(smach.State):
         a = dict(one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8,
                  nine=9, ten=10, eleven=11)  # because it has to go to eleven
         b = -1
-        msg_split = msg.split()  # Separe la string par mot (separateur *espace*
+        msg_split = self.msg.split()  # Separe la string par mot (separateur *espace*
         length_msg = len(msg_split)  # Retourne le nombre de mots dans la string
         for i in range(length_msg):  # Parcoure chaque mot
-            if (msg_split[
-                    i] in a.keys()):  # Si un des mots est dans la string msg
+            if (msg_split[i] in a.keys()):  # Si un des mots est dans la string msg
                 b = i  # Alors il donne la place du mot dans la string
-
         if (b >= 0):
-            new_speed = a.get(msg_split[
-                                  b])  # new_speed va contenir la valeur du dictionnaire se trouvant a la position b
+            new_speed = a.get(msg_split[b])  # new_speed va contenir la valeur du dictionnaire se trouvant a la position b
             return new_speed
         else:
             return None
@@ -130,11 +127,11 @@ class ChangeSpeed(smach.State):
     def execute(self, userdata):
         rospy.loginfo('Executing ChangeSpeed')
         # Will change the speed of the robot
-        while (self.speed_integer == None):
-            self.speed_integer = self.string_to_number(
-                self.msg)  # HAVE TO PUBLISH TO ROBOT TO CHANGE SPEED
+        speed_integer=None
+        while (speed_integer == None):
+            speed_integer = self.string_to_number(self.msg)  # HAVE TO PUBLISH TO ROBOT TO CHANGE SPEED
             rospy.sleep(0.1)
-        rospy.loginfo('New Speed is %s', self.speed_integer)
+        rospy.loginfo('New Speed is %s', speed_integer)
         return ChangeSpeed.outcome_speedchanged
 
     def callback(self, data):
@@ -154,37 +151,36 @@ class GetCommand(smach.State):
         rospy.Subscriber(topic, String, self.callback, queue_size=1)
         # internal data
         self.msg = ''
-        self.cmd = ''
         self.a = dict(faster=1, right=2, left=3, slower=4)
 
     def command_in_dictionnary(self, msg):
         b = -1
-        msg_split = msg.split()  # Separe la string par mot (separateur *espace*
+        cmd = ''
+        msg_split = self.msg.split()  # Separe la string par mot (separateur *espace*
         length_msg = len(msg_split)  # Retourne le nombre de mots dans la string
         for i in range(length_msg):  # Parcoure chaque mot
-            if (msg_split[
-                    i] in self.a.keys()):  # Si un des mots est dans la string msg
+            if (msg_split[i] in self.a.keys()):  # Si un des mots est dans la string msg
                 b = i  # Alors il donne la place du mot dans la string
 
-        if (
-            b >= 0):  # empty string is checked here and if the number is in the string also
-            self.cmd = msg_split[
-                b]  # contient le mot qui est dans le dictionnaire
+        if (b >= 0):  # empty string is checked here and if the number is in the string also
+            cmd = msg_split[b]  # contient le mot qui est dans le dictionnaire
+            rospy.loginfo('my command is ')
             return True
         else:
+            rospy.loginfo('command unknown')
             return False
 
     def execute(self, userdata):
+        a=False
         while True:
+            a=self.command_in_dictionnary
             if (self.msg != ''):
-                if (self.command_in_dictionnary):
+                if (a):
+                    rospy.loginfo('This command exist yet.')
                     return GetCommand.outcome_getcommand
-                    break
                 else:
-                    rospy.loginfo(
-                        'This command does not exist yet.')  ##May I call the SayState in the getCommand State, or should redefine it in this stat ?
+                    rospy.loginfo('This command does not exist yet.')  ##May I call the SayState in the getCommand State, or should redefine it in this stat ?
                     return GetCommand.outcome_unknowncommand
-                    break
 
                     # Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it
                     # Should I make the check before 'if the command exist' ? And so implement the dictionnary when I teach a new command ?
@@ -291,9 +287,8 @@ class UserInteraction(smach.StateMachine):
                      transitions={SayState.outcome_success: getcommand_name})
 
             self.add(getcommand_name, getcommand_state,
-                     transitions={
-                         GetCommand.outcome_getcommand: commanddone_name,
-                         GetCommand.outcome_unknowncommand: unknowncommand_name})
+                     transitions={GetCommand.outcome_getcommand: commanddone_name,
+                                GetCommand.outcome_unknowncommand: unknowncommand_name})
 
             self.add(unknowncommand_name, unknowncommand_state,
                      transitions={SayState.outcome_success: hw_name})
