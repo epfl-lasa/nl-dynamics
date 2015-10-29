@@ -68,7 +68,7 @@ class ReadyState(smach.State):
     def execute(self, userdata):
         # This is called when the node is active. Currently it waits for the
         # user to press enter.
-
+        self.msg=''
         rospy.loginfo('Executing ReadyState')
 
         while True :
@@ -142,9 +142,10 @@ class ChangeSpeed(smach.State):
 class GetCommand(smach.State):
     outcome_getcommand = 'getcommand'
     outcome_unknowncommand = 'unknowncommand'
-    outcomes = [outcome_getcommand, outcome_unknowncommand]
+    outcome_list = 'list'
+    outcomes = [outcome_getcommand, outcome_unknowncommand, outcome_list]
 
-    def __init__(self):
+    def __init__(self, my_list):
         # specify the outcomes
         smach.State.__init__(self, outcomes=GetCommand.outcomes)
         # Subscribe to a Topic
@@ -152,7 +153,11 @@ class GetCommand(smach.State):
         rospy.Subscriber(topic, String, self.callback, queue_size=1)
         # internal data
         self.msg = ''
-        self.a = dict(faster=1, right=2, left=3, slower=4)
+        self.a = my_list
+
+    def command_list_str():
+        my_command_list= ' '.join(self.a)
+        return my_command_list
 
     def command_in_dictionnary(self, msg):
         b = -1
@@ -160,7 +165,7 @@ class GetCommand(smach.State):
         msg_split = self.msg.split()  # Separe la string par mot (separateur *espace*
         length_msg = len(msg_split)  # Retourne le nombre de mots dans la string
         for i in range(length_msg):  # Parcoure chaque mot
-            if (msg_split[i] in self.a.keys()):  # Si un des mots est dans la string msg
+            if (msg_split[i] in self.a):  # Si un des mots est dans la string msg
                 b = i  # Alors il donne la place du mot dans la string
 
         if (b >= 0):  # empty string is checked here and if the number is in the string also
@@ -181,9 +186,13 @@ class GetCommand(smach.State):
             if (self.msg != ''):
                 if (self.command_in_dictionnary(self.msg)):
                     rospy.loginfo('This command exist yet.')
+                    self.msg=''
                     return GetCommand.outcome_getcommand
+                elif(self.msg=='list'):
+                    return GetCommand.outcome_list
             end=time.time()
         rospy.loginfo('This command does not exist yet.')  ##May I call the SayState in the getCommand State, or should redefine it in this stat ?
+        self.msg=''
         return GetCommand.outcome_unknowncommand
 
                     # Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it
@@ -228,8 +237,13 @@ class UserInteraction(smach.StateMachine):
         askcommand_state = SayState('Which command would you like me to do ?')
         askcommand_name = 'ASK_COMMAND'
 
-        getcommand_state = GetCommand()
+        getcommand_state = GetCommand(['left', 'right', 'up', 'down', 'dance'])
         getcommand_name = 'GET_COMMAND'
+
+
+        # implement something like: getcommand_state.command_list() -> 'left, right, up, down'
+        #  tip: loop up ', '.join() google string join
+        # listing_state = SayState('The available commands are ' + command_list) 
 
         commanddone_state = SayState('Okay I have done your command')
         commanddone_name = 'COMMAND_DONE'
@@ -237,9 +251,8 @@ class UserInteraction(smach.StateMachine):
         unknowncommand_state = SayState('Unknown Command')
         unknowncommand_name = 'UNKNOWN_COMMAND'
 
-        # For executing commands, assume there exists a list of all the
-        # available commands the robot can execute: you can define this
-        # for yourself in the constructor.
+        listing_state = SayState('The list of command is :'+ getcommand_state.command_list_str()) 
+        listing_name = 'LISTING'
 
         # All states are now defined. Connect them.
         with self:
@@ -292,13 +305,17 @@ class UserInteraction(smach.StateMachine):
 
             self.add(getcommand_name, getcommand_state,
                      transitions={GetCommand.outcome_getcommand: commanddone_name,
-                                GetCommand.outcome_unknowncommand: unknowncommand_name})
+                                GetCommand.outcome_unknowncommand: unknowncommand_name #})
+                                ,GetCommand.outcome_list: listing_name})
 
             self.add(unknowncommand_name, unknowncommand_state,
                      transitions={SayState.outcome_success: hw_name})
 
             self.add(commanddone_name, commanddone_state,
                      transitions={SayState.outcome_success: hw_name})
+
+            self.add(listing_name,listing_state,
+                    transitions={SayState.outcome_success: getcommand_name})
 
         pass
 

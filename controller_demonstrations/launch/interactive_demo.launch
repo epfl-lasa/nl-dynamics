@@ -30,7 +30,8 @@
 
 	<node name ="sound_play" pkg="sound_play" type="soundplay_node.py"/>
 
-	<node name ="demo" pkg="controller_demonstrations" type="interactive_demo.py" output="screen"/>
+	<node name ="demo" pkg="controller_demonstrations" type="interactive_demo.py" output="screen"
+	required="true"/>
 
 	<node name ="smach_viewer" pkg="smach_viewer" type="smach_viewer.py" output="screen"/>
 
