@@ -15,6 +15,18 @@ class Spline3D:
     def __init__(self):
         self.coord = [Spline(), Spline(), Spline()]
 
+    def get_spline(self, element):
+    # getter function, state = 0,1,2 or 'x','y','z' for x,y,z splines
+        if isinstance(element, int) and element >= 0 and element <= 2:
+            return self.coord[element]
+        elif isinstance(element, str):
+            if element == 'x':
+                return self.coord[0]
+            elif element == 'y':
+                return self.coord[1]
+            elif element == 'z':
+                return self.coord[2]
+
 
 def spline3D(data):
     #data is a KUKA/CartStamped structur:

@@ -166,6 +166,27 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
 
 #another thing, frequency analysis ??
 
+def analyzeData_online(actual_point, Desired_Velocity, is_in, precision_factor=0.4):
+    # function that return a string based on the same algorithm as analyzeData(..)
+    # - 'start' if this is a start point
+    # - 'stop'  if this is a stop point
+    # - 'none' if this a nothing
+
+    # calculate dot product
+    dis_vel = [Desired_Velocity.twist.linear.x, Desired_Velocity.twist.linear.y, Desired_Velocity.twist.linear.z]
+    vel = [actual_point.twist.linear.x, actual_point.twist.linear.y, actual_point.twist.linear.z]
+    dot = np.dot(dis_vel/np.linalg.norm(dis_vel), vel/np.linalg.norm(vel))
+
+    #analyze data
+    if not(is_in) and dot < (1-precision_factor):
+        return 'start'
+
+    elif is_in and dot >= (1-precision_factor):
+       return 'stop'
+
+    else:
+        return 'none'
+
 def analyzeData_force(trajectory_data, precision_factor=0.4, return_type='point'):
     # trajectory_data represent the actual data of the robot, the position and the velocity of the robot for all the points
     # original_data only represent a vector from the robot to the attractor point (following the OriginalDynamics) for all the points

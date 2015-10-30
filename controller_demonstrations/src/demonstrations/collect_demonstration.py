@@ -12,10 +12,13 @@ import PyKDL
 import numpy as np
 
 from kuka_bag_visualization.kuka_bag_plot import analyzeData, analyzeData_force, forcePlot
-from kuka_bag_visualization.spline import spline3D, getPointsSpline3D
+from kuka_bag_visualization.spline import spline3D, getPointsSpline3D, Spline, Spline3D
 
 from nl_msgs.msg import CartStateStamped
 from nl_msgs.msg import AnchoredDemonstration
+from nl_msgs.msg import AttractorDemonstration
+from nl_msgs.msg import Correction
+from nl_msgs.msg import SplineClass
 
 
 class CollectDemonstration(object):
@@ -41,6 +44,7 @@ class CollectDemonstration(object):
 
     channel = 'KUKA/CartState'
     channel2 = 'KUKA/DesiredState'
+
 
     def __init__(self, words, num_desired_points, bag_filename):
         rospy.init_node('collect_demonstration', anonymous=True)
@@ -176,7 +180,7 @@ class CollectDemonstration(object):
 
                 #adding data in 2 differents way
                 newData.extend(temp)
-                listData.append(temp)
+                listData.append(temp) # here need to fill lisData with point or spline3D
 
             anchor = newData[0]      # anchor is no longer the first given point but the first start point
 
@@ -283,7 +287,7 @@ class CollectDemonstration(object):
 
         return (anchor_new, parsed)
 
-    def make_message(self, anchor, data):
+    def make_message_point(self, anchor, data):
         """ Create a AnchoredDemonstration message.
 
         Message contains three parts:
@@ -301,6 +305,65 @@ class CollectDemonstration(object):
         for d in data:
             assert isinstance(d, CartStateStamped)
             msg.demonstration.append(d)
+
+        msg.num_words = len(self._words)
+        msg.words = self._words
+
+        return msg
+
+    def make_message_spline(self, anchor, data):
+        """ Create a AnchoredDemonstration message.
+            here the parameter 'data' must contain an array of spline3D
+
+        Message contains three parts:
+         - anchor
+         - demonstration spline
+         - words
+        """
+
+        msg = AttractorDemonstration()
+
+        assert isinstance(anchor, CartStateStamped)
+        msg.anchor = anchor
+
+        #fill Correction[] trajectory
+        for dat in data:
+            temp = Correction()
+
+            # filling x_spline
+            spl = dat.get_spline('x')
+
+            for (coef, point) in zip(spl.coef, spl.points):
+                temp2 = SplineClass()
+                temp2.coefficients = coef
+                temp2.points = point
+                temp.x_splines.append(temp2)
+
+
+            # filling y_spline
+            spl = dat.get_spline('y')
+
+            for (coef, point) in zip(spl.coef, spl.points):
+                emp2 = SplineClass()
+                temp2.coefficients = coef
+                temp2.points = point
+                temp.y_splines.append(temp2)
+
+
+            # filling z_spline
+            spl = dat.get_spline('z')
+
+            for (coef, point) in zip(spl.coef, spl.points):
+                temp2 = SplineClass()
+                temp2.coefficients = coef
+                temp2.points = point
+                temp.z_splines.append(temp2)
+
+
+            temp.number_points = spl.nbPoints
+
+            # store the correction
+            msg.trajectory.append(temp)
 
         msg.num_words = len(self._words)
         msg.words = self._words
