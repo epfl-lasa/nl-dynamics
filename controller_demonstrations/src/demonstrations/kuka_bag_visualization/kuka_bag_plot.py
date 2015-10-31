@@ -7,6 +7,22 @@ from spline import spline3D, getPointsSpline3D
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+#for 3d arrow
+from matplotlib.patches import FancyArrowPatch
+from mpl_toolkits.mplot3d import proj3d
+
+
+class Arrow3D(FancyArrowPatch):
+    def __init__(self, xs, ys, zs, *args, **kwargs):
+        FancyArrowPatch.__init__(self, (0, 0), (0, 0), *args, **kwargs)
+        self._verts3d = xs, ys, zs
+
+    def draw(self, renderer):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
+        self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
+        FancyArrowPatch.draw(self, renderer)
+
 
 def getSmoothDataIndex(nb_points, alpha):
 # return a vector of the index of the new point
@@ -75,6 +91,20 @@ def plotPoints(data, name):
     plt.show()
 
     return ax
+
+
+def plotVelocity(pos, vel, name, ax, color='blue'):
+    # function plot the velocity with arrow, from each point to the direction of the velocity
+
+    for (p, v) in zip(pos, vel):
+        a = Arrow3D([p.x, p.x + v.x / 5],
+                    [p.y, p.y + v.y / 5],
+                    [p.z, p.z + v.z / 5], mutation_scale=10, lw=1, arrowstyle="-|>", color=color)
+        ax.add_artist(a)
+
+    #show result
+    plt.ion()
+    plt.show()
 
 
 def plotSpline3D(data, ax, factor):
@@ -165,6 +195,28 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
 #another thing :  when we found a jump on the curve that is supposed to be a jump, the start and stops are in the middle of the jump, should correct it
 
 #another thing, frequency analysis ??
+
+def analyzeData_online(actual_point, Desired_Velocity, is_in, precision_factor=0.4):
+    # function that return a string based on the same algorithm as analyzeData(..)
+    # - 'start' if this is a start point
+    # - 'stop'  if this is a stop point
+    # - 'none' if this a nothing
+
+    # calculate dot product
+    dis_vel = [Desired_Velocity.twist.linear.x, Desired_Velocity.twist.linear.y, Desired_Velocity.twist.linear.z]
+    vel = [actual_point.twist.linear.x, actual_point.twist.linear.y, actual_point.twist.linear.z]
+    dot = np.dot(dis_vel/np.linalg.norm(dis_vel), vel/np.linalg.norm(vel))
+
+    #analyze data
+    if not(is_in) and dot < (1-precision_factor):
+        return 'start'
+
+    elif is_in and dot >= (1-precision_factor):
+        return 'stop'
+
+    else:
+        return 'none'
+
 
 def analyzeData_force(trajectory_data, precision_factor=0.4, return_type='point'):
     # trajectory_data represent the actual data of the robot, the position and the velocity of the robot for all the points
@@ -263,11 +315,11 @@ def run():
     tab4 = ['2015.10.09-kuka-no.correction.bag']
 
     #set some parameter
-    alpha = 1./50           # alpha si the coefficient of smoothness, the most it goes to zero, the less points there will remain
+    alpha = 1./80           # alpha si the coefficient of smoothness, the most it goes to zero, the less points there will remain
     precision_factor = 0.4  # this factor is for analysis, the most it goes to 0, the sharper the analysis will be
     factor = 30             # this factor represent how much more point than the robot gave are drawn by the spline3D
 
-    for name in tab3:
+    for name in tab1:
         # load data
         (trajectory_data, original_data) = load(name)
 
@@ -279,6 +331,10 @@ def run():
 
         #drawpoints (to be deleated)
         ax = plotPoints(trajectory_data, name + ", with alpha=" + str(alpha))
+        plotVelocity([t.pose.position for t in trajectory_data],
+                     [t.twist.linear for t in trajectory_data], name, ax, 'blue')
+        plotVelocity([t.pose.position for t in trajectory_data],
+                     [t.twist.linear for t in original_data], name, ax, 'green')
 
         # drawing start-stops points (red stars for the starts and blue triangle for the stops)
         drawStartStop(start, stop, ax)
