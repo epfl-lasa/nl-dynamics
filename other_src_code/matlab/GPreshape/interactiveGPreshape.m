@@ -65,7 +65,9 @@ s.newPosData = [];
 s.drawingDt = 0.01;
 s.breakSimulation = 0;
 s.opt = opt;
-
+s.trianglesData = [];
+s.spline = [];
+s.smooth = 1/5;
 
 % parameters for GP regression
 s.gprStruct.meanfunc = {@meanZero};
@@ -115,7 +117,6 @@ xd = GMR(originalGMM.Priors,originalGMM.Mu,originalGMM.Sigma,x,1:2,3:4 );
 jac = eye(2);
 end
 
-
 function Xd = reshapedDynamics(x)
 global originalDynamics;
 s = get(gcf,'UserData');
@@ -132,7 +133,6 @@ speedHat = max(speedHat, -0.9);
 Xd = originalDynamics(x);
 Xd = locallyRotateV(Xd,angleHat,speedHat);
 end
-
 
 function ret = buttonClicked(h, e, args)
 disp(['Click callback on main figure: ', get(gcf,'selectiontype')])
@@ -230,17 +230,37 @@ colormap(cm);
 
 
 s.streamHandle = streamslice(axisHandle, s.gridData.xM,s.gridData.yM,reshape(Xd(1,:),s.gridData.nX,s.gridData.nX),reshape(Xd(2,:),s.gridData.nX,s.gridData.nX),0.5);
-% plot collected points
 
+% plot collected points (desactivated because spline are plot now)
 plot(axisHandle, s.allData(1,:),s.allData(2,:),'r.');
 % plot training points
 plot(axisHandle, s.gpData(1,:),s.gpData(2,:),'go');
+
+%drawing triangles
+for i=1:2:size(s.trianglesData, 1)
+    drawTriangle(s.trianglesData(i,:), 'm');
+    drawTriangle(s.trianglesData(i+1,:), 'k');
+end
+
+%drawing points in green
+plot(s.allData(1,:), s.allData(2,:), 'ro')
+t=smoothData(size(s.allData, 2), s.smooth);
+plot(s.allData(1,t), s.allData(2,t), 'bo','LineWidth', 1.3);
+
+%drawing spline
+for i=1:size(s.spline)
+    t=linspace(-0.003,1.003,s.spline(i,1).nbPoint*100);
+%     xx=linspace(0,1, s.spline(i).nbPoint * 1);
+    plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'b-', 'LineWidth', 1.5);
+%     plot(ppval(s.spline(i).vect(1), t), ppval(s.spline(i).vect(2), t), 'r', 'LineWidth', 1.5);
+%     plot(xx, getPointsSplineNO(s.spline(i), xx), 'b-', 'LineWidth', 1.5)
+end
 
 set(gcf,'UserData',s);
 %x=[0;0];
 %[orgVel orgJac]=originalDynamics(x);
 %J=compute2dGPLMDSjacobian(s.gprStruct,s.gpData,orgVel,orgJac,x);
-%eig(J)
+%eig(J)'
 
 end
 
@@ -270,6 +290,13 @@ Q = 1e2*ones(2,1);
 R = 0.001*ones(2,1);
 xi0 = [s.newPosData(1:2,1);zeros(4,1)];
 [demPos,demVel, demAcc] = EstimateVA_P(X, dt, Q, R, xi0, P0);
+
+fig = get(groot,'CurrentFigure');
+analyzeError(demPos);
+set(groot,'CurrentFigure', fig);
+s.trianglesData = [s.trianglesData; analyzeData(demPos, demVel)];
+s.spline = [s.spline ; computeTrajectory(demPos, demVel, s.smooth)];
+
 % Compute the angle and speed factor. newData is a 4xN matrix with each
 % column: [x; y; theta; velocity].
 newData = computeLMDSdata2D(demPos,demVel,originalDynamics(demPos));
@@ -323,6 +350,96 @@ set(gcf,'UserData',s);
 %figure(3);clf; plot(s.gpData(3,:),'k.')
 end
 
+function ret = smoothData(nbPoint, alpha)
+% return a vector of the index of the new point 
+    if (nbPoint*alpha<2)
+        ret=[1,nbPoint];
+    else
+        ret=round(linspace(1,nbPoint,nbPoint*alpha));
+    end
+end
+
+function splinesData = computeTrajectory(pos, vel, alpha)
+    %put originalDynamic velocity on first and last points
+    vel(:,1)  = originalDynamicsLINEAR(pos(:,1));
+    vel(:,end)= originalDynamicsLINEAR(pos(:,end));
+
+    %smooth data
+    values=smoothData(size(pos,2), alpha);
+    x =transpose(pos(1,values));
+    y =transpose(pos(2,values));
+    xp=transpose(vel(1,values));
+    yp=transpose(vel(2,values));
+    
+    % INSERTED BY KLAS: %
+    % less confusing parameterization
+    t = transpose(linspace(0,1,size(x,1)));
+    % replace tx AND ty by t below and replace ttx and tty in plot function
+    % by linspace(0,1,nbPoints)
+    % END KLAS%
+    
+    %spline data calculation
+    splinesData=[ownSpline(t,x,xp), ownSpline(t,y,yp)];
+end
+
+function start_stop=analyzeData (pos, vel)
+    precisionFactor = 0.15; %percent
+    s = get(gcf,'UserData');
+    
+    %vectors from point to the attractor following dynamics direction
+    originalDS=[];
+    for i=1:size(pos,2)
+        [temp1, temp2] = originalDynamicsLINEAR(pos(:,i));
+        originalDS=[originalDS, temp1];
+    end
+    
+    %normalization of the vectors in the matrix
+    %this could be done in only two lines with matlab 2015a and normc
+    for i = 1:size(pos,2)-1
+        vel(:,i) = vel(:,i) / norm(vel(:,i));
+        originalDS(:,i) = originalDS(:,i) / norm(originalDS(:,i));
+    end
+    
+    %comparison with dotproduct
+    dotProd = dot(originalDS, vel);
+    
+    %verifying all the starts-and-stops
+    isIn=false;
+    count=0;
+    start_stop=[];
+    for i = 1:size(pos,2)-1
+        
+        if ~isIn && dotProd(i)<1-precisionFactor
+            start_stop = [start_stop; [pos(1,i), pos(2,i)] ];
+            isIn = true;
+            count=count+1;
+            
+        elseif isIn && dotProd(i)>=1-precisionFactor
+            start_stop = [start_stop; [pos(1,i), pos(2,i)] ];
+            isIn = false;
+            
+            %for only one start-and-stop uncomment the next line
+            %break
+        end
+    end
+    
+    %in case of there weren't the last stop
+    if isIn
+        start_stop= [start_stop; [pos(1,size(pos,2)-1), pos(2, size(pos,2)-1)]];
+    end
+end
+
+function drawTriangle(pos, color)
+    %drawing a triangle around the point
+    halfLength=5;
+    a=[pos(1)-halfLength,pos(1)+halfLength,pos(1),pos(1)-halfLength];
+    b=[pos(2)-halfLength,pos(2)-halfLength,pos(2)+halfLength,pos(2)-halfLength];
+    plot(a,b,color, 'LineWidth', 2)
+    
+    %having the color's point changed
+    plot(pos(1),pos(2),strcat(color, '.'))
+end
+
 function r = startSimulation(x)
 s = get(gcf,'UserData');
 disp('starting simulation')
@@ -364,8 +481,60 @@ function opt = parseArguments(args)
     end
 end
 
-
 function ret = demonstrationsCallback(h, e, args)
     disp(['Click callback on global demonstrations: ', get(gcf, 'selectiontype')])
     updateStreamlines(h)
 end
+
+% ------- myOwnSpline Functions
+
+function splineData = ownSpline(x,y, dev)
+    splineData.points = [];
+    splineData.coef   = [];
+    splineData.nbPoint= size(x,1);
+    
+    for i=1:size(x,1)-1
+        splineData.coef   = [splineData.coef, systemSolver(x(i), x(i+1), y(i), y(i+1), dev(i), dev(i+1))];
+        splineData.points = [splineData.points, [x(i); x(i+1)]];
+    end
+end
+
+function coef = systemSolver(t1, t2, f1, f2, fp1, fp2)
+% at^3+bt^2+ct+d=ft(1,2)
+% 3at^2+2bt+c=ftp(1,2)
+% ( t1^3    t1^2    t1     1) ( a )   ( ft1)
+% ( t2^3    t2^2    t2     1) ( b )   ( ft2)
+% (3t1^2    2t1     1      0) ( c ) = (fpt1)
+% (3t2^2    2t2     1      0) ( d )   (fpt2)
+    
+    A = [[t1.^3   t1.^2  t1 1];
+         [t2.^3   t2.^2  t2 1];
+         [3*t1.^2 2*t1   1  0];
+         [3*t2.^2 2*t2   1  0]];
+     
+    b=[f1;f2;fp1;fp2];
+    
+    %A*coef = b
+    coef = A\b;
+    %coef = inv(A)*b;
+
+end
+
+function yy=getPointsSplineNO(splineData, xx)
+%this function coulp be optimized a bit, so NO for Not optimized
+    yy=[];
+    for i=1:size(xx,2)
+        count=2;
+        while (count<splineData.nbPoint && xx(i) > splineData.points(1,count))
+            count = count+1;
+        end
+        yy=[yy getValCoef(splineData.coef(:,count-1), xx(i))];
+    end
+end
+
+function y=getValCoef(coef, x)
+    y=coef(1).*x.^3+coef(2).*x.^2+coef(3).*x+coef(4);
+end
+
+
+
