@@ -8,7 +8,7 @@ import time
 
 from sound_play.libsoundplay import SoundClient
 
-from std_msgs.msg import String
+import std_msgs 
 
 from demo_collection import DemoCollectionMachine
 
@@ -60,7 +60,7 @@ class ReadyState(smach.State):
 
         # Subscribe to a topic, defined using a callback.
         topic = '/nl_command_parsed'
-        rospy.Subscriber(topic, String, self.callback, queue_size=1)
+        rospy.Subscriber(topic, std_msgs.msg.String, self.callback, queue_size=1)
 
         # Internal data.
         self.msg = ''
@@ -102,8 +102,10 @@ class ChangeSpeed(smach.State):
         # specify the outcomes
         smach.State.__init__(self, outcomes=ChangeSpeed.outcomes)
         # Subscribe to a Topic
-        topic = '/nl_command_parsed'
-        rospy.Subscriber(topic, String, self.callback, queue_size=1)
+        topic_sub = '/nl_command_parsed'
+        rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
+        topic_pub = 'robot_control/desired_velocity'
+        self.pub = rospy.Publisher(topic_pub, std_msgs.msg.Int8, queue_size=5)
         # internal data
         self.msg = ''
         
@@ -111,16 +113,16 @@ class ChangeSpeed(smach.State):
         # This method does not change the class members directly.
 
     def string_to_number(self, msg):
-        a = dict(one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8,
+        number_dict = dict(one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8,
                  nine=9, ten=10, eleven=11)  # because it has to go to eleven
         b = -1
         msg_split = self.msg.split()  # Separe la string par mot (separateur *espace*
         length_msg = len(msg_split)  # Retourne le nombre de mots dans la string
         for i in range(length_msg):  # Parcoure chaque mot
-            if (msg_split[i] in a.keys()):  # Si un des mots est dans la string msg
+            if (msg_split[i] in number_dict.keys()):  # Si un des mots est dans la string msg
                 b = i  # Alors il donne la place du mot dans la string
         if (b >= 0):
-            new_speed = a.get(msg_split[b])  # new_speed va contenir la valeur du dictionnaire se trouvant a la position b
+            new_speed = number_dict.get(msg_split[b])  # new_speed va contenir la valeur du dictionnaire se trouvant a la position b
             return new_speed
         else:
             return None
@@ -130,8 +132,9 @@ class ChangeSpeed(smach.State):
         # Will change the speed of the robot
         speed_integer=None
         while (speed_integer == None):
-            speed_integer = self.string_to_number(self.msg)  # HAVE TO PUBLISH TO ROBOT TO CHANGE SPEED
+            speed_integer = self.string_to_number(self.msg) 
             rospy.sleep(0.1)
+        self.pub.publish(speed_integer)        
         rospy.loginfo('New Speed is %s', speed_integer)
         return ChangeSpeed.outcome_speedchanged
 
@@ -149,14 +152,16 @@ class GetCommand(smach.State):
         # specify the outcomes
         smach.State.__init__(self, outcomes=GetCommand.outcomes)
         # Subscribe to a Topic
-        topic = '/nl_command_parsed'
-        rospy.Subscriber(topic, String, self.callback, queue_size=1)
+        topic_sub = '/nl_command_parsed'
+        rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
+        topic_pub = '/robot_control/desired_command'
+        self.pub = rospy.Publisher(topic_pub, std_msgs.msg.String, queue_size=5)
         # internal data
         self.msg = ''
-        self.a = my_list
+        self.command_list = my_list
 
-    def command_list_str():
-        my_command_list= ' '.join(self.a)
+    def command_list_str(self):
+        my_command_list= ' '.join(self.command_list)
         return my_command_list
 
     def command_in_dictionnary(self, msg):
@@ -165,11 +170,12 @@ class GetCommand(smach.State):
         msg_split = self.msg.split()  # Separe la string par mot (separateur *espace*
         length_msg = len(msg_split)  # Retourne le nombre de mots dans la string
         for i in range(length_msg):  # Parcoure chaque mot
-            if (msg_split[i] in self.a):  # Si un des mots est dans la string msg
+            if (msg_split[i] in self.command_list):  # Si un des mots est dans la string msg
                 b = i  # Alors il donne la place du mot dans la string
 
         if (b >= 0):  # empty string is checked here and if the number is in the string also
             cmd = msg_split[b]  # contient le mot qui est dans le dictionnaire
+            self.pub.publish(cmd)
             return True
         else:
             return False
@@ -178,21 +184,21 @@ class GetCommand(smach.State):
         # Assumption for now: wait until the user provides *one* of the available commands. Stay in this state until this is true.
         # We only return from this state once the user has provided a known command. 
         # TODO: LOGINFO for the command type.
-
         # TODO later: after 10 seconds in this state, return outcome_unknowncommand
+        self.msg=''
         begin=time.time()
         end=0
         while ((begin+10)>end):
             if (self.msg != ''):
                 if (self.command_in_dictionnary(self.msg)):
                     rospy.loginfo('This command exist yet.')
+                    #pub.publish(self.msg) !!!!!!!!!!!!!
                     self.msg=''
                     return GetCommand.outcome_getcommand
                 elif(self.msg=='list'):
                     return GetCommand.outcome_list
             end=time.time()
-        rospy.loginfo('This command does not exist yet.')  ##May I call the SayState in the getCommand State, or should redefine it in this stat ?
-        self.msg=''
+        rospy.loginfo('This command does not exist yet.')  
         return GetCommand.outcome_unknowncommand
 
                     # Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it
@@ -315,7 +321,7 @@ class UserInteraction(smach.StateMachine):
                      transitions={SayState.outcome_success: hw_name})
 
             self.add(listing_name,listing_state,
-                    transitions={SayState.outcome_success: getcommand_name})
+                    transitions={SayState.outcome_success: askcommand_name})
 
         pass
 

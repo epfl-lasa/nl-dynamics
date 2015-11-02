@@ -3,10 +3,11 @@ TODO for Cyril's project:
  - Have the GetCommand constructor take in a list of available commands. (DONE)
  now: GetCommand() -> knows left/right/faster/...
  desired: GetCommand(['left', 'right', 'up', 'down', 'dance']) -> knows those commands
- 
- - Give the dialogue system the ability to list the commands that it knows (in the GetCommand state)
-
  - clear self.msg when entering/leaving ReadyState (DONE)
+ - Give the dialogue system the ability to list the commands that it knows (in the GetCommand state) (DONE)
+ 
+
+
  - acknowledge substring containing 'command' in ReadyState
 
 
