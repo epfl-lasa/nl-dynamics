@@ -66,7 +66,7 @@ class CollectDemonstration(object):
 
         rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
-    def do(self, discard_static_points, plot=False):
+    def do(self, discard_static_points, plot=False, format='points'):
         rospy.loginfo('Listening to messages on {} {} channels'.format(
             CollectDemonstration.channel, CollectDemonstration.channel2))
         # Spin but do not catch keyboard interrupt exception -- just move onto
@@ -386,11 +386,13 @@ def run(arguments):
 
     parser.add_argument('--plot', default=False, action='store_true',
                         help='Plot demonstration (default=False).')
+
+    parser.add_argument('--format', default='points', metavar='FORMAT',
+                        help='Format for result, can be "spline" or "points", default="points"')
     args = parser.parse_args(arguments)
 
     demonstrator = CollectDemonstration(args.words, args.num, args.output)
-    demonstrator.do(args.discard_static_points, args.plot)
-
+    demonstrator.do(args.discard_static_points, args.plot, args.format)
     raw_input('press enter')
 
     return

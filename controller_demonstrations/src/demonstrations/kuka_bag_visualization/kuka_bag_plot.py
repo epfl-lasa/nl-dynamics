@@ -96,10 +96,20 @@ def plotPoints(data, name):
 def plotVelocity(pos, vel, name, ax, color='blue'):
     # function plot the velocity with arrow, from each point to the direction of the velocity
 
+    p1=pos[0]
+    p2=pos[1]
+    p=p1
+    v=vel[0]
+    d = np.sqrt( (p1.x - p2.x)**2 + (p1.y + p2.y)**2 + (p1.z + p2.z)**2 ) * 0.05
+
+    print p.x, p.y, p.z
+    print v.x, v.y, v.z
+
     for (p, v) in zip(pos, vel):
-        a = Arrow3D([p.x, p.x + v.x / 5],
-                    [p.y, p.y + v.y / 5],
-                    [p.z, p.z + v.z / 5], mutation_scale=10, lw=1, arrowstyle="-|>", color=color)
+        dist = np.sqrt( (v.x)**2 + (v.y)**2 + (v.z)**2 )
+        a = Arrow3D([p.x, p.x + v.x * d / dist],
+                    [p.y, p.y + v.y * d / dist],
+                    [p.z, p.z + v.z * d / dist], mutation_scale=10, lw=1, arrowstyle="-|>", color=color)
         ax.add_artist(a)
 
     #show result
@@ -154,8 +164,8 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
     for i, (tra, ori) in enumerate(zip(trajectory_data, original_data)):
     #calculate dot product
         pos = [tra.pose.position.x, tra.pose.position.y, tra.pose.position.z]
-        dis_vel = [tra.twist.linear.x, tra.twist.linear.y, tra.twist.linear.z]
-        vel = [ori.twist.linear.x, ori.twist.linear.y, ori.twist.linear.z]
+        vel = [tra.twist.linear.x, tra.twist.linear.y, tra.twist.linear.z]
+        dis_vel = [ori.twist.linear.x, ori.twist.linear.y, ori.twist.linear.z]
 
         dot = np.dot(dis_vel/np.linalg.norm(dis_vel), vel/np.linalg.norm(vel))
 
@@ -314,6 +324,8 @@ def run():
     tab3 = ['2015.10.09-kuka.two.corrections.bag']
     tab4 = ['2015.10.09-kuka-no.correction.bag']
 
+    test = ['dance.bag']
+
     #set some parameter
     alpha = 1./80           # alpha si the coefficient of smoothness, the most it goes to zero, the less points there will remain
     precision_factor = 0.4  # this factor is for analysis, the most it goes to 0, the sharper the analysis will be
@@ -331,10 +343,10 @@ def run():
 
         #drawpoints (to be deleated)
         ax = plotPoints(trajectory_data, name + ", with alpha=" + str(alpha))
-        plotVelocity([t.pose.position for t in trajectory_data],
-                     [t.twist.linear for t in trajectory_data], name, ax, 'blue')
-        plotVelocity([t.pose.position for t in trajectory_data],
-                     [t.twist.linear for t in original_data], name, ax, 'green')
+        # plotVelocity([t.pose.position for t in trajectory_data],
+        #              [t.twist.linear for t in trajectory_data], name, ax, 'blue')
+        # plotVelocity([t.pose.position for t in trajectory_data],
+        #              [t.twist.linear for t in original_data], name, ax, 'green')
 
         # drawing start-stops points (red stars for the starts and blue triangle for the stops)
         drawStartStop(start, stop, ax)
