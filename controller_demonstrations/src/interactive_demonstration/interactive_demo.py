@@ -74,19 +74,22 @@ class ReadyState(smach.State):
         while True :
         # There are two outcomes possible from this state; always return one of
         # them.
-            if (self.msg == 'quit' or self.msg == 'stop' or self.msg == 'done'):
-                rospy.loginfo('State machine is finished.')
-                return ReadyState.outcome_finished
-            elif (self.msg == "finish"):
-                rospy.loginfo('What a success')
-                return ReadyState.outcome_success
-            elif (self.msg == 'askingspeed'):
-                return ReadyState.outcome_askingspeed
-            elif (self.msg == 'command'):
-                return ReadyState.outcome_askcommand
-            elif (self.msg == 'collect'):
-                rospy.loginfo('The show will go on')
-                return ReadyState.outcome_ready
+            msg_split=self.msg.split()
+            length_msg = len(msg_split)
+            for i in range(length_msg):       
+                if (msg_split[i] == 'quit' or msg_split[i] == 'stop' or msg_split[i] == 'done'):
+                    rospy.loginfo('State machine is finished.')
+                    return ReadyState.outcome_finished
+                elif (msg_split[i] == "finish"):
+                    rospy.loginfo('What a success')
+                    return ReadyState.outcome_success
+                elif (msg_split[i] == 'askingspeed'):
+                    return ReadyState.outcome_askingspeed
+                elif (msg_split[i] == 'command'):
+                    return ReadyState.outcome_askcommand
+                elif (msg_split[i] == 'collect'):
+                    rospy.loginfo('The show will go on')
+                    return ReadyState.outcome_ready
 
     def callback(self, data):
         # This is the callback for the subscribed topic.

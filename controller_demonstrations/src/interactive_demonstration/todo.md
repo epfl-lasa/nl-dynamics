@@ -5,10 +5,12 @@ TODO for Cyril's project:
  desired: GetCommand(['left', 'right', 'up', 'down', 'dance']) -> knows those commands
  - clear self.msg when entering/leaving ReadyState (DONE)
  - Give the dialogue system the ability to list the commands that it knows (in the GetCommand state) (DONE)
+ - acknowledge substring containing 'command' in ReadyState (DONE)
+ - publish the robot desired speed to a topic: /robot_control/desired_speed (DONE)
+ - publish the command to execute to a topic: /robot_control/desired_command (DONE)
  
 
 
- - acknowledge substring containing 'command' in ReadyState
 
 
 
@@ -16,5 +18,3 @@ TODO for Cyril's project:
  - create a smach.StateMachine out of the ChangeSpeed states (the entire branch).
    - The ChangeSpeedMachine will be a single state in the UserInteraction machine
    - Move the ChangeSpeedMachine into its own python file.
- - publish the robot desired speed to a topic: /robot_control/desired_speed
- - publish the command to execute to a topic: /robot_control/desired_command
