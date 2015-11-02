@@ -7,6 +7,8 @@ class Spline(object):
         self.points = []
         self.coef = []
         self.nbPoints = 0
+    def __str__(self):
+        return "points :" + str(self.points) + "\ncoefficients :\n" + str(self.coef) + "\nnumber of point :" + str(self.nbPoints)
 
 
 # spline3D function assume that we are using a parametrise system
@@ -26,6 +28,10 @@ class Spline3D:
                 return self.coord[1]
             elif element == 'z':
                 return self.coord[2]
+
+    def __str__(self):
+        print "hello"
+        return "\nx:\n" + str(self.coord[0]) + "\ny:\n" + str(self.coord[1]) + "\nz:\n" + str(self.coord[2])
 
 
 def spline3D(data):
@@ -103,6 +109,7 @@ def getPointsSpline3D(splineData3D, t):
 def spline_(x, y, derivate):
     #creating data output
     data = Spline()
+
     data.nbPoints = len(x)-1
 
      #spline data calculation

@@ -20,6 +20,8 @@ from nl_msgs.msg import AttractorDemonstration
 from nl_msgs.msg import Correction
 from nl_msgs.msg import SplineClass
 
+from geometry_msgs.msg import Point
+
 
 class CollectDemonstration(object):
     """Collect and store kinesthetic demonstrations for a natural language.
@@ -45,7 +47,6 @@ class CollectDemonstration(object):
     channel = 'KUKA/CartState'
     channel2 = 'KUKA/DesiredState'
 
-
     def __init__(self, words, num_desired_points, bag_filename):
         rospy.init_node('collect_demonstration', anonymous=True)
         rospy.Subscriber(CollectDemonstration.channel, CartStateStamped,
@@ -70,12 +71,18 @@ class CollectDemonstration(object):
 
         rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
-    def do(self, discard_static_points, plot=False):
+    def do(self, discard_static_points, plot=False, format_='points'):
         rospy.loginfo('Listening to messages on {} {} channels'.format(
             CollectDemonstration.channel, CollectDemonstration.channel2))
+       
+        if format_ != 'spline' and format_ != 'points':
+            rospy.logwarn('wrong format, taking "points" one')
+            format_ = 'points'
+
         # Spin but do not catch keyboard interrupt exception -- just move onto
         # processing & saving the demonstration.
         rospy.spin()
+
         #raw_input('press enter when data-collecting is finished')
         #self._collecting_data = False
 
@@ -102,8 +109,12 @@ class CollectDemonstration(object):
                               'desired': self._velocity_vector}
 
         (processed_anchor, processed_data) = self.process_demonstration(
-            demonstration_data, discard_static_points, plot)
-        msg = self.make_message(processed_anchor, processed_data)
+            demonstration_data, discard_static_points, plot, format_)
+
+        if format_ == 'points':
+            msg = self.make_message_point(processed_anchor, processed_data)
+        else:
+            msg = self.make_message_spline(processed_anchor, processed_data)
 
         # Save message to a rosbag file.
         topic = 'demonstration'
@@ -114,7 +125,7 @@ class CollectDemonstration(object):
 
     def process_demonstration(self, demonstration_data,
                               discard_static_points,
-                              plot=True):
+                              plot=True, format_='points'):
         """Process demonstration data.
 
         Downsample the data to only keep a smaller number of them, and subtract
@@ -180,9 +191,9 @@ class CollectDemonstration(object):
 
                 #adding data in 2 differents way
                 newData.extend(temp)
-                listData.append(temp) # here need to fill lisData with point or spline3D
+                listData.append(temp)  # here need to fill lisData with point or spline3D
 
-            anchor = newData[0]      # anchor is no longer the first given point but the first start point
+            anchor = newData[0]        # anchor is no longer the first given point but the first start point
 
         # Subtract the pose of the anchor from all downsampled points.
         rospy.loginfo('Removing anchor ({:.2f} {:.2f} {:.2f}) from {} data points'.
@@ -192,7 +203,14 @@ class CollectDemonstration(object):
                              len(downsampled)))
 
         # return of the function
-        (anchor_new, corrections_new) = self.remove_anchor_pose(anchor, newData)
+        if format_ == 'points':
+            (anchor_new, corrections_new) = self.remove_anchor_pose(anchor, newData)
+        else:
+            corrections_new = []
+            anchor_new = anchor
+            for dat in listData:
+                (to_the_bin, dat) = self.remove_anchor_pose(anchor, dat)
+                corrections_new.append(spline3D(dat))
 
         if plot:
             import matplotlib.pyplot as plt
@@ -321,6 +339,8 @@ class CollectDemonstration(object):
          - words
         """
 
+        print anchor, data
+
         msg = AttractorDemonstration()
 
         assert isinstance(anchor, CartStateStamped)
@@ -336,9 +356,8 @@ class CollectDemonstration(object):
             for (coef, point) in zip(spl.coef, spl.points):
                 temp2 = SplineClass()
                 temp2.coefficients = coef
-                temp2.points = point
+                temp2.points.append(Point(point[0], point[1], 0))
                 temp.x_splines.append(temp2)
-
 
             # filling y_spline
             spl = dat.get_spline('y')
@@ -346,9 +365,7 @@ class CollectDemonstration(object):
             for (coef, point) in zip(spl.coef, spl.points):
                 emp2 = SplineClass()
                 temp2.coefficients = coef
-                temp2.points = point
                 temp.y_splines.append(temp2)
-
 
             # filling z_spline
             spl = dat.get_spline('z')
@@ -356,9 +373,8 @@ class CollectDemonstration(object):
             for (coef, point) in zip(spl.coef, spl.points):
                 temp2 = SplineClass()
                 temp2.coefficients = coef
-                temp2.points = point
+                #temp2.points = point
                 temp.z_splines.append(temp2)
-
 
             temp.number_points = spl.nbPoints
 
@@ -449,10 +465,12 @@ def run(arguments):
 
     parser.add_argument('--plot', default=False, action='store_true',
                         help='Plot demonstration (default=False).')
+    parser.add_argument('--format', default='points', metavar='FORMAT',
+                        help='Format for result, can be "spline" or "points", default="points"')
     args = parser.parse_args(arguments)
 
     demonstrator = CollectDemonstration(args.words, args.num, args.output)
-    demonstrator.do(args.discard_static_points, args.plot)
+    demonstrator.do(args.discard_static_points, args.plot, args.format)
 
     raw_input('press enter')
 
