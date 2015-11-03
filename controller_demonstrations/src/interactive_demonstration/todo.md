@@ -14,7 +14,7 @@ TODO for Cyril's project:
 
 
 
-  - move the SayState into its own python file (import it to use it)
+ - move the SayState into its own python file (import it to use it)
  - create a smach.StateMachine out of the ChangeSpeed states (the entire branch).
    - The ChangeSpeedMachine will be a single state in the UserInteraction machine
    - Move the ChangeSpeedMachine into its own python file.

@@ -29,6 +29,10 @@ class TestStringToNum(unittest.TestCase):
     	ret = self.change_speed.string_to_number('I am happy')
     	self.assertEqual(None, ret)
 
+     def test_twonumber_string(self):
+        ret = self.change_speed.string_to_number('nine it four')
+        self.assertEqual(None, ret)
+
 if __name__ == '__main__':
     unittest.main()
 

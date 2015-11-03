@@ -166,6 +166,7 @@ class GetCommand(smach.State):
 
     def command_list_str(self):
         my_command_list= ' '.join(self.command_list)
+        rospy.sleep(4)
         return my_command_list
 
     def command_in_dictionnary(self, msg):
