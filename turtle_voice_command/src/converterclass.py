@@ -72,7 +72,7 @@ class TurtleCommander(object):
     def speaking(self, text):
             # The soundhandle has been defined in the class init.
         self.soundhandle.say("Acknowledge %s" % text)
-	
+
 
 
 

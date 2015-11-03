@@ -9,6 +9,7 @@ import std_msgs
 
 from demo_collection import DemoCollectionMachine
 from say_state import SayState
+#from branch_changespeed import 
 
 
 class ReadyState(smach.State):
@@ -64,54 +65,6 @@ class ReadyState(smach.State):
         rospy.loginfo('Got message: {}'.format(self.msg))
 
 
-class ChangeSpeed(smach.State):
-    outcome_speedchanged = 'speedchanged'
-    outcomes = [outcome_speedchanged]
-
-    def __init__(self):
-        # specify the outcomes
-        smach.State.__init__(self, outcomes=ChangeSpeed.outcomes)
-        # Subscribe to a Topic
-        topic_sub = '/nl_command_parsed'
-        rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
-        topic_pub = 'robot_control/desired_velocity'
-        self.pub = rospy.Publisher(topic_pub, std_msgs.msg.Int8, queue_size=5)
-        # internal data
-        self.msg = ''
-        
-
-        # This method does not change the class members directly.
-
-    def string_to_number(self, msg):
-        number_dict = dict(one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8,
-                 nine=9, ten=10, eleven=11)  # because it has to go to eleven
-        b = -1
-        msg_split = self.msg.split()  # Separe la string par mot (separateur *espace*
-        length_msg = len(msg_split)  # Retourne le nombre de mots dans la string
-        for i in range(length_msg):  # Parcoure chaque mot
-            if (msg_split[i] in number_dict.keys()):  # Si un des mots est dans la string msg
-                b = i  # Alors il donne la place du mot dans la string
-        if (b >= 0):
-            new_speed = number_dict.get(msg_split[b])  # new_speed va contenir la valeur du dictionnaire se trouvant a la position b
-            return new_speed
-        else:
-            return None
-
-    def execute(self, userdata):
-        rospy.loginfo('Executing ChangeSpeed')
-        # Will change the speed of the robot
-        speed_integer=None
-        while (speed_integer == None):
-            speed_integer = self.string_to_number(self.msg) 
-            rospy.sleep(0.1)
-        self.pub.publish(speed_integer)        
-        rospy.loginfo('New Speed is %s', speed_integer)
-        return ChangeSpeed.outcome_speedchanged
-
-    def callback(self, data):
-        self.msg = data.data  # data.data == self.msg de ReadyState
-
-
 class GetCommand(smach.State):
     outcome_getcommand = 'getcommand'
     outcome_unknowncommand = 'unknowncommand'
@@ -132,7 +85,6 @@ class GetCommand(smach.State):
 
     def command_list_str(self):
         my_command_list= ' '.join(self.command_list)
-        rospy.sleep(4)
         return my_command_list
 
     def command_in_dictionnary(self, msg):
@@ -202,15 +154,6 @@ class UserInteraction(smach.StateMachine):
         finished_state = SayState("I am finished")
         finished_name = 'SAY_FINISHED'
 
-        askingspeed_state = SayState('At which speed do you want me to go ?')
-        askingspeed_name = 'ASKING_SPEED'
-
-        speedchanged_state = ChangeSpeed()
-        speedchanged_name = 'CHANGED_SPEED'
-
-        validatespeed_state = SayState('New Velocity implemented')
-        validatespeed_name = 'VALIDATE_SPEED'
-
         askcommand_state = SayState('Which command would you like me to do ?')
         askcommand_name = 'ASK_COMMAND'
 
@@ -266,16 +209,7 @@ class UserInteraction(smach.StateMachine):
 
             # NEW
             # Changing Speed States
-            self.add(askingspeed_name, askingspeed_state,
-                     transitions={SayState.outcome_success: speedchanged_name})
-
-            self.add(speedchanged_name, speedchanged_state,
-                     transitions={
-                         ChangeSpeed.outcome_speedchanged: validatespeed_name})
-
-            self.add(validatespeed_name, validatespeed_state,
-                     transitions={SayState.outcome_success: hw_name})
-
+            
             # Giving a command to do States
             self.add(askcommand_name, askcommand_state,
                      transitions={SayState.outcome_success: getcommand_name})

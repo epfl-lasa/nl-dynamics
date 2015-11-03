@@ -7,15 +7,14 @@ from interactive_demonstration.interactive_demo import GetCommand
 class TestCommandInDictionnary(unittest.TestCase):
 
     def setUp(self):
-        self.in_dictionnary = GetCommand()
-
+        self.in_dictionnary = GetCommand(['faster'])
     def test_one(self):
         ret = self.in_dictionnary.command_in_dictionnary('one')
         self.assertEqual(False, ret)
-    def test_in_dictionnary(self):
+    def test_in_dictionnary(self): #revoir
         ret = self.in_dictionnary.command_in_dictionnary('faster')
         self.assertEqual(True, ret)
-    def test_in_sentence(self):
+    def test_in_sentence(self): #revoir
         ret = self.in_dictionnary.command_in_dictionnary('Go faster please !')
         self.assertEqual(True, ret)
     def test_empty(self):

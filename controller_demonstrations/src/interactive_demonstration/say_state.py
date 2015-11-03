@@ -29,7 +29,7 @@ class SayState(smach.State):
         # case, it just prints a message, sleeps.
         self.speaking(self._message)
         rospy.loginfo(self._message)
-        rospy.sleep(2)
+        rospy.sleep(4)
         # The execute function *must* return one of its defined outcomes. Here,
         # we only have one outcome (SayState.outcome_success) so return it.
         return SayState.outcome_success
@@ -37,5 +37,4 @@ class SayState(smach.State):
 if __name__ == '__main__':
     import smach_ros
     rospy.init_node('interactive_demo')
-
     say=SayState()
