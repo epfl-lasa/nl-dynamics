@@ -2,6 +2,7 @@
 
 import rospy
 import smach
+from sound_play.libsoundplay import SoundClient
 
 class SayState(smach.State):
     # A state in the state machine can have multiple outcomes. The outcomes must
