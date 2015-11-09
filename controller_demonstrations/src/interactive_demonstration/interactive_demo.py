@@ -9,7 +9,7 @@ import std_msgs
 
 from demo_collection import DemoCollectionMachine
 from say_state import SayState
-#from branch_changespeed import 
+from branch_changingspeed import ChangingSpeedBranch
 
 
 class ReadyState(smach.State):
@@ -63,7 +63,6 @@ class ReadyState(smach.State):
         # This is the callback for the subscribed topic.
         self.msg = data.data
         rospy.loginfo('Got message: {}'.format(self.msg))
-
 
 class GetCommand(smach.State):
     outcome_getcommand = 'getcommand'
@@ -164,6 +163,9 @@ class UserInteraction(smach.StateMachine):
         # implement something like: getcommand_state.command_list() -> 'left, right, up, down'
         #  tip: loop up ', '.join() google string join
         # listing_state = SayState('The available commands are ' + command_list) 
+
+        changingspeed_machine = ChangingSpeedBranch()
+        changingspeed_name = 'CHANGING_SPEED'
 
         commanddone_state = SayState('Okay I have done your command')
         commanddone_name = 'COMMAND_DONE'

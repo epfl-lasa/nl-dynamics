@@ -6,7 +6,6 @@ import std_msgs
 
 from say_state import SayState
 
-
 class ChangeSpeed(smach.State):
     outcome_speedchanged = 'speedchanged'
     outcomes = [outcome_speedchanged]
@@ -64,7 +63,7 @@ class ChangingSpeedBranch(smach.StateMachine):
     def __init__(self):
 
         super(ChangingSpeedBranch, self).__init__(
-            outcomes=DemoCollectionMachine.outcomes)
+            outcomes=ChangingSpeedBranch.outcomes)
 
         askingspeed_state = SayState('At which speed do you want me to go ?')
         askingspeed_name = 'ASKING_SPEED'
