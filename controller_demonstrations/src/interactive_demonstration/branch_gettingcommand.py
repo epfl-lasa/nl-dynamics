@@ -29,10 +29,10 @@ class GetCommand(smach.State):
         my_command_list= ' '.join(self.command_list)
         return my_command_list
 
-    def command_in_dictionnary(self, msg):
+    def command_in_dictionnary(self, message):
         b = -1
         cmd = ''
-        msg_split = self.msg.split()  # Separe la string par mot (separateur *espace*
+        msg_split = message .split()  # Separe la string par mot (separateur *espace*
         length_msg = len(msg_split)  # Retourne le nombre de mots dans la string
         for i in range(length_msg):  # Parcoure chaque mot
             if (msg_split[i] in self.command_list):  # Si un des mots est dans la string msg
