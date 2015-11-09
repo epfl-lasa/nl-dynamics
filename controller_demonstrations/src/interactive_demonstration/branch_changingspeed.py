@@ -8,7 +8,7 @@ from say_state import SayState
 
 
 class ChangeSpeed(smach.State):
-    outcome_speedchanged = 'speedchanged'
+    outcome_speedchanged ='speedchanged'
     outcomes = [outcome_speedchanged]
 
     def __init__(self):
@@ -59,12 +59,13 @@ class ChangeSpeed(smach.State):
 
 class ChangingSpeedBranch(smach.StateMachine):
     outcome_success = 'success'
-    outcomes = [outcome_success]
+    outcome_failure = 'failure'
+    outcomes = [outcome_success, outcome_failure]
 
     def __init__(self):
 
         super(ChangingSpeedBranch, self).__init__(
-            outcomes=DemoCollectionMachine.outcomes)
+            outcomes=ChangingSpeedBranch.outcomes)
 
         askingspeed_state = SayState('At which speed do you want me to go ?')
         askingspeed_name = 'ASKING_SPEED'
@@ -84,7 +85,7 @@ class ChangingSpeedBranch(smach.StateMachine):
                          ChangeSpeed.outcome_speedchanged: validatespeed_name})
 
             self.add(validatespeed_name, validatespeed_state,
-                     transitions={SayState.outcome_success: hw_name})
+                     transitions={SayState.outcome_success: ChangingSpeedBranch.outcome_success})
 
 if __name__ == '__main__':
     import smach_ros

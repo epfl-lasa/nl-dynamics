@@ -5,11 +5,12 @@ import smach
 import smach_ros
 import sys
 import time
-import std_msgs 
+import std_msgs
 
 from demo_collection import DemoCollectionMachine
 from say_state import SayState
-#from branch_changespeed import 
+from branch_changingspeed import ChangingSpeedBranch
+#from branch_changespeed import
 
 
 class ReadyState(smach.State):
@@ -34,8 +35,6 @@ class ReadyState(smach.State):
         self.msg = ''
 
     def execute(self, userdata):
-        # This is called when the node is active. Currently it waits for the
-        # user to press enter.
         self.msg=''
         rospy.loginfo('Executing ReadyState')
 
@@ -44,7 +43,7 @@ class ReadyState(smach.State):
         # them.
             msg_split=self.msg.split()
             length_msg = len(msg_split)
-            for i in range(length_msg):       
+            for i in range(length_msg):
                 if (msg_split[i] == 'quit' or msg_split[i] == 'stop' or msg_split[i] == 'done'):
                     rospy.loginfo('State machine is finished.')
                     return ReadyState.outcome_finished
@@ -105,7 +104,7 @@ class GetCommand(smach.State):
 
     def execute(self, userdata):
         # Assumption for now: wait until the user provides *one* of the available commands. Stay in this state until this is true.
-        # We only return from this state once the user has provided a known command. 
+        # We only return from this state once the user has provided a known command.
         # TODO: LOGINFO for the command type.
         # TODO later: after 10 seconds in this state, return outcome_unknowncommand
         self.msg=''
@@ -121,7 +120,7 @@ class GetCommand(smach.State):
                 elif(self.msg=='list'):
                     return GetCommand.outcome_list
             end=time.time()
-        rospy.loginfo('This command does not exist yet.')  
+        rospy.loginfo('This command does not exist yet.')
         return GetCommand.outcome_unknowncommand
 
                     # Publish the string to a node where all the commands are registered (Command_Node) which will publish in the Robot_Node to execute it
@@ -151,6 +150,9 @@ class UserInteraction(smach.StateMachine):
         collect_name = 'COLLECT'
         collect_machine = DemoCollectionMachine()
 
+        branchspeed_name = 'SPEED'
+        branchspeed_machine = ChangingSpeedBranch()
+
         finished_state = SayState("I am finished")
         finished_name = 'SAY_FINISHED'
 
@@ -163,7 +165,7 @@ class UserInteraction(smach.StateMachine):
 
         # implement something like: getcommand_state.command_list() -> 'left, right, up, down'
         #  tip: loop up ', '.join() google string join
-        # listing_state = SayState('The available commands are ' + command_list) 
+        # listing_state = SayState('The available commands are ' + command_list)
 
         commanddone_state = SayState('Okay I have done your command')
         commanddone_name = 'COMMAND_DONE'
@@ -171,45 +173,43 @@ class UserInteraction(smach.StateMachine):
         unknowncommand_state = SayState('Unknown Command')
         unknowncommand_name = 'UNKNOWN_COMMAND'
 
-        listing_state = SayState('The list of command is :'+ getcommand_state.command_list_str()) 
+        listing_state = SayState('The list of command is :'+ getcommand_state.command_list_str())
         listing_name = 'LISTING'
 
         # All states are now defined. Connect them.
         with self:
             # The first state added is the initial state.
             self.add(hw_name, hw_state,
-                     transitions={SayState.outcome_success: ready_name})
+                    transitions={SayState.outcome_success: ready_name})
 
-            # For each state, all connections must be mapped to another
             # state. In this example, the ready outcome from ReadyState goes to
             # the collect node (identified by collect_name), and the finshed
             # outcome goes to the SAY_FINISHED node (again, identified by its
             # name). It's important to remember that all transitions are defined
             # by *strings*, not the underlying nodes.
             self.add(ready_name, ready_state,
-                     transitions={ReadyState.outcome_ready: collect_name,
+                    transitions={ReadyState.outcome_ready: collect_name,
                                   ReadyState.outcome_finished: finished_name,
                                   ReadyState.outcome_success: hw_name,
-                                  ReadyState.outcome_askingspeed: askingspeed_name,
+                                  ReadyState.outcome_askingspeed: branchspeed_name,
                                   ReadyState.outcome_askcommand: askcommand_name})
 
             # Here the connected state is actually a whole other
             # StateMachine. This is valid as long as its outcomes are properly
             # connected.
             self.add(collect_name, collect_machine,
-                     transitions={
+                    transitions={
                          DemoCollectionMachine.outcome_success: hw_name,
                          # Go back to hello world
                          DemoCollectionMachine.outcome_failure: UserInteraction.outcome_failure})
 
+            self.add(branchspeed_name, branchspeed_machine,
+                    transitions={ChangingSpeedBranch.outcome_success: hw_name})
+
             self.add(finished_name, finished_state,
-                     transitions={
-                         SayState.outcome_success: UserInteraction.outcome_success})
+                    transitions={SayState.outcome_success: UserInteraction.outcome_success})
 
 
-            # NEW
-            # Changing Speed States
-            
             # Giving a command to do States
             self.add(askcommand_name, askcommand_state,
                      transitions={SayState.outcome_success: getcommand_name})
