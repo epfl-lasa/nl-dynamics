@@ -11,11 +11,6 @@ nl_msgs
 passive_ds_control
 )
 
-set(CMAKE_MODULE_PATH /usr/local/share/cmake/Modules/)  # OSX eigen3
-set(CMAKE_BUILD_TYPE Debug)
-
-find_package(Eigen3 REQUIRED)
-
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 ###################################
@@ -35,7 +30,7 @@ catkin_package(
 )
 
 
-include_directories(include ${EIGEN_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(gpmds src/MultiGPR.cpp src/GPMDS.cpp)
 # also listing includes just to have them show up in qtcreator

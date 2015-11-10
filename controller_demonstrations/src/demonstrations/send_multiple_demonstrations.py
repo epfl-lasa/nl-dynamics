@@ -8,8 +8,6 @@ import rospy
 from std_msgs.msg import String
 
 from correction_publisher import PublishCorrections
-from kit_speech_client.msg import NLCommand  # TODO deprecate this
-from kit_speech_client.msg import AudioReceivedSignal
 
 """
 Send multiple commands at once, using stdin as the input
@@ -80,8 +78,6 @@ class DemonstrationPlayback(object):
         readline.parse_and_bind('tab: complete')
 
         # Subscribe to voice commands channel.
-        rospy.Subscriber(topic_microphone_active, AudioReceivedSignal,
-                         self.nl_microphone_active_callback)
         rospy.Subscriber(topic_command_parsed, String,
                          self.nl_command_received_callback)
 
@@ -106,6 +102,7 @@ class DemonstrationPlayback(object):
                                              use_current_state_as_anchor=True)
 
     def nl_microphone_active_callback(self, data):
+        # NOTE this is not currently in use.
         rospy.loginfo('Microphone active -- pausing robot')
         msg = String("PAUSE")
         self._kuka_pause_publisher.publish(msg)
