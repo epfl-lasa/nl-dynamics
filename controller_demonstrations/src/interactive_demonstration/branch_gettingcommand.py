@@ -3,6 +3,7 @@
 import rospy
 import smach
 import std_msgs
+import time
 
 from say_state import SayState
 
@@ -32,11 +33,12 @@ class GetCommand(smach.State):
     def command_in_dictionnary(self, message):
         b = -1
         cmd = ''
-        msg_split = message .split()  # Separe la string par mot (separateur *espace*
+        msg_split = message.split()  # Separe la string par mot (separateur *espace*
         length_msg = len(msg_split)  # Retourne le nombre de mots dans la string
         for i in range(length_msg):  # Parcoure chaque mot
             if (msg_split[i] in self.command_list):  # Si un des mots est dans la string msg
                 b = i  # Alors il donne la place du mot dans la string
+                rospy.loginfo('The value of b is %d', b)
 
         if (b >= 0):  # empty string is checked here and if the number is in the string also
             cmd = msg_split[b]  # contient le mot qui est dans le dictionnaire
@@ -83,19 +85,19 @@ class GettingCommandBranch(smach.StateMachine):
             outcomes=GettingCommandBranch.outcomes)
 
         askcommand_state = SayState('Which command would you like me to do ?')
-        askcommand_name = 'ASK_COMMAND'
+        askcommand_name = 'Which Command ?'
 
         getcommand_state = GetCommand(['left', 'right', 'up', 'down', 'dance'])
-        getcommand_name = 'GET_COMMAND'
+        getcommand_name = 'Receiving Command'
 
         commanddone_state = SayState('Okay I have done your command')
-        commanddone_name = 'COMMAND_DONE'
+        commanddone_name = 'Aknowledge Command Done'
 
         unknowncommand_state = SayState('Unknown Command')
-        unknowncommand_name = 'UNKNOWN_COMMAND'
+        unknowncommand_name = 'Unknow Command'
 
         listing_state = SayState('The list of command is :'+ getcommand_state.command_list_str())
-        listing_name = 'LISTING'
+        listing_name = 'Listing Commands'
 
 
         with self:

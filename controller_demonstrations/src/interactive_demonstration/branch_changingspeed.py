@@ -68,13 +68,13 @@ class ChangingSpeedBranch(smach.StateMachine):
             outcomes=ChangingSpeedBranch.outcomes)
 
         askingspeed_state = SayState('At which speed do you want me to go ?')
-        askingspeed_name = 'ASKING_SPEED'
+        askingspeed_name = 'Which Speed ?'
 
         speedchanged_state = ChangeSpeed()
-        speedchanged_name = 'CHANGED_SPEED'
+        speedchanged_name = 'Receiving Speed'
 
         validatespeed_state = SayState('New Velocity implemented')
-        validatespeed_name = 'VALIDATE_SPEED'
+        validatespeed_name = 'Aknowledge Speed Changed'
 
         with self:
             self.add(askingspeed_name, askingspeed_state,

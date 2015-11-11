@@ -79,23 +79,23 @@ class UserInteraction(smach.StateMachine):
 
         # Create the states and give them names here. Each state (an instance of
         # the class) has an associated name (a string), used by the transitions.
-        hw_state = SayState(message='Hello, world')
-        hw_name = 'SAY_HW'
+        hw_state = SayState(message='Hello, what would you like me to do ? command, changing speed or teaching ?')
+        hw_name = 'Introduction'
 
         ready_state = ReadyState()
-        ready_name = 'READY'
+        ready_name = 'Which Branch ?'
 
-        collect_name = 'COLLECT'
+        collect_name = 'Collecting Datas'
         collect_machine = DemoCollectionMachine()
 
-        branchspeed_name = 'SPEED'
+        branchspeed_name = 'Changing Speed'
         branchspeed_machine = ChangingSpeedBranch()
 
-        branchcommand_name = 'COMMAND'
+        branchcommand_name = 'Giving Command'
         branchcommand_machine = GettingCommandBranch()
 
         finished_state = SayState("I am finished")
-        finished_name = 'SAY_FINISHED'
+        finished_name = 'Finishing'
 
 
         # All states are now defined. Connect them.
