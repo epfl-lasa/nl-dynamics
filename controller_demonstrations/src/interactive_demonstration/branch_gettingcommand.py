@@ -50,9 +50,9 @@ class GetCommand(smach.State):
         # TODO: LOGINFO for the command type.
         # TODO later: after 10 seconds in this state, return outcome_unknowncommand
         self.msg=''
-        begin=time.time()
-        end=0
-        while ((begin+10)>end):
+        begin=rospy.get_rostime()
+        end=rospy.get_rostime()
+        while (end - begin).to_sec() < 10:
             if (self.msg != ''):
                 cmd = self.command_in_dictionnary(self.msg)
                 if (cmd):
@@ -62,7 +62,7 @@ class GetCommand(smach.State):
                     return GetCommand.outcome_getcommand
                 elif(self.msg=='list'):
                     return GetCommand.outcome_list
-            end=time.time()
+            end=rospy.get_rostime()
         rospy.loginfo('This command does not exist yet.')
         return GetCommand.outcome_unknowncommand
 
