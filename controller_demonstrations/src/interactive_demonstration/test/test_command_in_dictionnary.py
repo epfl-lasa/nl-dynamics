@@ -8,24 +8,35 @@ import rospy
 class TestCommandInDictionnary(unittest.TestCase):
 
     def setUp(self):
-        rospy.init_node('testing_getcommand', anonymous=True)
-        self.in_dictionnary = GetCommand(['faster'])
+        self.in_dictionnary = GetCommand(['faster', 'slower'])
 
     def test_one(self):
         ret = self.in_dictionnary.command_in_dictionnary('one')
-        self.assertEqual(False, ret)
+        self.assertEqual(None, ret)
 
     def test_in_dictionnary(self): #revoir
         ret = self.in_dictionnary.command_in_dictionnary('faster')
-        self.assertEqual(True, ret)
+        self.assertEqual('faster', ret)
+
+    def test_in_dictionnary_uppercase(self): #revoir
+        ret = self.in_dictionnary.command_in_dictionnary('FasteR')
+        self.assertEqual(None, ret)
 
     def test_in_sentence(self): #revoir
         ret = self.in_dictionnary.command_in_dictionnary('Go faster please !')
-        self.assertEqual(True, ret)
+        self.assertEqual('faster', ret)
 
     def test_empty(self):
         ret = self.in_dictionnary.command_in_dictionnary('')
-        self.assertEqual(False, ret)
+        self.assertEqual(None, ret)
+
+    def test_slower(self):
+        ret = self.in_dictionnary.command_in_dictionnary('go slower please !')
+        self.assertEqual('slower', ret)
+
+    def test_both(self):
+        ret = self.in_dictionnary.command_in_dictionnary('go faster then slower')
+        self.assertEqual('slower', ret)
 
 if __name__ == '__main__':
     unittest.main()
