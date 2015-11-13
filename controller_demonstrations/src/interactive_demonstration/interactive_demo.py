@@ -4,44 +4,25 @@ import rospy
 import smach
 import smach_ros
 import sys
-
-from std_msgs.msg import String
+import time
+import std_msgs
 
 from demo_collection import DemoCollectionMachine
-
-
-class SayState(smach.State):
-    # A state in the state machine can have multiple outcomes. The outcomes must
-    # be unique names.
-
-    outcome_success = 'success'
-    outcomes = [outcome_success]
-
-    def __init__(self, message):
-        # The state initialization can store information.
-
-        # Make sure to specify the outcomes here.
-        super(SayState, self).__init__(outcomes=SayState.outcomes)
-
-        self._message = message  # Store the message to say later.
-
-    def execute(self, user_data):
-        # The execute function gets called when the node is active. In this
-        # case, it just prints a message, sleeps.
-        print('--- {} ---'.format(self._message))
-        rospy.sleep(2)
-
-        # The execute function *must* return one of its defined outcomes. Here,
-        # we only have one outcome (SayState.outcome_success) so return it.
-        return SayState.outcome_success
+from say_state import SayState
+from branch_changingspeed import ChangingSpeedBranch
+from branch_gettingcommand import GettingCommandBranch
+#from branch_changespeed import
 
 
 class ReadyState(smach.State):
-
     # This state has two possible outcomes.
     outcome_ready = 'ready'
     outcome_finished = 'finished'
-    outcomes = [outcome_ready, outcome_finished]
+    outcome_success = 'success'
+    outcome_askingspeed = 'askingspeed'
+    outcome_askcommand = 'askcommand'
+    outcomes = [outcome_ready, outcome_finished, outcome_success,
+                outcome_askingspeed, outcome_askcommand]
 
     def __init__(self):
         # Again, specify the outcomes.
@@ -49,57 +30,69 @@ class ReadyState(smach.State):
 
         # Subscribe to a topic, defined using a callback.
         topic = '/nl_command_parsed'
-        rospy.Subscriber(topic, String, self.callback, queue_size=1)
+        rospy.Subscriber(topic, std_msgs.msg.String, self.callback, queue_size=1)
 
         # Internal data.
-        self._finished = False
+        self.msg = ''
 
     def execute(self, userdata):
-        # This is called when the node is active. Currently it waits for the
-        # user to press enter.
-
+        self.msg=''
         rospy.loginfo('Executing ReadyState')
-        raw_input('Press enter to be ready...')
 
+        while True :
         # There are two outcomes possible from this state; always return one of
         # them.
-        if self._finished:
-            rospy.loginfo('State machine is finished.')
-            return ReadyState.outcome_finished
-        else:
-            rospy.loginfo('The show will go on')
-            return ReadyState.outcome_ready
+            msg_split=self.msg.split()
+            length_msg = len(msg_split)
+            for i in range(length_msg):
+                if (msg_split[i] == 'quit' or msg_split[i] == 'stop' or msg_split[i] == 'done'):
+                    rospy.loginfo('State machine is finished.')
+                    return ReadyState.outcome_finished
+                elif (msg_split[i] == "finish"):
+                    rospy.loginfo('What a success')
+                    return ReadyState.outcome_success
+                elif (msg_split[i] == 'askingspeed'):
+                    return ReadyState.outcome_askingspeed
+                elif (msg_split[i] == 'command'):
+                    return ReadyState.outcome_askcommand
+                elif (msg_split[i] == 'collect'):
+                    rospy.loginfo('The show will go on')
+                    return ReadyState.outcome_ready
 
     def callback(self, data):
         # This is the callback for the subscribed topic.
-        msg = data.data
-        rospy.loginfo('Got message: {}'.format(msg))
+        self.msg = data.data
+        rospy.loginfo('Got message: {}'.format(self.msg))
 
-        if 'quit' in msg or 'stop' in msg or 'done' in msg:
-            self._finished = True
+
+
 
 
 class UserInteraction(smach.StateMachine):
-
     # A state machine similarly has possible outcomes.
     outcome_success = 'success'
     outcome_failure = 'failure'
     outcomes = [outcome_success, outcome_failure]
 
     def __init__(self):
-        super(UserInteraction, self).__init__(
-            outcomes=UserInteraction.outcomes)
+        super(UserInteraction, self).__init__(outcomes=UserInteraction.outcomes)
 
         # Create the states and give them names here. Each state (an instance of
         # the class) has an associated name (a string), used by the transitions.
-        say_state = SayState('Hello, world')
-        say_name = 'SAY_HELLO'
+        hw_state = SayState(message='Hello, world')
+        hw_name = 'SAY_HW'
 
         ready_state = ReadyState()
         ready_name = 'READY'
 
         collect_name = 'COLLECT'
         collect_machine = DemoCollectionMachine()
+
+        branchspeed_name = 'SPEED'
+        branchspeed_machine = ChangingSpeedBranch()
+
+        branchcommand_name = 'COMMAND'
+        branchcommand_machine = GettingCommandBranch()
 
         finished_state = SayState("I am finished")
         finished_name = 'SAY_FINISHED'
@@ -108,27 +101,41 @@ class UserInteraction(smach.StateMachine):
         # All states are now defined. Connect them.
         with self:
             # The first state added is the initial state.
-            self.add(say_name, say_state,
-                     transitions={SayState.outcome_success: ready_name})
+            self.add(hw_name, hw_state,
+                    transitions={SayState.outcome_success: ready_name})
 
-            # For each state, all connections must be mapped to another
             # state. In this example, the ready outcome from ReadyState goes to
             # the collect node (identified by collect_name), and the finshed
             # outcome goes to the SAY_FINISHED node (again, identified by its
             # name). It's important to remember that all transitions are defined
             # by *strings*, not the underlying nodes.
             self.add(ready_name, ready_state,
-                     transitions={ReadyState.outcome_ready: collect_name,
-                                  ReadyState.outcome_finished: finished_name})
+                    transitions={ReadyState.outcome_ready: collect_name,
+                                  ReadyState.outcome_finished: finished_name,
+                                  ReadyState.outcome_success: hw_name,
+                                  ReadyState.outcome_askingspeed: branchspeed_name,
+                                  ReadyState.outcome_askcommand: branchcommand_name})
 
             # Here the connected state is actually a whole other
             # StateMachine. This is valid as long as its outcomes are properly
             # connected.
             self.add(collect_name, collect_machine,
-                     transitions={DemoCollectionMachine.outcome_success: say_name,  # Go back to say_state
-                                  DemoCollectionMachine.outcome_failure: UserInteraction.outcome_failure})
+                    transitions={DemoCollectionMachine.outcome_success: hw_name,
+                                DemoCollectionMachine.outcome_failure: UserInteraction.outcome_failure})
+
+            self.add(branchspeed_name, branchspeed_machine,
+                    transitions={ChangingSpeedBranch.outcome_success: hw_name})
+
+            self.add(branchcommand_name, branchcommand_machine,
+                    transitions={GettingCommandBranch.outcome_success: hw_name})
+
             self.add(finished_name, finished_state,
-                     transitions={SayState.outcome_success: UserInteraction.outcome_success})
+                    transitions={SayState.outcome_success: UserInteraction.outcome_success})
+
+
+            # Giving a command to do States
+
+
         pass
 
 
@@ -149,6 +156,7 @@ def run(arguments):
     rospy.loginfo('Outcome: {}'.format(outcome))
 
     machine_viz.stop()
+
 
 if __name__ == '__main__':
     arguments = sys.argv[1:]  # argv[0] is the program name.
