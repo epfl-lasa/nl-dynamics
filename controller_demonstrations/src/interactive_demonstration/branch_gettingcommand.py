@@ -42,10 +42,9 @@ class GetCommand(smach.State):
 
         if (b >= 0):  # empty string is checked here and if the number is in the string also
             cmd = msg_split[b]  # contient le mot qui est dans le dictionnaire
-            self.pub.publish(cmd)
-            return True
+            return cmd
         else:
-            return False
+            return None
 
     def execute(self, userdata):
         # Assumption for now: wait until the user provides *one* of the available commands. Stay in this state until this is true.
@@ -53,18 +52,19 @@ class GetCommand(smach.State):
         # TODO: LOGINFO for the command type.
         # TODO later: after 10 seconds in this state, return outcome_unknowncommand
         self.msg=''
-        begin=time.time()
-        end=0
-        while ((begin+10)>end):
+        begin=rospy.get_rostime()
+        end=rospy.get_rostime()
+        while (end - begin).to_sec() < 10:
             if (self.msg != ''):
-                if (self.command_in_dictionnary(self.msg)):
+                cmd = self.command_in_dictionnary(self.msg)
+                if (cmd):
                     rospy.loginfo('This command exist yet.')
-                    #pub.publish(self.msg) !!!!!!!!!!!!!
+                    self.pub.publish(cmd)
                     self.msg=''
                     return GetCommand.outcome_getcommand
                 elif(self.msg=='list'):
                     return GetCommand.outcome_list
-            end=time.time()
+            end=rospy.get_rostime()
         rospy.loginfo('This command does not exist yet.')
         return GetCommand.outcome_unknowncommand
 
