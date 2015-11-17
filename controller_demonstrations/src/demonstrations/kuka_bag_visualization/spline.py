@@ -7,6 +7,7 @@ class Spline(object):
         self.points = []
         self.coef = []
         self.nbPoints = 0
+
     def __str__(self):
         return "points :" + str(self.points) + "\ncoefficients :\n" + str(self.coef) + "\nnumber of point :" + str(self.nbPoints)
 

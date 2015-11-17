@@ -55,8 +55,7 @@ def load(name):
     return trajectory_data, original_data
 
 
-
-def plotPoints(data, name, a,b):
+def plotPoints(data, name, a, b):
     # create new figure in 3D
     fig = plt.figure()
     ax = fig.gca(projection='3d')
@@ -84,31 +83,12 @@ def plotPoints(data, name, a,b):
     plt.ion()
     plt.show()
 
-    # def animate(i):
-    #     ax.view_init(elev=10., azim=i)
-
-    # def init():
-    #     # plot points and add label
-    #     ax.plot([d.pose.position.x for d in data[:]],
-    #             [d.pose.position.y for d in data[:]],
-    #             [d.pose.position.z for d in data[:]], c='b', label=name)
-
-    #     #plot a   at the start and at the end
-    #     ax.scatter(data[0].pose.position.x,  data[0].pose.position.y,  data[0].pose.position.z,  s=50, c='g', marker='o')
-    #     ax.scatter(data[-1].pose.position.x,  data[-1].pose.position.y,  data[-1].pose.position.z,  s=100, c='g', marker='x')
-
-
-    # # Animate
-    # anim = animation.FuncAnimation(fig, animate, init_func=init, frames=60, interval=20, blit=True)
-    # anim.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
-
-    
-
     return ax
+
 
 def plotSpline3D_correction(data, ax, factor, start_stop):
     (start, stop) = start_stop
-    for (s1,s2) in zip(start, stop):
+    for (s1, s2) in zip(start, stop):
         plotSpline3D(data[s1:s2+1:], ax, factor)
 
 
@@ -190,16 +170,6 @@ def analyzeData(trajectory_data, original_data, precision_factor=0.4, return_typ
         rospy.logerr("error in function analyzeData, return_type is wrong")
         return 0, 0
 
-
-#reflexion here : maybe the algorithm would more precise with a filter : if 2 points (start then stop) are too closed, we remove then.
-#or better : if 2 points are too closed and the dot product is not so low, keep them, but if they are closed with a high dot product remove them.
-# maybe find a formula ?
-#this can be done with another correction-factor, maybe a factor that tell us up to how many points the start and stop is validate ?
-#after reflexion it's quite like a lowpass filter for big amplitude wave.
-
-#another thing :  when we found a jump on the curve that is supposed to be a jump, the start and stops are in the middle of the jump, should correct it
-
-#another thing, frequency analysis ??
 
 def analyzeData_online(actual_point, Desired_Velocity, is_in, precision_factor=0.4):
     # function that return a string based on the same algorithm as analyzeData(..)
@@ -316,8 +286,6 @@ def dotProdPlot(vel1, vel2, name):
     # show result
     plt.ion()
     plt.show()
-
-
 
 
 def run():

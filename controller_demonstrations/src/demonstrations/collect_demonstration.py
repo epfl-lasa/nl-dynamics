@@ -19,7 +19,7 @@ from nl_msgs.msg import AnchoredDemonstration
 from nl_msgs.msg import AttractorDemonstration
 from nl_msgs.msg import Correction
 from nl_msgs.msg import SplineClass
-from nl_msgs.srv import Com
+from nl_msgs.srv import Demonstration
 
 from geometry_msgs.msg import Point
 
@@ -28,6 +28,7 @@ _bag_filename_ = 'out.bag'
 _discard_static_points_ = True
 _plot_ = False
 _format_ = 'points'
+
 
 def set_global_var(_num_desired_points, _bag_filename, _discard_static_points, _plot, _format):
     global _num_desired_points_
@@ -44,6 +45,7 @@ def set_global_var(_num_desired_points, _bag_filename, _discard_static_points, _
 
     global _format_
     _format_ = _format
+
 
 def get_global_var():
     return (_num_desired_points_, _bag_filename_, _discard_static_points_, _plot_, _format_)
@@ -97,17 +99,18 @@ class CollectDemonstration(object):
 
         rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
-    def do(self, discard_static_points, plot=False, format_='points'):
+    def do(self, discard_static_points, plot=False, format='points'):
         rospy.loginfo('Listening to messages on {} {} channels'.format(
             CollectDemonstration.channel, CollectDemonstration.channel2))
 
-        if format_ != 'spline' and format_ != 'points':
+        if format != 'spline' and format != 'points':
             rospy.logwarn('wrong format, taking "points" one')
-            format_ = 'points'
+            format = 'points'
 
         # Spin but do not catch keyboard interrupt exception -- just move onto
         # processing & saving the demonstration.
         #rospy.spin()
+
         try:
             while self._collecting_data:
                 rospy.sleep(0.01)
@@ -141,9 +144,9 @@ class CollectDemonstration(object):
                               'desired': self._velocity_vector}
 
         (processed_anchor, processed_data) = self.process_demonstration(
-            demonstration_data, discard_static_points, plot, format_)
+            demonstration_data, discard_static_points, plot, format)
 
-        if format_ == 'points':
+        if format == 'points':
             msg = self.make_message_point(processed_anchor, processed_data)
         else:
             msg = self.make_message_spline(processed_anchor, processed_data)
@@ -157,7 +160,7 @@ class CollectDemonstration(object):
 
     def process_demonstration(self, demonstration_data,
                               discard_static_points,
-                              plot=True, format_='points'):
+                              plot=True, format='points'):
         """Process demonstration data.
 
         Downsample the data to only keep a smaller number of them, and subtract
@@ -235,7 +238,7 @@ class CollectDemonstration(object):
                              len(downsampled)))
 
         # return of the function
-        if format_ == 'points':
+        if format == 'points':
             (anchor_new, corrections_new) = self.remove_anchor_pose(anchor, newData)
         else:
             corrections_new = []
@@ -249,13 +252,6 @@ class CollectDemonstration(object):
             from mpl_toolkits.mplot3d import Axes3D
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
-
-            # # downsampling data for a better visibility
-            # original_x = downsampling([f.pose.position.x for f in downsampled], self._num_desired_points)
-            # original_y = downsampling([f.pose.position.y for f in downsampled], self._num_desired_points)
-            # original_z = downsampling([f.pose.position.z for f in downsampled], self._num_desired_points)
-
-            # ax.scatter(original_x, original_y, original_z, c='r', zorder=2)
 
             # plotting new position
             (temp, downsampled) = self.remove_anchor_pose(anchor, downsampled)
@@ -277,11 +273,6 @@ class CollectDemonstration(object):
 
             #display a star at the beggining
             ax.scatter(shifted_x[0], shifted_y[0], shifted_z[0], s=150, c='r', marker='*', zorder=3)
-            #ax.scatter(original_x[0], original_y[0], original_z[0], s=150, c='b', marker='*', zorder=3)
-
-            #plotting anchor old position in a black point
-            #ax.scatter(anchor.pose.position.x, anchor.pose.position.y,
-            #           anchor.pose.position.z, c='k', zorder=2)
 
             #plotting anchor new position in a black point
             ax.scatter(anchor_new.pose.position.x,
@@ -293,7 +284,7 @@ class CollectDemonstration(object):
             ax.set_ylabel('Y axis')
             ax.set_zlabel('Z axis')
             ax.axis('equal')
-            
+
             plt.ion()
             plt.show()
 
@@ -301,12 +292,6 @@ class CollectDemonstration(object):
             plt.close()
 
             pass
-
-        #raw_input('press enter')
-        #forcePlot(downsampled)
-
-        # Note: if you need the header time:
-        # times = [x.header.stamp.to_time() for x in demonstration_data['corrections']]
 
         return (anchor_new, corrections_new)
 
@@ -410,7 +395,6 @@ class CollectDemonstration(object):
             for (coef, point) in zip(spl.coef, spl.points):
                 temp2 = SplineClass()
                 temp2.coefficients = coef
-                #temp2.points = point
                 temp.z_splines.append(temp2)
 
             temp.number_points = spl.nbPoints
@@ -466,11 +450,6 @@ class CollectDemonstration(object):
 
         # automatic stop when collecting data
         if np.sqrt(data.twist.linear.x**2 + data.twist.linear.y**2 + data.twist.linear.z**2) < 0.18:
-            # the norm of the desired velocity is quite exactly 0.20 all the time, exept when it reaching the attractve point,
-            #   so when it goes under 0.20, we can detect that we are getting close to the final point. why 0.18 ?
-            #   because by stopping in an early we cut all the last point off and at the same time, get ride of all the
-            #   start-stop parasite point at the end of the curve. The 0.18 represent the sphere cut.
-            # rospy.signal_shutdown('last point reach, starting analyse') # don't do that, it will stop the service-request-return
             self._collecting_data = False
 
 
@@ -505,73 +484,38 @@ def run_service(arguments):
                         help='Filename of output bag file (default=out.bag).')
     parser.add_argument('--num', default=50, type=int,
                         help='Number of demonstration points to store for each corrections (default=50).')
-    #parser.add_argument('words', default='default', metavar='words',
-    #                    nargs='+',
-    #                    help='Demonstration word(s), required.')
     parser.add_argument('--discard_static', action='store_true',
                         dest='discard_static_points',
                         default=True,
                         help='Discard any points without motion from the start (default=True).')
     parser.add_argument('--no-discard_static',
                         dest='discard_static_points', action='store_false')
-
+    parser.add_argument('--word', default='', metavar='WORD',
+                        help='Format for result, can be "spline" or "points", default="points"')
     parser.add_argument('--plot', default=False, action='store_true',
                         help='Plot demonstration (default=False).')
     parser.add_argument('--format', default='points', metavar='FORMAT',
                         help='Format for result, can be "spline" or "points", default="points"')
     args = parser.parse_args(arguments)
 
-    #demonstrator = CollectDemonstration(args.words, args.num, args.output, args.discard_static_points, args.plot, args.format)
-    # store parameters
-    set_global_var(args.num, args.output, args.discard_static_points, args.plot, args.format)
+    # checking if a word was enter
+    if len(args.word) > 0:
+        rospy.init_node('waiting_for_request_to_start_server')
+        demonstrator = CollectDemonstration(args.word, args.num, args.output)
+        demonstrator.do(args.discard_static_points, args.plot, args.format)
 
-    # initial the node and add service usability
-    rospy.init_node('waiting_for_request_to_start_server')
-    s = rospy.Service('Correction_Isolation', Com, handle_service)
-    print 'ready to receive request'
+    else:
+        # store parameters
+        set_global_var(args.num, args.output, args.discard_static_points, args.plot, args.format)
 
-    # wait for request
-    try:
+        # initial the node and add service usability
+        rospy.init_node('waiting_for_request_to_start_server')
+        s = rospy.Service('Correction_Isolation', Demonstration, handle_service)
+        print 'ready to receive request'
+
+        # wait for request
         rospy.spin()
-    except KeyboardInterrupt:
-        print 'User stoped program, ending service'
-        rospy.signal_shutdown()
-        exit
-
-
-# def run_command(arguments):
-#     parser = argparse.ArgumentParser(
-#         description=('Collect demonstrations from the robot. Specify the words '
-#                      'on the command line. Optionally change the filename as well'))
-#     parser.add_argument('--output', default='out.bag', metavar='output_filename',
-#                         help='Filename of output bag file (default=out.bag).')
-#     parser.add_argument('--num', default=50, type=int,
-#                         help='Number of demonstration points to store for each corrections (default=50).')
-#     parser.add_argument('words', default='default', metavar='words',
-#                         nargs='+',
-#                         help='Demonstration word(s), required.')
-#     parser.add_argument('--discard_static', action='store_true',
-#                         dest='discard_static_points',
-#                         default=True,
-#                         help='Discard any points without motion from the start (default=True).')
-#     parser.add_argument('--no-discard_static',
-#                         dest='discard_static_points', action='store_false')
-
-#     parser.add_argument('--plot', default=False, action='store_true',
-#                         help='Plot demonstration (default=False).')
-#     parser.add_argument('--format', default='points', metavar='FORMAT',
-#                         help='Format for result, can be "spline" or "points", default="points"')
-#     args = parser.parse_args(arguments)
-
-#     demonstrator = CollectDemonstration(args.words, args.num, args.output, args.discard_static_points, args.plot, args.format)
-#     demonstrator.do(args.discard_static_points, args.plot, args.format)
-
-#     raw_input('press enter')
-
-#     return
-
 
 if __name__ == '__main__':
     arguments = sys.argv[1:]  # argv[0] is the program name.
     run_service(arguments)
-    # run_command(arguments)
