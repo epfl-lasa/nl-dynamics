@@ -8,13 +8,7 @@ TODO for Cyril's project:
  - acknowledge substring containing 'command' in ReadyState (DONE)
  - publish the robot desired speed to a topic: /robot_control/desired_speed (DONE)
  - publish the command to execute to a topic: /robot_control/desired_command (DONE)
- 
-
-
-
-
-
- - move the SayState into its own python file (import it to use it)
- - create a smach.StateMachine out of the ChangeSpeed states (the entire branch).
-   - The ChangeSpeedMachine will be a single state in the UserInteraction machine
-   - Move the ChangeSpeedMachine into its own python file.
+ - move the SayState into its own python file (import it to use it) (DONE)
+ - create a smach.StateMachine out of the ChangeSpeed states (the entire branch). (DONE)
+   - The ChangeSpeedMachine will be a single state in the UserInteraction machine (DONE)
+   - Move the ChangeSpeedMachine into its own python file. (DONE)
