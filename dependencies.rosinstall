@@ -1,4 +1,0 @@
-- git: {local-name: robot-toolkit, uri: 'git@github.com:epfl-lasa/robot-toolkit.git'}
-- git: {local-name: passive-ds-control, uri: 'git@github.com:epfl-lasa/passive-ds-control.git'}
-- git: {local-name: pocketsphinx-ros, uri: 'git@github.com:felixduvallet/pocketsphinx.git'}
-- git: {local-name: audio-common-felix, uri: 'git@github.com:felixduvallet/audio_common.git'}
