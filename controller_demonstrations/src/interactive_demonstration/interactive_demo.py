@@ -11,6 +11,7 @@ from demo_collection import DemoCollectionMachine
 from say_state import SayState
 from branch_changingspeed import ChangingSpeedBranch
 from branch_gettingcommand import GettingCommandBranch
+from branch_teachingcommand import TeachingCommandBranch
 #from branch_changespeed import
 
 
@@ -21,8 +22,9 @@ class ReadyState(smach.State):
     outcome_success = 'success'
     outcome_askingspeed = 'askingspeed'
     outcome_askcommand = 'askcommand'
+    outcome_teach = 'teach'
     outcomes = [outcome_ready, outcome_finished, outcome_success,
-                outcome_askingspeed, outcome_askcommand]
+                outcome_askingspeed, outcome_askcommand, outcome_teach]
 
     def __init__(self):
         # Again, specify the outcomes.
@@ -58,6 +60,9 @@ class ReadyState(smach.State):
                 elif (msg_split[i] == 'collect'):
                     rospy.loginfo('The show will go on')
                     return ReadyState.outcome_ready
+                elif (msg_split[i] == 'teach'):
+                    rospy.loginfo('Now we teach !')
+                    return ReadyState.outcome_teach
 
     def callback(self, data):
         # This is the callback for the subscribed topic.
@@ -94,6 +99,9 @@ class UserInteraction(smach.StateMachine):
         branchcommand_name = 'Giving Command'
         branchcommand_machine = GettingCommandBranch()
 
+        branchteach_name = 'Teaching Command'
+        branchteach_machine = TeachingCommandBranch()
+
         finished_state = SayState("I am finished")
         finished_name = 'Finishing'
 
@@ -114,7 +122,8 @@ class UserInteraction(smach.StateMachine):
                                   ReadyState.outcome_finished: finished_name,
                                   ReadyState.outcome_success: hw_name,
                                   ReadyState.outcome_askingspeed: branchspeed_name,
-                                  ReadyState.outcome_askcommand: branchcommand_name})
+                                  ReadyState.outcome_askcommand: branchcommand_name,
+                                  ReadyState.outcome_teach: branchteach_name})
 
             # Here the connected state is actually a whole other
             # StateMachine. This is valid as long as its outcomes are properly
@@ -129,12 +138,11 @@ class UserInteraction(smach.StateMachine):
             self.add(branchcommand_name, branchcommand_machine,
                     transitions={GettingCommandBranch.outcome_success: hw_name})
 
+            self.add(branchteach_name, branchteach_machine,
+                    transitions={TeachingCommandBranch.outcome_success: hw_name})
+
             self.add(finished_name, finished_state,
                     transitions={SayState.outcome_success: UserInteraction.outcome_success})
-
-
-            # Giving a command to do States
-
 
         pass
 

@@ -3,6 +3,7 @@
 import rospy
 import smach
 import std_msgs
+import time
 
 from say_state import SayState
 
@@ -16,12 +17,13 @@ class GetTeachCommand(smach.State):
         smach.State.__init__(self, outcomes=GetTeachCommand.outcomes)
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
+        self.cmd=''
 
     def execute(self, userdata):
         self.cmd=''
         while(self.cmd==''):
             rospy.sleep(0.5)
-            return GetTeachCommand.outcome_commandteached
+        return GetTeachCommand.outcome_commandteached
 
     def current_command(self):
         currentcommand=self.cmd
@@ -42,14 +44,20 @@ class RightOrWrong(smach.State):
         smach.State.__init__(self, outcomes=RightOrWrong.outcomes)
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
+        self.cmd=''
 
     def execute(self, userdata):
-        if(self.cmd=='Yes'):
-            return RightOrWrong.outcome_success
-        elif(self.cmd=='No'):
-            return RightOrWrong.outcome_failure
-        else:
-            return RightOrWrong.outcome_explanation
+        self.cmd=''
+        begin=rospy.get_rostime()
+        end=rospy.get_rostime()
+        while (end - begin).to_sec() < 10:
+            if(self.cmd=='Right'):
+                return RightOrWrong.outcome_success
+            elif(self.cmd=='Wrong'):
+                return RightOrWrong.outcome_failure
+            rospy.sleep(0.5)
+            end=rospy.get_rostime()
+        return RightOrWrong.outcome_explanation
 
     def callback(self, data):
         self.cmd=data.data
@@ -62,8 +70,12 @@ class Demonstration(smach.State):
 
     def __init__(self):
         smach.State.__init__(self, outcomes=Demonstration.outcomes)
+        topic_sub = '/nl_command_parsed'
+        rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
+        self.cmd=''
 
     def execute(self, userdata):
+        self.cmd=''
         while(self.cmd!='Start'):
             rospy.sleep(0.5)
             while(self.cmd!='Stop'):
@@ -76,46 +88,51 @@ class Demonstration(smach.State):
 class GetConfirmation(smach.State):
     outcome_success ='Success'
     outcome_failure ='Failure'
-    outcome_quitteaching = 'Quit Teaching'
     outcome_othertry = 'Other Try'
 
-    outcomes = [outcome_success, outcome_failure, outcome_quitteaching, outcome_othertry]
+    outcomes = [outcome_success, outcome_failure, outcome_othertry]
 
     def __init__(self):
         smach.State.__init__(self, outcomes=GetConfirmation.outcomes)
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
+        self.cmd=''
 
     def execute(self, userdata):
-        if(self.cmd=='Yes'):
-            return RightOrWrong.outcome_success
-        elif(self.cmd=='No'):
-            return RightOrWrong.outcome_failure
-        else:
-            return RightOrWrong.outcome_othertry
+        self.cmd=''
+        begin=rospy.get_rostime()
+        end=rospy.get_rostime()
+        while (end - begin).to_sec() < 10:
+            if(self.cmd=='Right'):
+                return GetConfirmation.outcome_success
+            elif(self.cmd=='Retry'):
+                return GetConfirmation.outcome_othertry
+            rospy.sleep(0.5)
+            end=rospy.get_rostime()
+        return GetConfirmation.outcome_success
 
     def callback(self, data):
         self.cmd=data.data
 
 
-class TeachingCommandMachine(smach.StateMachine):
+class TeachingCommandBranch(smach.StateMachine):
     outcome_success = 'success'
     outcome_failure = 'failure'
     outcomes = [outcome_success, outcome_failure]
 
     def __init__(self):
 
-        super(TeachingCommandMachine, self).__init__(
-            outcomes=TeachingCommandMachine.outcomes)
+        super(TeachingCommandBranch, self).__init__(
+            outcomes=TeachingCommandBranch.outcomes)
 
         askteachcommand_name='Which command ?'
         askteachcommand_state=SayState('Which command would you like to teach me ?')
 
         getteachcommand_name='Get Command'
-        getteachcommand_state=GetTeachCommand()  #bidouillage
+        getteachcommand_state=GetTeachCommand()
 
         confirmteachcommand_name='Right command ?'
-        confirmteachcommand_state=SayState('Are you going to teach ') + getteachcommand_state.current_command())
+        confirmteachcommand_state=SayState('Are you going to teach ' + getteachcommand_state.current_command())
 
         rw_name='Right or Wrong'
         rw_state=RightOrWrong()
@@ -164,8 +181,8 @@ class TeachingCommandMachine(smach.StateMachine):
                      transitions={SayState.outcome_success: getconfirmation_name})
 
             self.add(getconfirmation_name, getconfirmation_state,
-                     transitions={GetConfirmation.outcome_success: TeachingCommandMachine.outcome_success,
-                                  GetConfirmation.outcome_failure: TeachingCommandMachine.outcome_failure,
+                     transitions={GetConfirmation.outcome_success: TeachingCommandBranch.outcome_success,
+                                  GetConfirmation.outcome_failure: TeachingCommandBranch.outcome_failure,
                                   GetConfirmation.outcome_othertry: startdemonstration_name})
 
 
@@ -175,7 +192,7 @@ if __name__ == '__main__':
     import smach_ros
     rospy.init_node('interactive_demo')
 
-    machine = TeachingCommandMachine()
+    machine = TeachingCommandBranch()
 
     # Visualize the machine.
     machine_viz = smach_ros.IntrospectionServer(
