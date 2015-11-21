@@ -4,6 +4,7 @@ import rospy
 import smach
 import std_msgs
 import time
+from sound_play.libsoundplay import SoundClient
 
 from say_state import SayState
 
@@ -11,23 +12,31 @@ from say_state import SayState
 class GetTeachCommand(smach.State):
 
     outcome_commandteached ='commandteached'
+    outcome_misspelling='misspelling'
     outcomes = [outcome_commandteached]
 
-    def __init__(self): #bidouillage, ajout d'un argument inutile to make it works
+    def __init__(self):
         smach.State.__init__(self, outcomes=GetTeachCommand.outcomes)
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
-        self.cmd=''
+        
+        self.soundhandle = SoundClient()
+        self._message = 'Is the following the right command '  # Store the message to say later.
+
+    def speaking(self, text):
+        self.soundhandle.say(text)
 
     def execute(self, userdata):
         self.cmd=''
+        confirmation=''
         while(self.cmd==''):
             rospy.sleep(0.5)
-        return GetTeachCommand.outcome_commandteached
-
-    def current_command(self):
-        currentcommand=self.cmd
-        return currentcommand
+            confirmation=self.speaking(message)
+            while(confirmation==''):
+                if(confirmation=='yes' OR confirmation=='right'):
+                        return GetTeachCommand.outcome_commandteached
+                elif(confirmation=='no' OR confirmation=='wrong'):
+                        return GetTeachCommand.outcome_misselling
 
     def callback(self, data):
         self.cmd = data.data
@@ -131,9 +140,6 @@ class TeachingCommandBranch(smach.StateMachine):
         getteachcommand_name='Get Command'
         getteachcommand_state=GetTeachCommand()
 
-        confirmteachcommand_name='Right command ?'
-        confirmteachcommand_state=SayState('Are you going to teach ' + getteachcommand_state.current_command())
-
         rw_name='Right or Wrong'
         rw_state=RightOrWrong()
 
@@ -158,10 +164,8 @@ class TeachingCommandBranch(smach.StateMachine):
                      transitions={SayState.outcome_success: getteachcommand_name})
 
             self.add(getteachcommand_name, getteachcommand_state,
-                     transitions={GetTeachCommand.outcome_commandteached: confirmteachcommand_name})
-
-            self.add(confirmteachcommand_name, confirmteachcommand_state,
-                     transitions={SayState.outcome_success: rw_name})
+                     transitions={GetTeachCommand.outcome_commandteached: rw_name
+                                  GetTeachCommand.outcome_misselling: askteachcommand_name})
 
             self.add(rw_name, rw_state,
                      transitions={RightOrWrong.outcome_success: startdemonstration_name,
