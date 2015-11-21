@@ -13,12 +13,13 @@ class GetTeachCommand(smach.State):
 
     outcome_commandteached ='commandteached'
     outcome_misspelling='misspelling'
-    outcomes = [outcome_commandteached]
+    outcomes = [outcome_commandteached, outcome_misspelling]
 
     def __init__(self):
         smach.State.__init__(self, outcomes=GetTeachCommand.outcomes)
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
+        self.cmd=''
         
         self.soundhandle = SoundClient()
         self._message = 'Is the following the right command '  # Store the message to say later.
@@ -28,48 +29,22 @@ class GetTeachCommand(smach.State):
 
     def execute(self, userdata):
         self.cmd=''
-        confirmation=''
         while(self.cmd==''):
             rospy.sleep(0.5)
-            confirmation=self.speaking(message)
-            while(confirmation==''):
-                if(confirmation=='yes' OR confirmation=='right'):
-                        return GetTeachCommand.outcome_commandteached
-                elif(confirmation=='no' OR confirmation=='wrong'):
-                        return GetTeachCommand.outcome_misselling
+            if(self.cmd!=''):
+                rospy.sleep(0.5)
+                rospy.loginfo(self._message + self.cmd)
+                confirmation=self.speaking(self._message + self.cmd)
+                self.cmd=''
+                while(self.cmd!='yes' or self.cmd!='no' or self.cmd!='right' or self.cmd!='wrong'):
+                        if(self.cmd=='yes' or self.cmd=='right'):
+                                rospy.loginfo('YEAAAAAAAAH')
+                                return GetTeachCommand.outcome_commandteached
+                        elif(self.cmd=='no' or self.cmd=='wrong'):
+                                return GetTeachCommand.outcome_misspelling
 
     def callback(self, data):
         self.cmd = data.data
-
-
-class RightOrWrong(smach.State):
-
-    outcome_success ='success'
-    outcome_failure ='failure'
-    outcome_explanation='explanation'
-    outcomes = [outcome_success, outcome_failure, outcome_explanation]
-
-    def __init__(self):
-        smach.State.__init__(self, outcomes=RightOrWrong.outcomes)
-        topic_sub = '/nl_command_parsed'
-        rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
-        self.cmd=''
-
-    def execute(self, userdata):
-        self.cmd=''
-        begin=rospy.get_rostime()
-        end=rospy.get_rostime()
-        while (end - begin).to_sec() < 10:
-            if(self.cmd=='Right'):
-                return RightOrWrong.outcome_success
-            elif(self.cmd=='Wrong'):
-                return RightOrWrong.outcome_failure
-            rospy.sleep(0.5)
-            end=rospy.get_rostime()
-        return RightOrWrong.outcome_explanation
-
-    def callback(self, data):
-        self.cmd=data.data
 
 
 class Demonstration(smach.State):
@@ -140,9 +115,6 @@ class TeachingCommandBranch(smach.StateMachine):
         getteachcommand_name='Get Command'
         getteachcommand_state=GetTeachCommand()
 
-        rw_name='Right or Wrong'
-        rw_state=RightOrWrong()
-
         startdemonstration_name='Start Demonstration'
         startdemonstration_state=SayState('Ok, say Start to begin the recording and Stop to end it')
 
@@ -164,16 +136,10 @@ class TeachingCommandBranch(smach.StateMachine):
                      transitions={SayState.outcome_success: getteachcommand_name})
 
             self.add(getteachcommand_name, getteachcommand_state,
-                     transitions={GetTeachCommand.outcome_commandteached: rw_name
-                                  GetTeachCommand.outcome_misselling: askteachcommand_name})
+                     transitions={GetTeachCommand.outcome_commandteached: startdemonstration_name,
+                                  GetTeachCommand.outcome_misspelling: askteachcommand_name})
 
-            self.add(rw_name, rw_state,
-                     transitions={RightOrWrong.outcome_success: startdemonstration_name,
-                                  RightOrWrong.outcome_failure: askteachcommand_name,
-                                  RightOrWrong.outcome_explanation: explanation_name})
-
-            self.add(explanation_name, explanation_state,
-                     transitions={SayState.outcome_success: rw_name})
+         
 
             self.add(startdemonstration_name, startdemonstration_state,
                      transitions={SayState.outcome_success: demonstration_name})
