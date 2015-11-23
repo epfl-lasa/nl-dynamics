@@ -7,48 +7,13 @@ import time
 from sound_play.libsoundplay import SoundClient
 
 from say_state import SayState
-
-class GetTeachCommand(smach.State):
-
-    outcome_commandteached ='commandteached'
-    outcome_misspelling='misspelling'
-    outcomes = [outcome_commandteached, outcome_misspelling]
-
-    def __init__(self):
-        smach.State.__init__(self, outcomes=GetTeachCommand.outcomes)
-        topic_sub = '/nl_command_parsed'
-        rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
-        self.cmd=''
-
-        self.soundhandle = SoundClient()
-        self._message = 'Is the following the right command '
-
-    def speaking(self, text):
-        self.soundhandle.say(text)
-
-    def execute(self, userdata):
-        self.cmd=''
-        while(self.cmd==''):
-            rospy.sleep(0.5)
-            if(self.cmd!=''):
-                rospy.sleep(0.5)
-                rospy.loginfo(self._message + self.cmd)
-                confirmation=self.speaking(self._message + self.cmd)
-                self.cmd=''
-                while(self.cmd!='yes' or self.cmd!='no' or self.cmd!='right' or self.cmd!='wrong'):
-                        if(self.cmd=='yes' or self.cmd=='right'):
-                                return GetTeachCommand.outcome_commandteached
-                        elif(self.cmd=='no' or self.cmd=='wrong'):
-                                return GetTeachCommand.outcome_misspelling
-
-    def callback(self, data):
-        self.cmd = data.data
-
+from ConfirmationState import ConfirmationState
 
 class Demonstration(smach.State):
 
-    outcome_demonstration ='Demonstration'
-    outcomes = [outcome_demonstration]
+    outcome_demonstration = 'Demonstration'
+    outcome_reset = 'Reset'
+    outcomes = [outcome_demonstration, outcome_reset]
 
     def __init__(self):
         smach.State.__init__(self, outcomes=Demonstration.outcomes)
@@ -64,35 +29,8 @@ class Demonstration(smach.State):
                 while(self.cmd!='stop'):
                     rospy.sleep(0.5)
                 return Demonstration.outcome_demonstration
-
-    def callback(self, data):
-        self.cmd=data.data
-
-class GetConfirmation(smach.State):
-    outcome_success ='Success'
-    outcome_failure ='Failure'
-    outcome_othertry = 'Other Try'
-
-    outcomes = [outcome_success, outcome_failure, outcome_othertry]
-
-    def __init__(self):
-        smach.State.__init__(self, outcomes=GetConfirmation.outcomes)
-        topic_sub = '/nl_command_parsed'
-        rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
-        self.cmd=''
-
-    def execute(self, userdata):
-        self.cmd=''
-        begin=rospy.get_rostime()
-        end=rospy.get_rostime()
-        while (end - begin).to_sec() < 10:
-            if(self.cmd=='right'):
-                return GetConfirmation.outcome_success
-            elif(self.cmd=='retry'):
-                return GetConfirmation.outcome_othertry
-            rospy.sleep(0.5)
-            end=rospy.get_rostime()
-        return GetConfirmation.outcome_success
+            elif(self.cmd=='reset'):
+                return Demonstration.outcome_reset
 
     def callback(self, data):
         self.cmd=data.data
@@ -100,8 +38,8 @@ class GetConfirmation(smach.State):
 
 class TeachingCommandBranch(smach.StateMachine):
     outcome_success = 'success'
-    outcome_failure = 'failure'
-    outcomes = [outcome_success, outcome_failure]
+    outcome_reset = 'reset'
+    outcomes = [outcome_success, outcome_reset]
 
     def __init__(self):
 
@@ -111,48 +49,41 @@ class TeachingCommandBranch(smach.StateMachine):
         askteachcommand_name='Which command ?'
         askteachcommand_state=SayState('Which command would you like to teach me ?')
 
-        getteachcommand_name='Get Command'
-        getteachcommand_state=GetTeachCommand()
-
         startdemonstration_name='Start Demonstration'
         startdemonstration_state=SayState('Ok, say Start to begin the recording and Stop to end it')
 
-        demonstration_name="Demonstration"
-        demonstration_state=Demonstration() #create class
-        #SHould this class begin a timer to know when the demonstration is over ?
+        getconfirmationname_name='Get Confirmation Command Name'
+        getconfirmationname_state=ConfirmationState('Do you want to record the command name ?',1)
 
         explanation_name='Explanation'
         explanation_state=SayState('Say Yes or No please')
 
-        confirmation_name='Confirmation'
-        confirmation_state=SayState('Do you want me to save this new command ?')
+        demonstration_name='Demonstration'
+        demonstration_state=Demonstration()
 
-        getconfirmation_name='Get Confirmation'
-        getconfirmation_state=GetConfirmation()
+        getconfirmationtrajectory_name='Get Confirmation Command Trajectory'
+        getconfirmationtrajectory_state=ConfirmationState('Do you want to record this trajectory ?',2)
 
         with self:
             self.add(askteachcommand_name, askteachcommand_state,
-                     transitions={SayState.outcome_success: getteachcommand_name})
+                     transitions={SayState.outcome_success: getconfirmationname_name})
 
-            self.add(getteachcommand_name, getteachcommand_state,
-                     transitions={GetTeachCommand.outcome_commandteached: startdemonstration_name,
-                                  GetTeachCommand.outcome_misspelling: askteachcommand_name})
-
-
+            self.add(getconfirmationname_name, getconfirmationname_state,
+                     transitions={ConfirmationState.outcome_success: startdemonstration_name,
+                                  ConfirmationState.outcome_reset: TeachingCommandBranch.outcome_reset,
+                                  ConfirmationState.outcome_redostate: askteachcommand_name})
 
             self.add(startdemonstration_name, startdemonstration_state,
                      transitions={SayState.outcome_success: demonstration_name})
 
             self.add(demonstration_name, demonstration_state,
-                     transitions={Demonstration.outcome_demonstration: confirmation_name})
+                     transitions={Demonstration.outcome_demonstration: getconfirmationtrajectory_name,
+                                  Demonstration.outcome_reset: TeachingCommandBranch.outcome_reset})
 
-            self.add(confirmation_name, confirmation_state,
-                     transitions={SayState.outcome_success: getconfirmation_name})
-
-            self.add(getconfirmation_name, getconfirmation_state,
-                     transitions={GetConfirmation.outcome_success: TeachingCommandBranch.outcome_success,
-                                  GetConfirmation.outcome_failure: TeachingCommandBranch.outcome_failure,
-                                  GetConfirmation.outcome_othertry: startdemonstration_name})
+            self.add(getconfirmationtrajectory_name, getconfirmationtrajectory_state,
+                     transitions={ConfirmationState.outcome_success: TeachingCommandBranch.outcome_success,
+                                  ConfirmationState.outcome_reset: TeachingCommandBranch.outcome_reset,
+                                  ConfirmationState.outcome_redostate: startdemonstration_name})
 
 
 

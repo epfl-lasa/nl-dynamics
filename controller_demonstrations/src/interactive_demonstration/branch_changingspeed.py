@@ -5,6 +5,7 @@ import smach
 import std_msgs
 
 from say_state import SayState
+from ConfirmationState import ConfirmationState
 
 
 class ChangeSpeed(smach.State):
@@ -72,6 +73,9 @@ class ChangingSpeedBranch(smach.StateMachine):
 
         speedchanged_state = ChangeSpeed()
         speedchanged_name = 'Receiving Speed'
+
+        confirmationstate_name = "Confirmation"
+        confirmationstate_state = ConfirmationState('Do you want to record this velocity to',1)
 
         validatespeed_state = SayState('New Velocity implemented')
         validatespeed_name = 'Aknowledge Speed Changed'

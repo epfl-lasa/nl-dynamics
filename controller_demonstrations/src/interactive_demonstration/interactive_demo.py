@@ -126,7 +126,8 @@ class UserInteraction(smach.StateMachine):
                     transitions={GettingCommandBranch.outcome_success: hw_name})
 
             self.add(branchteach_name, branchteach_machine,
-                    transitions={TeachingCommandBranch.outcome_success: hw_name})
+                    transitions={TeachingCommandBranch.outcome_success: hw_name,
+                                 TeachingCommandBranch.outcome_reset: hw_name})
 
             self.add(finished_name, finished_state,
                     transitions={SayState.outcome_success: UserInteraction.outcome_success})
