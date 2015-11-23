@@ -51,9 +51,9 @@ class RightOrWrong(smach.State):
         begin=rospy.get_rostime()
         end=rospy.get_rostime()
         while (end - begin).to_sec() < 10:
-            if(self.cmd=='Right'):
+            if(self.cmd=='right'):
                 return RightOrWrong.outcome_success
-            elif(self.cmd=='Wrong'):
+            elif(self.cmd=='wrong'):
                 return RightOrWrong.outcome_failure
             rospy.sleep(0.5)
             end=rospy.get_rostime()
@@ -103,9 +103,9 @@ class GetConfirmation(smach.State):
         begin=rospy.get_rostime()
         end=rospy.get_rostime()
         while (end - begin).to_sec() < 10:
-            if(self.cmd=='Right'):
+            if(self.cmd=='right'):
                 return GetConfirmation.outcome_success
-            elif(self.cmd=='Retry'):
+            elif(self.cmd=='retry'):
                 return GetConfirmation.outcome_othertry
             rospy.sleep(0.5)
             end=rospy.get_rostime()
