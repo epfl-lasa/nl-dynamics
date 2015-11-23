@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import rospy
-from nl_msgs.srv import Com
+from nl_msgs.srv import Demonstration
 
 
 def run():
@@ -9,7 +9,7 @@ def run():
     rospy.wait_for_service('Correction_Isolation')
 
     try:
-        isolation = rospy.ServiceProxy('Correction_Isolation', Com)
+        isolation = rospy.ServiceProxy('Correction_Isolation', Demonstration)
         reponse = isolation('testDemonstration')
 
         if reponse:
