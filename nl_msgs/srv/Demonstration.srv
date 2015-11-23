@@ -1,0 +1,5 @@
+# word : the word corresponding to the correction
+
+string word
+---
+bool finish
