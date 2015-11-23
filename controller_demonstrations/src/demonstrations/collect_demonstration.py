@@ -76,8 +76,6 @@ class CollectDemonstration(object):
 
         self._collecting_data = True
 
-        self._fig = plt.figure()
-
         rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
     def do(self):
@@ -233,50 +231,49 @@ class CollectDemonstration(object):
                 corrections_new.append(spline3D(dat))
 
         if self._plot:
-            ax = self._fig.gca()
-            ax.plot(0,0)
-            # ax = self._fig.add_subplot(111, projection='3d')
-            # ax = self._fig.gca(projection = '3d')
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            ax = fig.gca(projection = '3d')
 
-            # # plotting new position
-            # (temp, downsampled) = self.remove_anchor_pose(anchor, downsampled)
+            # plotting new position
+            (temp, downsampled) = self.remove_anchor_pose(anchor, downsampled)
 
-            # # downsampling data for a better visibility
-            # shifted_x = downsampling([f.pose.position.x for f in downsampled], self._num_desired_points)
-            # shifted_y = downsampling([f.pose.position.y for f in downsampled], self._num_desired_points)
-            # shifted_z = downsampling([f.pose.position.z for f in downsampled], self._num_desired_points)
+            # downsampling data for a better visibility
+            shifted_x = downsampling([f.pose.position.x for f in downsampled], self._num_desired_points)
+            shifted_y = downsampling([f.pose.position.y for f in downsampled], self._num_desired_points)
+            shifted_z = downsampling([f.pose.position.z for f in downsampled], self._num_desired_points)
 
-            # ax.scatter(shifted_x, shifted_y, shifted_z, c='b', zorder=2)
+            ax.scatter(shifted_x, shifted_y, shifted_z, c='b', zorder=2)
 
-            # # plotting new compute spline position
-            # if len(newData):
-            #     t = np.linspace(0, 1, self._num_desired_points)
-            #     for dat in listData:
-            #         (temp, dat) = self.remove_anchor_pose(anchor, dat)
-            #         [xx, yy, zz] = getPointsSpline3D(spline3D(dat), t)
-            #         ax.plot(xx, yy, zz, c='g', lw=3, zorder=4)
+            # plotting new compute spline position
+            if len(newData):
+                t = np.linspace(0, 1, self._num_desired_points)
+                for dat in listData:
+                    (temp, dat) = self.remove_anchor_pose(anchor, dat)
+                    [xx, yy, zz] = getPointsSpline3D(spline3D(dat), t)
+                    ax.plot(xx, yy, zz, c='g', lw=3, zorder=4)
 
-            # # display a star at the beggining
-            # ax.scatter(shifted_x[0], shifted_y[0], shifted_z[0], s=150, c='r', marker='*', zorder=3)
+            # display a star at the beggining
+            ax.scatter(shifted_x[0], shifted_y[0], shifted_z[0], s=150, c='r', marker='*', zorder=3)
 
-            # # plotting anchor new position in a black point
-            # ax.scatter(anchor_new.pose.position.x,
-            #            anchor_new.pose.position.y,
-            #            anchor_new.pose.position.z, c='k', zorder=2)
-            # ax.scatter(0, 0, 0, c='r', zorder=2)
+            # plotting anchor new position in a black point
+            ax.scatter(anchor_new.pose.position.x,
+                       anchor_new.pose.position.y,
+                       anchor_new.pose.position.z, c='k', zorder=2)
+            ax.scatter(0, 0, 0, c='r', zorder=2)
 
-            # ax.set_xlabel('X axis')
-            # ax.set_ylabel('Y axis')
-            # ax.set_zlabel('Z axis')
-            # ax.axis('equal')
-
+            ax.set_xlabel('X axis')
+            ax.set_ylabel('Y axis')
+            ax.set_zlabel('Z axis')
+            ax.axis('equal')
 
 
-            #plt.ion()
+
+            plt.ion()
             plt.show()
 
             raw_input('press enter to continue')
-            #plt.close(self._fig)
+            plt.close(fig)
 
         return (anchor_new, corrections_new)
 
