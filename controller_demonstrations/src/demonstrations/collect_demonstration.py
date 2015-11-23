@@ -16,6 +16,7 @@ import numpy as np
 
 from kuka_bag_visualization.kuka_bag_plot import analyzeData, analyzeData_force, forcePlot
 from kuka_bag_visualization.spline import spline3D, getPointsSpline3D, Spline, Spline3D
+from plotting import plotting_handle
 
 from nl_msgs.msg import CartStateStamped
 from nl_msgs.msg import AnchoredDemonstration
@@ -76,7 +77,8 @@ class CollectDemonstration(object):
 
         self._collecting_data = True
 
-        rospy.loginfo('Collecting demonstration for words: {}'.format(words))
+        if len(words) > 0 :
+            rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
     def do(self):
         rospy.loginfo('Listening to messages on {} {} channels'.format(
@@ -231,13 +233,13 @@ class CollectDemonstration(object):
                 corrections_new.append(spline3D(dat))
 
         if self._plot:
+            self._plot = False
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             ax = fig.gca(projection = '3d')
-
             # plotting new position
-            (temp, downsampled) = self.remove_anchor_pose(anchor, downsampled)
 
+            (anchor_new, downsampled) = self.remove_anchor_pose(anchor, downsampled)
             # downsampling data for a better visibility
             shifted_x = downsampling([f.pose.position.x for f in downsampled], self._num_desired_points)
             shifted_y = downsampling([f.pose.position.y for f in downsampled], self._num_desired_points)
@@ -266,8 +268,6 @@ class CollectDemonstration(object):
             ax.set_ylabel('Y axis')
             ax.set_zlabel('Z axis')
             ax.axis('equal')
-
-
 
             plt.ion()
             plt.show()
@@ -478,11 +478,14 @@ def run_service(arguments):
         demonstrator.do()
 
     else:
+        rospy.init_node('waiting_for_request_to_start_server')
+
+        if args.plot:
+            rospy.logwarn('There is an issues with plot, the result will be plot only after the first demonstration')
         
         mydemonstration = CollectDemonstration(args.word, args.num, args.output, args.discard_static_points, args.plot, args.format);
 
         # initial the node and add service usability
-        rospy.init_node('waiting_for_request_to_start_server')
         s = rospy.Service('Correction_Isolation', Demonstration, mydemonstration.handle_service_callback)
         print 'ready to receive request'
 
