@@ -12,3 +12,4 @@ TODO for Cyril's project:
  - create a smach.StateMachine out of the ChangeSpeed states (the entire branch). (DONE)
    - The ChangeSpeedMachine will be a single state in the UserInteraction machine (DONE)
    - Move the ChangeSpeedMachine into its own python file. (DONE)
+
