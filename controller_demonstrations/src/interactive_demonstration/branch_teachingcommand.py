@@ -22,7 +22,7 @@ class GetTeachCommand(smach.State):
         self.cmd=''
         
         self.soundhandle = SoundClient()
-        self._message = 'Is the following the right command '  # Store the message to say later.
+        self._message = 'Is the following the right command '  
 
     def speaking(self, text):
         self.soundhandle.say(text)
@@ -38,7 +38,6 @@ class GetTeachCommand(smach.State):
                 self.cmd=''
                 while(self.cmd!='yes' or self.cmd!='no' or self.cmd!='right' or self.cmd!='wrong'):
                         if(self.cmd=='yes' or self.cmd=='right'):
-                                rospy.loginfo('YEAAAAAAAAH')
                                 return GetTeachCommand.outcome_commandteached
                         elif(self.cmd=='no' or self.cmd=='wrong'):
                                 return GetTeachCommand.outcome_misspelling
