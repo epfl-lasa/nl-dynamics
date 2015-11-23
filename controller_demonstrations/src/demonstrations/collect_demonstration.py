@@ -16,7 +16,6 @@ import numpy as np
 
 from kuka_bag_visualization.kuka_bag_plot import analyzeData, analyzeData_force, forcePlot
 from kuka_bag_visualization.spline import spline3D, getPointsSpline3D, Spline, Spline3D
-from plotting import plotting_handle
 
 from nl_msgs.msg import CartStateStamped
 from nl_msgs.msg import AnchoredDemonstration
@@ -71,13 +70,13 @@ class CollectDemonstration(object):
 
         self._discard_static_points = discard_static_points
         self._plot = plot
-        self._format = format;
+        self._format = format
 
         self.MOTION_DISTANCE_THRESHOLD = 1e-3
 
         self._collecting_data = True
 
-        if len(words) > 0 :
+        if len(words) > 0:
             rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
     def do(self):
@@ -141,7 +140,6 @@ class CollectDemonstration(object):
 
         self._num_velocity_points = 0
         self._velocity_vector = []
-
 
     def process_demonstration(self, demonstration_data):
         """Process demonstration data.
@@ -235,8 +233,7 @@ class CollectDemonstration(object):
         if self._plot:
             self._plot = False
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-            ax = fig.gca(projection = '3d')
+            ax = fig.gca(projection='3d')
             # plotting new position
 
             (anchor_new, downsampled) = self.remove_anchor_pose(anchor, downsampled)
@@ -482,8 +479,8 @@ def run_service(arguments):
 
         if args.plot:
             rospy.logwarn('There is an issues with plot, the result will be plot only after the first demonstration')
-        
-        mydemonstration = CollectDemonstration(args.word, args.num, args.output, args.discard_static_points, args.plot, args.format);
+
+        mydemonstration = CollectDemonstration(args.word, args.num, args.output, args.discard_static_points, args.plot, args.format)
 
         # initial the node and add service usability
         s = rospy.Service('Correction_Isolation', Demonstration, mydemonstration.handle_service_callback)
