@@ -8,7 +8,6 @@ from sound_play.libsoundplay import SoundClient
 
 from say_state import SayState
 
-
 class GetTeachCommand(smach.State):
 
     outcome_commandteached ='commandteached'
@@ -59,10 +58,11 @@ class Demonstration(smach.State):
 
     def execute(self, userdata):
         self.cmd=''
-        while(self.cmd!='Start'):
+        while(1):
             rospy.sleep(0.5)
-            while(self.cmd!='Stop'):
-                rospy.sleep(0.5)
+            if(self.cmd=='start'):
+                while(self.cmd!='stop'):
+                    rospy.sleep(0.5)
                 return Demonstration.outcome_demonstration
 
     def callback(self, data):
