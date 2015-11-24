@@ -231,7 +231,7 @@ class CollectDemonstration(object):
                 corrections_new.append(spline3D(dat))
 
         if self._plot:
-            self._plot = False
+            self._plot = False   # a segfault appear when ploted twice, so we turn the plot off after the first plot.
             fig = plt.figure()
             ax = fig.gca(projection='3d')
             # plotting new position
