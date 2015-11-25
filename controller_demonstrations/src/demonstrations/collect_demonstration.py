@@ -70,13 +70,14 @@ class CollectDemonstration(object):
 
         self._discard_static_points = discard_static_points
         self._plot = plot
-        self._format = format;
+        self._format = format
 
         self.MOTION_DISTANCE_THRESHOLD = 1e-3
 
         self._collecting_data = True
 
-        rospy.loginfo('Collecting demonstration for words: {}'.format(words))
+        if len(words) > 0:
+            rospy.loginfo('Collecting demonstration for words: {}'.format(words))
 
     def do(self):
         rospy.loginfo('Listening to messages on {} {} channels'.format(
@@ -139,7 +140,6 @@ class CollectDemonstration(object):
 
         self._num_velocity_points = 0
         self._velocity_vector = []
-
 
     def process_demonstration(self, demonstration_data):
         """Process demonstration data.
@@ -231,13 +231,12 @@ class CollectDemonstration(object):
                 corrections_new.append(spline3D(dat))
 
         if self._plot:
+            self._plot = False   # a segfault appear when ploted twice, so we turn the plot off after the first plot.
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
-            ax = fig.gca(projection = '3d')
-
+            ax = fig.gca(projection='3d')
             # plotting new position
-            (temp, downsampled) = self.remove_anchor_pose(anchor, downsampled)
 
+            (anchor_new, downsampled) = self.remove_anchor_pose(anchor, downsampled)
             # downsampling data for a better visibility
             shifted_x = downsampling([f.pose.position.x for f in downsampled], self._num_desired_points)
             shifted_y = downsampling([f.pose.position.y for f in downsampled], self._num_desired_points)
@@ -266,8 +265,6 @@ class CollectDemonstration(object):
             ax.set_ylabel('Y axis')
             ax.set_zlabel('Z axis')
             ax.axis('equal')
-
-
 
             plt.ion()
             plt.show()
@@ -478,11 +475,14 @@ def run_service(arguments):
         demonstrator.do()
 
     else:
-        
-        mydemonstration = CollectDemonstration(args.word, args.num, args.output, args.discard_static_points, args.plot, args.format);
+        rospy.init_node('waiting_for_request_to_start_server')
+
+        if args.plot:
+            rospy.logwarn('There is an issues with plot, the result will be plot only after the first demonstration')
+
+        mydemonstration = CollectDemonstration(args.word, args.num, args.output, args.discard_static_points, args.plot, args.format)
 
         # initial the node and add service usability
-        rospy.init_node('waiting_for_request_to_start_server')
         s = rospy.Service('Correction_Isolation', Demonstration, mydemonstration.handle_service_callback)
         print 'ready to receive request'
 
