@@ -5,7 +5,7 @@ import smach
 import std_msgs
 
 from say_state import SayState
-from ConfirmationState import ConfirmationState
+from ConfirmationMachine import ConfirmationMachine
 
 
 class ChangeSpeed(smach.State):
@@ -61,7 +61,8 @@ class ChangeSpeed(smach.State):
 class ChangingSpeedBranch(smach.StateMachine):
     outcome_success = 'success'
     outcome_failure = 'failure'
-    outcomes = [outcome_success, outcome_failure]
+    outcome_reset = 'reset'
+    outcomes = [outcome_success, outcome_failure, outcome_reset]
 
     def __init__(self):
 
@@ -74,8 +75,8 @@ class ChangingSpeedBranch(smach.StateMachine):
         speedchanged_state = ChangeSpeed()
         speedchanged_name = 'Receiving Speed'
 
-        confirmationstate_name = "Confirmation"
-        confirmationstate_state = ConfirmationState('Do you want to record this velocity to',1)
+        confirmation_name = "Confirmation"
+        confirmation_machine = ConfirmationMachine()
 
         validatespeed_state = SayState('New Velocity implemented')
         validatespeed_name = 'Aknowledge Speed Changed'
@@ -85,8 +86,12 @@ class ChangingSpeedBranch(smach.StateMachine):
                      transitions={SayState.outcome_success: speedchanged_name})
 
             self.add(speedchanged_name, speedchanged_state,
-                     transitions={
-                         ChangeSpeed.outcome_speedchanged: validatespeed_name})
+                     transitions={ChangeSpeed.outcome_speedchanged: validatespeed_name})
+
+            self.add(confirmation_name,confirmation_machine,
+                     transitions={ConfirmationMachine.outcome_success: validatespeed_name,
+                                  ConfirmationMachine.outcome_failure: askingspeed_name,
+                                  ConfirmationMachine.outcome_reset: ChangingSpeedBranch.outcome_reset})
 
             self.add(validatespeed_name, validatespeed_state,
                      transitions={SayState.outcome_success: ChangingSpeedBranch.outcome_success})

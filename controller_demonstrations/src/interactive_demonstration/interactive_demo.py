@@ -120,7 +120,8 @@ class UserInteraction(smach.StateMachine):
             # StateMachine. This is valid as long as its outcomes are properly
             # connected.
             self.add(branchspeed_name, branchspeed_machine,
-                    transitions={ChangingSpeedBranch.outcome_success: hw_name})
+                    transitions={ChangingSpeedBranch.outcome_success: hw_name,
+                                 ChangingSpeedBranch.outcome_reset: hw_name})
 
             self.add(branchcommand_name, branchcommand_machine,
                     transitions={GettingCommandBranch.outcome_success: hw_name})

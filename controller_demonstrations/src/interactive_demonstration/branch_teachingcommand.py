@@ -7,7 +7,7 @@ import time
 from sound_play.libsoundplay import SoundClient
 
 from say_state import SayState
-from ConfirmationState import ConfirmationState
+from ConfirmationMachine import ConfirmationMachine
 
 class Demonstration(smach.State):
 
@@ -53,7 +53,7 @@ class TeachingCommandBranch(smach.StateMachine):
         startdemonstration_state=SayState('Ok, say Start to begin the recording and Stop to end it')
 
         getconfirmationname_name='Get Confirmation Command Name'
-        getconfirmationname_state=ConfirmationState('Do you want to record the command name ?',1)
+        getconfirmationname_machine=ConfirmationMachine()
 
         explanation_name='Explanation'
         explanation_state=SayState('Say Yes or No please')
@@ -62,16 +62,16 @@ class TeachingCommandBranch(smach.StateMachine):
         demonstration_state=Demonstration()
 
         getconfirmationtrajectory_name='Get Confirmation Command Trajectory'
-        getconfirmationtrajectory_state=ConfirmationState('Do you want to record this trajectory ?',2)
+        getconfirmationtrajectory_machine=ConfirmationMachine()
 
         with self:
             self.add(askteachcommand_name, askteachcommand_state,
                      transitions={SayState.outcome_success: getconfirmationname_name})
 
-            self.add(getconfirmationname_name, getconfirmationname_state,
-                     transitions={ConfirmationState.outcome_success: startdemonstration_name,
-                                  ConfirmationState.outcome_reset: TeachingCommandBranch.outcome_reset,
-                                  ConfirmationState.outcome_redostate: askteachcommand_name})
+            self.add(getconfirmationname_name, getconfirmationname_machine,
+                     transitions={ConfirmationMachine.outcome_success: startdemonstration_name,
+                                  ConfirmationMachine.outcome_reset: TeachingCommandBranch.outcome_reset,
+                                  ConfirmationMachine.outcome_failure: askteachcommand_name})
 
             self.add(startdemonstration_name, startdemonstration_state,
                      transitions={SayState.outcome_success: demonstration_name})
@@ -80,10 +80,10 @@ class TeachingCommandBranch(smach.StateMachine):
                      transitions={Demonstration.outcome_demonstration: getconfirmationtrajectory_name,
                                   Demonstration.outcome_reset: TeachingCommandBranch.outcome_reset})
 
-            self.add(getconfirmationtrajectory_name, getconfirmationtrajectory_state,
-                     transitions={ConfirmationState.outcome_success: TeachingCommandBranch.outcome_success,
-                                  ConfirmationState.outcome_reset: TeachingCommandBranch.outcome_reset,
-                                  ConfirmationState.outcome_redostate: startdemonstration_name})
+            self.add(getconfirmationtrajectory_name, getconfirmationtrajectory_machine,
+                     transitions={ConfirmationMachine.outcome_success: TeachingCommandBranch.outcome_success,
+                                  ConfirmationMachine.outcome_reset: TeachingCommandBranch.outcome_reset,
+                                  ConfirmationMachine.outcome_failure: startdemonstration_name})
 
 
 
