@@ -14,7 +14,7 @@ class ListenCommand(smach.State):
 
     def __init__(self):
 
-        super(ListenCommand, self).__init__(outcomes=ListenCommand.outcomes)
+        super(ListenCommand, self).__init__(outcomes=ListenCommand.outcomes, output_keys=['listenedcommand_output'])
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
 
@@ -24,7 +24,7 @@ class ListenCommand(smach.State):
             if(self.cmd=='reset'):
                 return ListenCommand.outcome_reset
 
-        #mettre self.cmd dans user_data !!!
+        listenedcommand_output=self.cmd
         return ListenCommand.outcome_listened
 
 
@@ -66,13 +66,12 @@ class ConfirmationMachine(smach.StateMachine):
 
     def __init__(self):
 
-        super(ConfirmationMachine, self).__init__(
-            outcomes=ConfirmationMachine.outcomes)
+        super(ConfirmationMachine, self).__init__(outcomes=ConfirmationMachine.outcomes, output_keys=['UsersCommand'])
 
         listencommand_state = ListenCommand()
         listencommand_name = 'Listen Command'
 
-        askconfirmation_state = SayState('Do you really want to use the command ')#USERDATA)
+        askconfirmation_state = SayState('Do you really want to use the command ' + self.userdata.UsersCommand) #How to access to the user-data?
         askconfirmation_name = 'Ask Confirmation'
 
         listenconfirmation_state = ListenConfirmation()
@@ -81,7 +80,9 @@ class ConfirmationMachine(smach.StateMachine):
         with self:
             self.add(listencommand_name, listencommand_state,
                      transitions={ListenCommand.outcome_listened: askconfirmation_name,
-                                  ListenCommand.outcome_reset: ConfirmationMachine.outcome_reset})
+                                  ListenCommand.outcome_reset: ConfirmationMachine.outcome_reset},
+                     remapping={'listenedcommand_output': 'UsersCommand'})
+
 
             self.add(askconfirmation_name, askconfirmation_state,
                      transitions={SayState.outcome_success: listenconfirmation_name})
