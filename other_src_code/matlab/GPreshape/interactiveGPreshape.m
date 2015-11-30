@@ -67,7 +67,9 @@ s.breakSimulation = 0;
 s.opt = opt;
 s.trianglesData = [];
 s.spline = [];
-s.smooth = 1/5;
+s.smooth = 1/1;
+s.xs = 0;
+s.ys = 0;
 
 % parameters for GP regression
 s.gprStruct.meanfunc = {@meanZero};
@@ -76,7 +78,7 @@ ell = 30;   % INTERESTING PARAMTER TO PLAY WITH
 sf = 1;     % INTERESTING PARAMTER TO PLAY WITH 
 s.gprStruct.hyp.cov = log([ell; sf]);
 s.gprStruct.likfunc = @likGauss; 
-sn = 01.0;    % INTERESTING PARAMTER TO PLAY WITH
+sn = 1.0;    % INTERESTING PARAMTER TO PLAY WITH
 s.gprStruct.hyp.lik = log(sn);
 % store a handle to the regressionfunction for use in various functions
 s.gprStruct.regressionFunction = @(x_train,y_train,x_query) gp(s.gprStruct.hyp, @infExact, s.gprStruct.meanfunc, s.gprStruct.covfunc, s.gprStruct.likfunc, x_train, y_train, x_query);
@@ -113,7 +115,7 @@ end
 
 function [xd jac] = originalDynamicsGMR(x)
 global originalGMM;
-xd = GMR(originalGMM.Priors,originalGMM.Mu,originalGMM.Sigma,x,1:2,3:4 );
+xd = GMR(originalGMM.Priors,originalGMM.Mu,originalGMM.Sigma,x,1:2,3:4 )
 jac = eye(2);
 end
 
@@ -152,9 +154,14 @@ elseif(strcmp(get(gcf,'SelectionType'),'alt'))
 elseif(strcmp(get(gcf,'SelectionType'),'extend'))
     interactiveGPreshape(args{:});
 elseif(strcmp(get(gcf, 'SelectionType'), 'open'))
+%     x = get(gca,'Currentpoint');
+%     x = x(1,1:2)';
+%     loadStoredPoints(h, x)
     x = get(gca,'Currentpoint');
-    x = x(1,1:2)';
-    loadStoredPoints(h, x)
+    s.xs = x(1,1);
+    s.ys = x(1,2);
+    set(gcf, 'UserData', s);
+    updateStreamlines(h);
 end
 end
 
@@ -231,31 +238,53 @@ colormap(cm);
 
 s.streamHandle = streamslice(axisHandle, s.gridData.xM,s.gridData.yM,reshape(Xd(1,:),s.gridData.nX,s.gridData.nX),reshape(Xd(2,:),s.gridData.nX,s.gridData.nX),0.5);
 
-% plot collected points (desactivated because spline are plot now)
-plot(axisHandle, s.allData(1,:),s.allData(2,:),'r.');
-% plot training points
-plot(axisHandle, s.gpData(1,:),s.gpData(2,:),'go');
+% % plot collected points (desactivated because spline are plot now)
+% plot(axisHandle, s.allData(1,:),s.allData(2,:),'r.');
+% % plot training points
+% plot(axisHandle, s.gpData(1,:),s.gpData(2,:),'go');
 
 %drawing triangles
-for i=1:2:size(s.trianglesData, 1)
-    drawTriangle(s.trianglesData(i,:), 'm');
-    drawTriangle(s.trianglesData(i+1,:), 'k');
-end
+% for i=1:2:size(s.trianglesData, 1)
+%     drawTriangle(s.trianglesData(i,:), 'm');
+%     drawTriangle(s.trianglesData(i+1,:), 'k');
+% end
 
 %drawing points in green
-plot(s.allData(1,:), s.allData(2,:), 'ro')
-t=smoothData(size(s.allData, 2), s.smooth);
-plot(s.allData(1,t), s.allData(2,t), 'bo','LineWidth', 1.3);
+% plot(s.allData(1,:), s.allData(2,:), 'ro')
+% t=smoothData(size(s.allData, 2), s.smooth);
+% plot(s.allData(1,t), s.allData(2,t), 'bo','LineWidth', 1.3);
 
 %drawing spline
 for i=1:size(s.spline)
     t=linspace(-0.003,1.003,s.spline(i,1).nbPoint*100);
 %     xx=linspace(0,1, s.spline(i).nbPoint * 1);
-    plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'b-', 'LineWidth', 1.5);
+    plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r-', 'LineWidth', 1.5);
 %     plot(ppval(s.spline(i).vect(1), t), ppval(s.spline(i).vect(2), t), 'r', 'LineWidth', 1.5);
 %     plot(xx, getPointsSplineNO(s.spline(i), xx), 'b-', 'LineWidth', 1.5)
 end
 
+for i=1:size(s.spline, 1)
+    %draw test points
+    drawTriangle([s.xs,s.ys],'g');
+    
+    %get closest t_point of the spline
+    tic
+    t_close = minimumDistance2Spline(s.xs,s.ys, s.spline(i,:));
+    toc
+    
+    %draw closest point
+    if (t_close ~= -1)
+        if t_close > 1
+            t = linspace(1,t_close, 100);
+            plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r:', 'lineWidth', 2)
+        elseif t_close < 0
+            t = linspace(0,t_close, 100);
+            plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r:', 'lineWidth', 2)
+        end
+        
+        drawTriangle([ getPointsSplineNO(s.spline(i,1), t_close ), getPointsSplineNO(s.spline(i,2), t_close ) ], 'k');
+    end
+end
 set(gcf,'UserData',s);
 %x=[0;0];
 %[orgVel orgJac]=originalDynamics(x);
@@ -292,9 +321,9 @@ xi0 = [s.newPosData(1:2,1);zeros(4,1)];
 [demPos,demVel, demAcc] = EstimateVA_P(X, dt, Q, R, xi0, P0);
 
 fig = get(groot,'CurrentFigure');
-analyzeError(demPos);
-set(groot,'CurrentFigure', fig);
-s.trianglesData = [s.trianglesData; analyzeData(demPos, demVel)];
+% analyzeError(demPos);
+% set(groot,'CurrentFigure', fig);
+% s.trianglesData = [s.trianglesData; analyzeData(demPos, demVel)];
 s.spline = [s.spline ; computeTrajectory(demPos, demVel, s.smooth)];
 
 % Compute the angle and speed factor. newData is a 4xN matrix with each
@@ -361,11 +390,14 @@ end
 
 function splinesData = computeTrajectory(pos, vel, alpha)
     %put originalDynamic velocity on first and last points
-    vel(:,1)  = originalDynamicsLINEAR(pos(:,1));
-    vel(:,end)= originalDynamicsLINEAR(pos(:,end));
+    %vel(:,1)  = originalDynamicsLINEAR(pos(:,1));
+    %vel(:,end)= originalDynamicsLINEAR(pos(:,end));
 
     %smooth data
     values=smoothData(size(pos,2), alpha);
+    
+    %values = [1, round(size(pos,2)/2), size(pos,2)];
+    
     x =transpose(pos(1,values));
     y =transpose(pos(2,values));
     xp=transpose(vel(1,values));
@@ -380,6 +412,14 @@ function splinesData = computeTrajectory(pos, vel, alpha)
     
     %spline data calculation
     splinesData=[ownSpline(t,x,xp), ownSpline(t,y,yp)];
+
+%     figure
+%     t = linspace(0,1,1000);
+%     plot(t,getPointsSplineNO(splinesData(1), t), 'r')
+%     figure
+%     plot(t,getPointsSplineNO(splinesData(2), t), 'b');
+%     
+%     pause
 end
 
 function start_stop=analyzeData (pos, vel)
@@ -435,9 +475,10 @@ function drawTriangle(pos, color)
     a=[pos(1)-halfLength,pos(1)+halfLength,pos(1),pos(1)-halfLength];
     b=[pos(2)-halfLength,pos(2)-halfLength,pos(2)+halfLength,pos(2)-halfLength];
     plot(a,b,color, 'LineWidth', 2)
-    
+
     %having the color's point changed
     plot(pos(1),pos(2),strcat(color, '.'))
+
 end
 
 function r = startSimulation(x)
@@ -534,6 +575,118 @@ end
 
 function y=getValCoef(coef, x)
     y=coef(1).*x.^3+coef(2).*x.^2+coef(3).*x+coef(4);
+end
+
+% -------- distance func
+
+function d = dist(x1,y1,x2,y2)
+    d = sqrt((x1-x2).^2 + (y1-y2).^2);
+end
+
+function t_min = minimumDistance2Spline(xs,ys,spline2D)
+    t = distance2Spline2D(xs, ys, spline2D);
+    dist(getPointsSplineNO(spline2D(1), t')', getPointsSplineNO(spline2D(2), t')', t./t.*xs, t./t.*ys);
+
+    if size(t,1) == 1 && t == -1
+        t_min =-1;
+        return
+    end
+    
+    d = dist(getPointsSplineNO(spline2D(1), t(1) ), getPointsSplineNO(spline2D(2), t(1)), xs,ys);
+    t_min = t(1);
+    for j=2:size(t, 1)
+        dlocal = dist(getPointsSplineNO(spline2D(1), t(j) ), getPointsSplineNO(spline2D(2), t(j)), xs,ys);
+        if dlocal < d
+            d = dlocal;
+            t_min = t(j);
+        end
+    end
+end
+
+function t = distance2Spline2D(xs, ys, spline2D)
+    nbpts = min([spline2D(1).nbPoint, spline2D(2).nbPoint]);
+    t = [];
+    
+    for i=1:nbpts-1
+        if (i==1 || i == nbpts-1)
+            new_t = distance2Spline(spline2D(1).points(:,i), spline2D(1).coef(:,i), spline2D(2).coef(:,i), xs, ys, 1);
+        else
+            new_t = distance2Spline(spline2D(1).points(:,i), spline2D(1).coef(:,i), spline2D(2).coef(:,i), xs, ys, 1);
+        end
+        
+        if new_t == -1 %error
+            continue
+        end
+        t = [t;new_t];
+    end
+    
+    if (size(t,1) == 0)
+        t=-1;
+    end
+end
+
+function t = distance2Spline(t_lim, coefx, coefy, xs, ys, sharpParam)
+
+    %the spline is parametrize by t form t_lim(1) to t_lim(2), check
+    %distance from all the spline to (xs,ys)
+    %if sharpParam = 0, check on aaaall the curve (-inf to inf)
+    %if sharpParam = 1, only check on t_lim interval
+
+    % equ to resolve : a.t^5 + b.t^4+c.t^3+d.t^2+e.t+f = 0
+    
+    AA=[coefx(1), coefy(1)];
+    BB=[coefx(2), coefy(2)];
+    CC=[coefx(3), coefy(3)];
+    DD=[coefx(4), coefy(4)];
+    x =[xs, ys];
+    
+    a=0; b=0; c=0; d=0; e=0; f=0;
+
+    for i=1:2
+        A = AA(i);
+        B = BB(i);
+        C = CC(i);
+        D = DD(i);
+        mx = x(i);
+        
+        a = a + 6*A^2;
+        b = b + 10*A*B;
+        c = c + 8*A*C + 4*B^2;
+        d = d + 6*A*D + 6*B*C - 6*A*mx;
+        e = e + 4*B*D + 2*C^2 - 4*mx*B;
+        f = f + 2*C*D - 2*mx*C;
+    end
+
+    value = roots([a,b,c,d,e,f]);
+    rvalue = [];
+
+    for i = 1:size(value,1)
+        if sharpParam == 0 && imag(value(i)) == 0    
+            rvalue = [rvalue; real(value(i))];
+        elseif sharpParam == 1 && imag(value(i)) == 0 && real(value(i))>= t_lim(1) && real(value(i))<= t_lim(2)
+                rvalue = [rvalue; real(value(i))];
+        end
+    end
+
+    if size(rvalue, 1) == 0
+        t = -1; %error, no value found
+    elseif size(rvalue, 1) == 1
+        t = rvalue(1);
+    else
+       fx = @(t) coefx(1).*t.^3+coefx(2).*t.^2+coefx(3).*t+coefx(4);
+       fy = @(t) coefy(1).*t.^3+coefy(2).*t.^2+coefy(3).*t+coefy(4);
+       
+       t = rvalue(1);
+       dmin = dist(fx(t), fy(t), xs, ys);
+      
+       for i=2:size(rvalue, 1)
+           d = dist(fx(rvalue(i)), fy(rvalue(i)), xs,ys);
+           if (d<dmin)
+               dmin=d;
+               t=rvalue(i);
+           end
+       end
+    end
 end
 
 
