@@ -32,3 +32,10 @@ lots of dictionary updates: yes no -dance front back start stop right wrong true
 add 'start over' ability from any state (In development with the reset of every states)
 
 
+
+
+
+create new package inside root of nl-dynamics
+	user_voice_recording
+	- dependencies: pocketsphinx
+	- contents; language model (dict ...), launch file (microphone, recognizer)
