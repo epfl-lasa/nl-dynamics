@@ -26,8 +26,15 @@ make a generic confirmation state: ask yes/no, receive yes/correct/okay vs no/wr
 Read : http://wiki.ros.org/smach/Tutorials/User%20Data (Done)
 
 
+create new package inside root of nl-dynamics	(DONE)
+	user_voice_recording
+	- dependencies: pocketsphinx
+	- contents; language model (dict ...), launch file (microphone, recognizer)
+lots of dictionary updates: yes no -dance front back start stop right wrong true false quit stop done start (DONE)
 
-lots of dictionary updates: yes no -dance front back start stop right wrong true false quit stop done start(still adding some words)
+
+
+
 
 add 'start over' ability from any state (In development with the reset of every states)
 
@@ -35,7 +42,3 @@ add 'start over' ability from any state (In development with the reset of every 
 
 
 
-create new package inside root of nl-dynamics
-	user_voice_recording
-	- dependencies: pocketsphinx
-	- contents; language model (dict ...), launch file (microphone, recognizer)
