@@ -37,11 +37,5 @@
 	<node name ="state_machine" pkg="controller_demonstrations" type="interactive_demo.py" output="screen"
 	required="true"/>
 
-	<arg name='viewer' default="1"/>
-	<node name ="smach_viewer" pkg="smach_viewer" type="smach_viewer.py" output="screen"
-			if="$(arg viewer)">
-		<param name="bitrate" value="128"/>
-	</node>
-
 
   </launch>

@@ -7,22 +7,22 @@ import sys
 import time
 import std_msgs
 
-from demo_collection import DemoCollectionMachine
 from say_state import SayState
 from branch_changingspeed import ChangingSpeedBranch
 from branch_gettingcommand import GettingCommandBranch
+from branch_teachingcommand import TeachingCommandBranch
 #from branch_changespeed import
 
 
 class ReadyState(smach.State):
     # This state has two possible outcomes.
-    outcome_ready = 'ready'
     outcome_finished = 'finished'
     outcome_success = 'success'
     outcome_askingspeed = 'askingspeed'
     outcome_askcommand = 'askcommand'
-    outcomes = [outcome_ready, outcome_finished, outcome_success,
-                outcome_askingspeed, outcome_askcommand]
+    outcome_teach = 'teach'
+    outcomes = [outcome_finished, outcome_success,
+                outcome_askingspeed, outcome_askcommand, outcome_teach]
 
     def __init__(self):
         # Again, specify the outcomes.
@@ -55,9 +55,9 @@ class ReadyState(smach.State):
                     return ReadyState.outcome_askingspeed
                 elif (msg_split[i] == 'command'):
                     return ReadyState.outcome_askcommand
-                elif (msg_split[i] == 'collect'):
-                    rospy.loginfo('The show will go on')
-                    return ReadyState.outcome_ready
+                elif (msg_split[i] == 'teach'):
+                    rospy.loginfo('Now we teach !')
+                    return ReadyState.outcome_teach
 
     def callback(self, data):
         # This is the callback for the subscribed topic.
@@ -79,23 +79,23 @@ class UserInteraction(smach.StateMachine):
 
         # Create the states and give them names here. Each state (an instance of
         # the class) has an associated name (a string), used by the transitions.
-        hw_state = SayState(message='Hello, world')
-        hw_name = 'SAY_HW'
+        hw_state = SayState(message='Hello, what would you like me to do ? command, changing speed or teaching ?')
+        hw_name = 'Introduction'
 
         ready_state = ReadyState()
-        ready_name = 'READY'
+        ready_name = 'Which Branch ?'
 
-        collect_name = 'COLLECT'
-        collect_machine = DemoCollectionMachine()
-
-        branchspeed_name = 'SPEED'
+        branchspeed_name = 'Changing Speed'
         branchspeed_machine = ChangingSpeedBranch()
 
-        branchcommand_name = 'COMMAND'
+        branchcommand_name = 'Giving Command'
         branchcommand_machine = GettingCommandBranch()
 
+        branchteach_name = 'Teaching Command'
+        branchteach_machine = TeachingCommandBranch()
+
         finished_state = SayState("I am finished")
-        finished_name = 'SAY_FINISHED'
+        finished_name = 'Finishing'
 
 
         # All states are now defined. Connect them.
@@ -110,31 +110,28 @@ class UserInteraction(smach.StateMachine):
             # name). It's important to remember that all transitions are defined
             # by *strings*, not the underlying nodes.
             self.add(ready_name, ready_state,
-                    transitions={ReadyState.outcome_ready: collect_name,
-                                  ReadyState.outcome_finished: finished_name,
+                    transitions={ ReadyState.outcome_finished: finished_name,
                                   ReadyState.outcome_success: hw_name,
                                   ReadyState.outcome_askingspeed: branchspeed_name,
-                                  ReadyState.outcome_askcommand: branchcommand_name})
+                                  ReadyState.outcome_askcommand: branchcommand_name,
+                                  ReadyState.outcome_teach: branchteach_name})
 
             # Here the connected state is actually a whole other
             # StateMachine. This is valid as long as its outcomes are properly
             # connected.
-            self.add(collect_name, collect_machine,
-                    transitions={DemoCollectionMachine.outcome_success: hw_name,
-                                DemoCollectionMachine.outcome_failure: UserInteraction.outcome_failure})
-
             self.add(branchspeed_name, branchspeed_machine,
-                    transitions={ChangingSpeedBranch.outcome_success: hw_name})
+                    transitions={ChangingSpeedBranch.outcome_success: hw_name,
+                                 ChangingSpeedBranch.outcome_reset: hw_name})
 
             self.add(branchcommand_name, branchcommand_machine,
                     transitions={GettingCommandBranch.outcome_success: hw_name})
 
+            self.add(branchteach_name, branchteach_machine,
+                    transitions={TeachingCommandBranch.outcome_success: hw_name,
+                                 TeachingCommandBranch.outcome_reset: hw_name})
+
             self.add(finished_name, finished_state,
                     transitions={SayState.outcome_success: UserInteraction.outcome_success})
-
-
-            # Giving a command to do States
-
 
         pass
 
