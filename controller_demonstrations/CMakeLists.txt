@@ -157,3 +157,4 @@ include_directories(
 ## Add folders to be run by python nosetests
 catkin_add_nosetests(src/demonstrations)
 catkin_add_nosetests(src/interactive_demonstration)
+catkin_add_nosetests(src/robot_dialogue_interface)
