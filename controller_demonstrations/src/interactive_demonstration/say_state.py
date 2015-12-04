@@ -11,7 +11,7 @@ class SayState(smach.State):
     outcome_success = 'success'
     outcomes = [outcome_success]
 
-    def __init__(self, message):
+    def __init__(self, message, blocking=False):
         # The state initialization can store information.
 
         # Make sure to specify the outcomes here.
@@ -20,7 +20,7 @@ class SayState(smach.State):
                                        output_keys=['command_out'])
         # Init speaker
 
-        self.soundhandle = SoundClient()
+        self.soundhandle = SoundClient(blocking=blocking)
         self._message = message  # Store the message to say later.
 
     def speaking(self, text):
@@ -29,10 +29,18 @@ class SayState(smach.State):
     def execute(self, user_data):
         # The execute function gets called when the node is active. In this
         # case, it just prints a message, sleeps.
-        self.speaking(self._message + user_data.command_in)
-        rospy.loginfo(self._message + user_data.command_in)
-        rospy.sleep(4)
-        user_data.command_out=user_data.command_in
+
+        print 'User data: ', user_data.keys()
+
+        message_to_say = self._message
+        if hasattr(user_data, 'command_in'):
+            print 'Added user data:', user_data.command_in
+            message_to_say += ' ' + user_data.command_in
+            user_data.command_out=user_data.command_in
+
+
+        self.speaking(message_to_say)
+        rospy.loginfo(message_to_say)
         # The execute function *must* return one of its defined outcomes. Here,
         # we only have one outcome (SayState.outcome_success) so return it.
         return SayState.outcome_success
