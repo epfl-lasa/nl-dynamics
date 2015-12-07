@@ -4,6 +4,10 @@ from  robot_dialogue_interface.robot_dialogue_interface import RobotDialogueInte
 
 
 class TestAbstractClass(unittest.TestCase):
+    """
+    Unit tests for the abstract dialogue interface class: mostly ensure things
+    raise NotImplementedAssertions.
+    """
     def setUp(self):
         self.interface = RobotDialogueInterface()
         self.command1 = 'unit_test'
@@ -60,59 +64,108 @@ class TestAbstractClass(unittest.TestCase):
         self.assertRaises(NotImplementedError, self.interface._robot_set_speed)
 
 
-
 class BasicInterface(RobotDialogueInterface):
+    """
+    A trivial implementation of the robot dialogue interface for testing.
+    """
+    def __init__(self):
+        super(BasicInterface, self).__init__()
+        self._speed = 0
+
     def _robot_do_command(self, **kwargs):
         return True
 
     def _robot_record_command(self, command, **kwargs):
-        self._known_commands[command] = [1]
-        return True
+        return [1]
 
     def _robot_set_speed(self, speed, **kwargs):
+        self._speed = speed
         return True
 
 
 class TestSimpleInterface(unittest.TestCase):
+    """
+    Unit tests for the trivial dialogue interface defined above.
+    """
 
     def setUp(self):
         self.interface = BasicInterface()
         self.command1 = 'unit_test'
         self.command2 = 'command'
 
-    def train(self, cmd):
-        self.interface.record_command(cmd)
+    def test_setup(self):
+        self.assertEqual(0, self.interface._speed)
+
+    def test_train_adds_known_command(self):
+        ret = self.interface.record_command(self.command1)
+        self.assertTrue(ret)
+        known = self.interface.known_commands()
+        self.assertEqual(1, len(known))
+        self.assertIn(self.command1, known)
+
+    def test_train_adds_two_known_commands(self):
+        ret = self.interface.record_command(self.command1)
+        ret = self.interface.record_command(self.command2)
+
+        known = self.interface.known_commands()
+        self.assertEqual(2, len(known))
+        self.assertIn(self.command1, known)
+        self.assertIn(self.command2, known)
 
     def test_train(self):
-
-        self.fail()
+        self.interface.record_command(self.command1)
+        self.assertIn(self.command1, self.interface._known_commands)
+        stuff = self.interface._known_commands.get(self.command1)
+        self.assertIsNotNone(stuff)
+        self.assertEqual([1], stuff)
 
     def test_known_command_add(self):
-        self.train(self.command1)
+        self.interface.record_command(self.command1)
         known = self.interface.known_commands()
         self.assertIsNotNone(known)
-        self.assertEqual([self.command1], known)
+        self.assertEqual(1, len(known))
+        self.assertIn(self.command1, known)
 
-        self.train(self.command2)
+        self.interface.record_command(self.command2)
         known = self.interface.known_commands()
         self.assertIsNotNone(known)
-        self.assertEqual([self.command2, self.command1], known)
+        self.assertEqual(2, len(known))
+        self.assertIn(self.command1, known)
+        self.assertIn(self.command2, known)
 
     def test_known_command_add_same_command_twice(self):
-        self.train(self.command1)
+        self.interface.record_command(self.command1)
         known = self.interface.known_commands()
         self.assertIsNotNone(known)
         self.assertEqual([self.command1], known)
+        self.assertEqual(1, len(known))
+        self.assertIn(self.command1, known)
 
-        self.train(self.command1)
+        self.interface.record_command(self.command1)
         known = self.interface.known_commands()
         self.assertIsNotNone(known)
-        self.assertEqual([self.command1], known)
+        self.assertEqual(1, len(known))
+        self.assertIn(self.command1, known)
 
+    def test_record_command_returns_true(self):
+        ret = self.interface.record_command('stuff')
+        self.assertTrue(ret)
 
-    def test_execute(self):
-        self.train(self.command1)
-        self.fail()
+    def test_record_command_twice(self):
+        ret = self.interface.record_command('stuff')
+        self.assertTrue(ret)
+        ret = self.interface.record_command('stuff')
+        self.assertTrue(ret)
+
+    def test_record_command_returns_false(self):
+        def record_fails(command):
+            return False
+        self.interface._robot_record_command = record_fails
+        ret = self.interface.record_command(self.command1)
+        self.assertFalse(ret)
+
+        known = self.interface.known_commands()
+        self.assertNotIn(self.command1, known)
 
 
 if __name__ == '__main__':
