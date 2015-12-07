@@ -40,6 +40,14 @@ class RobotDialogueInterface(object):
             return False
         return self._robot_do_command(stuff_to_do)
 
+    def change_speed(self, speed):
+        """
+        Change the speed of the robot.
+        :param speed: New speed.
+        :return:
+        """
+        return self._robot_set_speed(speed)
+
     def _robot_do_command(self, *args, **kwargs):
         """
         Implement this to make the robot do stuff.

@@ -54,11 +54,15 @@ class TestAbstractClass(unittest.TestCase):
         self.assertEqual(1, len(known))
         self.assertIn(self.command1, known)
 
+    def test_change_speed(self):
+        self.assertRaises(NotImplementedError, self.interface.change_speed, 0)
+
     def test_raise_do(self):
         self.assertRaises(NotImplementedError, self.interface._robot_do_command)
 
     def test_raise_record(self):
-        self.assertRaises(NotImplementedError, self.interface._robot_record_command)
+        self.assertRaises(NotImplementedError,
+                          self.interface._robot_record_command)
 
     def test_raise_set_speed(self):
         self.assertRaises(NotImplementedError, self.interface._robot_set_speed)
@@ -181,6 +185,11 @@ class TestSimpleInterface(unittest.TestCase):
         ret = self.interface.execute_command(self.command2)
         self.assertFalse(ret)
         self.assertEqual(0, self.interface._execution_count)
+
+    def test_change_speed(self):
+        ret = self.interface.change_speed(5)
+        self.assertEqual(True, ret)
+        self.assertEqual(5, self.interface._speed)
 
 
 if __name__ == '__main__':
