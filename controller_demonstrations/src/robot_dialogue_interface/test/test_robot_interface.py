@@ -1,6 +1,6 @@
 import unittest
-
-from  robot_dialogue_interface.robot_dialogue_interface import RobotDialogueInterface
+from robot_dialogue_interface.robot_dialogue_interface import \
+    RobotDialogueInterface
 
 
 class TestAbstractClass(unittest.TestCase):
@@ -8,6 +8,7 @@ class TestAbstractClass(unittest.TestCase):
     Unit tests for the abstract dialogue interface class: mostly ensure things
     raise NotImplementedAssertions.
     """
+
     def setUp(self):
         self.interface = RobotDialogueInterface()
         self.command1 = 'unit_test'
@@ -58,7 +59,8 @@ class TestAbstractClass(unittest.TestCase):
         self.assertRaises(NotImplementedError, self.interface.change_speed, 0)
 
     def test_raise_do(self):
-        self.assertRaises(NotImplementedError, self.interface._robot_do_command)
+        self.assertRaises(NotImplementedError,
+                          self.interface._robot_do_command)
 
     def test_raise_record(self):
         self.assertRaises(NotImplementedError,
@@ -72,6 +74,7 @@ class BasicInterface(RobotDialogueInterface):
     """
     A trivial implementation of the robot dialogue interface for testing.
     """
+
     def __init__(self):
         super(BasicInterface, self).__init__()
         self._speed = 0
@@ -167,6 +170,7 @@ class TestSimpleInterface(unittest.TestCase):
     def test_record_command_returns_false(self):
         def record_fails(command):
             return False
+
         self.interface._robot_record_command = record_fails
         ret = self.interface.record_command(self.command1)
         self.assertFalse(ret)
