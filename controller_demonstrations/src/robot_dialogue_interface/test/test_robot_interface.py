@@ -71,8 +71,10 @@ class BasicInterface(RobotDialogueInterface):
     def __init__(self):
         super(BasicInterface, self).__init__()
         self._speed = 0
+        self._execution_count = 0
 
-    def _robot_do_command(self, **kwargs):
+    def _robot_do_command(self, *args, **kwargs):
+        self._execution_count += 1
         return True
 
     def _robot_record_command(self, command, **kwargs):
@@ -95,6 +97,7 @@ class TestSimpleInterface(unittest.TestCase):
 
     def test_setup(self):
         self.assertEqual(0, self.interface._speed)
+        self.assertEqual(0, self.interface._execution_count)
 
     def test_train_adds_known_command(self):
         ret = self.interface.record_command(self.command1)
@@ -166,6 +169,18 @@ class TestSimpleInterface(unittest.TestCase):
 
         known = self.interface.known_commands()
         self.assertNotIn(self.command1, known)
+
+    def test_execute_have_command(self):
+        self.interface.record_command(self.command1)
+        ret = self.interface.execute_command(self.command1)
+        self.assertTrue(ret)
+        self.assertEqual(1, self.interface._execution_count)
+
+    def test_execute_unknown_command(self):
+        self.interface.record_command(self.command1)
+        ret = self.interface.execute_command(self.command2)
+        self.assertFalse(ret)
+        self.assertEqual(0, self.interface._execution_count)
 
 
 if __name__ == '__main__':
