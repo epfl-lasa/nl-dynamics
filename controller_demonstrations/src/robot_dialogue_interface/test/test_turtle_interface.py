@@ -7,7 +7,7 @@ from geometry_msgs.msg import Twist
 class TestCase(unittest.TestCase):
 
     # A fake publisher.
-    class mock_publisher(object):
+    class MockPub(object):
         def __init__(self):
             self.num_pub = 0
             self.last_published = None
@@ -31,7 +31,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(False, ret)
 
     def test_do_command_mock_publisher(self):
-        mock_pub = self.mock_publisher()
+        mock_pub = self.MockPub()
         self.interface.pub = mock_pub
         cmd_to_execute = self.interface._known_commands['right']
         ret = self.interface._robot_do_command(cmd_to_execute)
@@ -40,7 +40,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(cmd_to_execute, mock_pub.last_published)
 
     def test_execute_known_mock_publisher(self):
-        mock_pub = self.mock_publisher()
+        mock_pub = self.MockPub()
         self.interface.pub = mock_pub
         ret = self.interface.execute_command('right')
 
@@ -50,7 +50,7 @@ class TestCase(unittest.TestCase):
                          mock_pub.last_published)
 
     def test_execute_known_no_publisher(self):
-        # Returns false because there is no publisher
+        # Returns false because there is no publisher.
         ret = self.interface.execute_command('right')
         self.assertEqual(False, ret)
 
