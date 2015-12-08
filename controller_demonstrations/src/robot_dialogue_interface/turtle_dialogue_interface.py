@@ -2,15 +2,31 @@
 
 from robot_dialogue_interface import RobotDialogueInterface
 from geometry_msgs.msg import Twist
+import rospy
 
 
 class TurtleDialogueInterface(RobotDialogueInterface):
     def __init__(self, default_speed=3):
         super(TurtleDialogueInterface, self).__init__()
         self._turtle_speed = default_speed
+        self.pub = None
+
+    def connect(self, topic='turtle1/cmd_vel'):
+        self.pub = rospy.Publisher(topic, Twist, queue_size=5)
 
     def fill_default_command_mappings(self):
-        pass
+
+        up_twist = self.make_twist(['linear.x'], self._turtle_speed)
+        self._known_commands['up'] = up_twist
+
+        down_twist = self.make_twist(['linear.x'], -1 * self._turtle_speed)
+        self._known_commands['down'] = down_twist
+
+        right_twist = self.make_twist(['angular.z'], self._turtle_speed)
+        self._known_commands['right'] = right_twist
+
+        left_twist = self.make_twist(['angular.z'], -1 * self._turtle_speed)
+        self._known_commands['left'] = left_twist
 
     @classmethod
     def make_twist(cls, fields_list, velocity):
@@ -22,6 +38,9 @@ class TurtleDialogueInterface(RobotDialogueInterface):
         :param velocity: Scalar velocity
         :return: A new twist object.
         """
+
+        assert isinstance(fields_list, list), 'Must provide list of fields.'
+
         twist = Twist()
         for field in fields_list:
             cls.set_twist_field(twist, field, velocity)
@@ -55,7 +74,11 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
     def _robot_do_command(self, command, **kwargs):
 
-        pass
+        if not self.pub:
+            return False
+
+        self.pub.publish(command)
+        return True
 
     def _robot_set_speed(self, speed, **kwargs):
         self._turtle_speed = speed
@@ -65,8 +88,16 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
 
 def run():
-    print 'Robot dialogue interface'
+    rospy.init_node('turtle_dialogue_interface', anonymous=False)
+    rospy.loginfo('Robot dialogue interface')
+
     interface = TurtleDialogueInterface()
+    interface.connect()
+    interface.fill_default_command_mappings()
+
+    rospy.loginfo('All systems running')
+    rospy.spin()
+
 
 if __name__ == '__main__':
     run()
