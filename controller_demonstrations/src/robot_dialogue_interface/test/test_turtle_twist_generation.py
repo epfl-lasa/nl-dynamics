@@ -19,6 +19,13 @@ class TestMessageGeneration(unittest.TestCase):
         ref.angular.y = 2.0
         self.assertEqual(ref, twist)
 
+    def test_make_twist_not_list(self):
+
+        field = 'linear.x'
+        with self.assertRaisesRegexp(AssertionError,
+                                     'Must provide list of fields'):
+            twist = TurtleDialogueInterface.make_twist(field, 2.0)
+
     def test_set_twist_field_1(self):
         field = 'linear.x'
         vel = 3.0
@@ -63,3 +70,14 @@ class TestMessageGeneration(unittest.TestCase):
         other = []
         with self.assertRaisesRegexp(AssertionError, 'Wrong type'):
             TurtleDialogueInterface.set_twist_field(other, 'linear.x', 3.0)
+
+    def test_fill_fields(self):
+        interface = TurtleDialogueInterface()
+        interface.fill_default_command_mappings()
+
+        known = interface.known_commands()
+        self.assertTrue(known is not None)
+        self.assertTrue('right' in known)
+        self.assertTrue('left' in known)
+        self.assertTrue('up' in known)
+        self.assertTrue('down' in known)
