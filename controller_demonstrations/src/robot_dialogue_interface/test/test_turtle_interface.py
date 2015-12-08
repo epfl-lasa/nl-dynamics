@@ -4,6 +4,7 @@ from robot_dialogue_interface.turtle_dialogue_interface import \
     TurtleDialogueInterface
 from geometry_msgs.msg import Twist
 
+
 class TestCase(unittest.TestCase):
 
     # A fake publisher.
