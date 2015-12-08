@@ -22,10 +22,10 @@ class TurtleDialogueInterface(RobotDialogueInterface):
         down_twist = self.make_twist(['linear.x'], -1 * self._turtle_speed)
         self._known_commands['down'] = down_twist
 
-        right_twist = self.make_twist(['angular.z'], self._turtle_speed)
+        right_twist = self.make_twist(['angular.z'], -1 * self._turtle_speed)
         self._known_commands['right'] = right_twist
 
-        left_twist = self.make_twist(['angular.z'], -1 * self._turtle_speed)
+        left_twist = self.make_twist(['angular.z'], self._turtle_speed)
         self._known_commands['left'] = left_twist
 
     @classmethod
