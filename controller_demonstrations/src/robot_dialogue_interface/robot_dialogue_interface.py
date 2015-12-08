@@ -53,7 +53,7 @@ class RobotDialogueInterface(object):
         Implement this to make the robot do stuff.
         :param args:
         :param kwargs:
-        :return:
+        :return: True if command was executed, false otherwise.
         """
         raise NotImplementedError('Implement this in each robot interface.')
 
