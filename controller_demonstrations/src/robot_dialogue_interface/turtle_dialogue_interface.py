@@ -14,6 +14,14 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
     @classmethod
     def make_twist(cls, fields_list, velocity):
+        """
+        Generate a Twist() where several fields are set to the given velocity.
+
+        :param fields_list: List of fields that will all have the given
+        velocity. Other fields will have a default (zero) value.
+        :param velocity: Scalar velocity
+        :return: A new twist object.
+        """
         twist = Twist()
         for field in fields_list:
             cls.set_twist_field(twist, field, velocity)
@@ -21,6 +29,14 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
     @classmethod
     def set_twist_field(cls, twist, field, velocity):
+        """
+        Set a specific field of a Twist() to a given velocity.
+
+        :param twist: The twist object, modified *in place*
+        :param field: The field as a string, e.g., 'linear.x' or 'angular.y'
+        :param velocity: The velocity to set the field.
+        :return: nothing.
+        """
         nested_fields = field.split('.')
         assert len(nested_fields) == 2, \
             ('Must have exactly two fields for '
