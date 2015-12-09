@@ -35,8 +35,13 @@ class PublishCorrections(object):
                          CartStateStamped, self.kuka_callback)
 
         # Corrections are dict word->data
-        self._corrections = self.load_all_demonstrations_from_directory(
-            demonstration_dir)
+        self._corrections = {}
+
+        if demonstration_dir is not None:
+            rospy.loginfo('Loading all demonstrations from {}'.format(
+                demonstration_dir))
+            self._corrections = self.load_all_demonstrations_from_directory(
+                demonstration_dir)
 
         # Kuka state: we store the current robot state every time it is
         # received, and when a command *begins* we copy the current state (at
