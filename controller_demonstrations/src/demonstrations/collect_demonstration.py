@@ -141,6 +141,8 @@ class CollectDemonstration(object):
         self._num_velocity_points = 0
         self._velocity_vector = []
 
+        return msg
+
     def process_demonstration(self, demonstration_data):
         """Process demonstration data.
 
@@ -431,7 +433,7 @@ class CollectDemonstration(object):
 
     def handle_service_callback(self, req):
         self._collecting_data = True
-        self.do()
+        msg = self.do()
         self._collecting_data = False
 
         return True
