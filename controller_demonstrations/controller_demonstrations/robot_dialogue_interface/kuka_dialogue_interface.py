@@ -54,3 +54,4 @@ class KukaDialogueInterface(RobotDialogueInterface):
 if __name__ == '__main__':
     rospy.init_node('kuka_dialogue_interface', anonymous=False)
     kuka_interface = KukaDialogueInterface()
+    kuka_interface.connect()
