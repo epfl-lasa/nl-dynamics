@@ -98,7 +98,7 @@ class GettingCommandBranch(smach.StateMachine):
         askcommand_state = SayState('Which command would you like me to do ?')
         askcommand_name = 'Which Command ?'
 
-        getcommand_state = GetCommand(['left', 'right', 'up', 'down', 'dance'])
+        getcommand_state = GetCommand(robot_interface=robot_interface)
         getcommand_name = 'Receiving Command'
 
         commanddone_state = SayState('Okay I have done your command', blocking=True)
