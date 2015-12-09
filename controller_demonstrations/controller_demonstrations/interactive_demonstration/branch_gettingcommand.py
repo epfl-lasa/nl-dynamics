@@ -4,7 +4,7 @@ import rospy
 import smach
 import std_msgs
 import time
-
+from sound_play.libsoundplay import SoundClient
 
 from controller_demonstrations.robot_dialogue_interface.kuka_dialogue_interface import KukaDialogueInterface
 
@@ -32,10 +32,9 @@ class GetCommand(smach.State):
             self.command_list = command_list
         if self.robot_interface is not None:
             self.command_list = self.robot_interface.known_commands()
+        self.soundhandle = SoundClient(blocking=False)
 
     def command_list_str(self):
-        if self.robot_interface:
-            self.command_list = self.robot_interface.known_commands()
         my_command_list= ' '.join(self.command_list)
         return my_command_list
 
@@ -71,11 +70,18 @@ class GetCommand(smach.State):
                 cmd = self.command_in_dictionnary(self.msg)
                 if (cmd):
                     rospy.loginfo('Executing command: {}.'.format(cmd))
+                    self.soundhandle.say('Executing command {}'.format(cmd), blocking=True)
                     self.robot_interface.execute_command(cmd)
                     self.msg=''
                     return GetCommand.outcome_getcommand
                 elif(self.msg=='list'):
-                    return GetCommand.outcome_list
+                    self.soundhandle.say('The list of commands is: ' + self.command_list_str(),
+                                         blocking=True)
+                    self.soundhandle.say('What would you like me to do?')
+                    begin = rospy.get_rostime()  # Restart the timeout.
+                    self.msg = ''  # Clear the input string.
+                    continue
+
             end=rospy.get_rostime()
         rospy.loginfo('This command does not exist yet.')
         return GetCommand.outcome_unknowncommand
