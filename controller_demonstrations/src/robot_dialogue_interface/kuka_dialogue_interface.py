@@ -3,8 +3,7 @@
 import rospy
 from robot_dialogue_interface.robot_dialogue_interface import \
     RobotDialogueInterface
-from nl_msgs.srv import Demonstration, DemonstrationRequest
-
+from nl_msgs.srv import Demonstration
 
 
 class KukaDialogueInterface(RobotDialogueInterface):
@@ -21,6 +20,7 @@ class KukaDialogueInterface(RobotDialogueInterface):
     def _robot_record_command(self, command, *args, **kwargs):
         rospy.loginfo('Recording command: {}'.format(command))
 
+        # Send the request and wait for a response.
         response = self.srv(command)
 
         if response.success:
