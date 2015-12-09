@@ -146,11 +146,6 @@ def run(arguments):
     robot_interface = KukaDialogueInterface()
     robot_interface.connect()
 
-    # DEBUGGING FOR NOW
-    robot_interface._known_commands['right'] = None
-    robot_interface._known_commands['left'] = None
-    # DEBUGGING FOR NOW
-
     # Define the state machine here.
     machine = UserInteraction(robot_interface)
 
