@@ -74,8 +74,11 @@ class UserInteraction(smach.StateMachine):
     outcome_failure = 'failure'
     outcomes = [outcome_success, outcome_failure]
 
-    def __init__(self):
+    def __init__(self, robot_interface=None):
         super(UserInteraction, self).__init__(outcomes=UserInteraction.outcomes)
+
+        self._robot_interface = robot_interface
+        rospy.loginfo('Have robot interface: {}'.format(self._robot_interface))
 
         # Create the states and give them names here. Each state (an instance of
         # the class) has an associated name (a string), used by the transitions.
@@ -89,7 +92,7 @@ class UserInteraction(smach.StateMachine):
         branchspeed_machine = ChangingSpeedBranch()
 
         branchcommand_name = 'Giving Command'
-        branchcommand_machine = GettingCommandBranch()
+        branchcommand_machine = GettingCommandBranch(robot_interface=self._robot_interface)
 
         branchteach_name = 'Teaching Command'
         branchteach_machine = TeachingCommandBranch()
@@ -139,8 +142,16 @@ class UserInteraction(smach.StateMachine):
 def run(arguments):
     rospy.init_node('interactive_demo')
 
+    robot_interface = KukaDialogueInterface()
+    robot_interface.connect()
+
+    # DEBUGGING FOR NOW
+    robot_interface._known_commands['right'] = None
+    robot_interface._known_commands['left'] = None
+    # DEBUGGING FOR NOW
+
     # Define the state machine here.
-    machine = UserInteraction()
+    machine = UserInteraction(robot_interface)
 
     # Visualize the machine.
     machine_viz = smach_ros.IntrospectionServer(
