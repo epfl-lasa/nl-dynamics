@@ -3,8 +3,8 @@
 import roslib
 import rospy
 
-from demonstrations.correction_publisher import PublishCorrections
-from robot_dialogue_interface import RobotDialogueInterface
+from controller_demonstrations.demonstrations.correction_publisher import PublishCorrections
+from controller_demonstrations.robot_dialogue_interface.robot_dialogue_interface import RobotDialogueInterface
 from nl_msgs.srv import Demonstration
 
 

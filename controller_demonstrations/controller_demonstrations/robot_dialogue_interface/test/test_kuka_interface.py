@@ -1,6 +1,6 @@
 import unittest
 
-from robot_dialogue_interface.kuka_dialogue_interface import \
+from controller_demonstrations.robot_dialogue_interface.kuka_dialogue_interface import \
     KukaDialogueInterface
 
 
