@@ -1,26 +1,17 @@
  <launch>
 
- 	<!-- No need to roscore if we use a launchfile -->
- 	<!-- type correspond to node name -->
- 	<!--
-      Launch file for the speech recognizer (with the manipulator command
-      language model and ROS audio message subscription), and optionally the
-      microphone capture.
-
-      Usage:
-      roslaunch pocketsphinx robot_voice_control.launch
-
-      Usage (no microphone):
-      roslaunch pocketsphinx robot_voice_control.launch microphone:=0
-  	-->
 
 	<!-- subscribe to /audio ROS messages -->
 	<node name="recognizer" pkg="pocketsphinx" type="recognizer.py">
-		<param name="lm" value="$(find controller_demonstrations)/language_models/robot_control.lm" />
-		<param name="dict" value="$(find controller_demonstrations)/language_models/robot_control.dic" />
+		<param name="lm" value="$(find user_voice_recordings)/language_models/robot_control.lm" />
+		<param name="dict" value="$(find user_voice_recordings)/language_models/robot_control.dic" />
 		<param name="audio_msg_topic" value="/audio" />
 		<remap from="~output" to="nl_command_parsed"/>
 	</node>
 
+	<!-- <node name ="recorder" pkg="user_voice_recordings" type="User_Recording_Script.py"/> -->
 
-  </launch>
+
+ </launch>
+
+
