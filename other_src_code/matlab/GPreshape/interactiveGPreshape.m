@@ -120,20 +120,51 @@ jac = eye(2);
 end
 
 function Xd = reshapedDynamics(x)
-global originalDynamics;
-s = get(gcf,'UserData');
+    global originalDynamics;
+    s = get(gcf,'UserData');
 
-if(size(s.gpData, 1) < 4)
-    Xd = originalDynamics(x);
-    return
-end
+    if(size(s.gpData, 1) < 4 || size(x,2) == 10000)
+        Xd = originalDynamics(x);
+        return
+    end
 
-angleHat = s.gprStruct.regressionFunction(s.gpData(1:2,:)',s.gpData(3,:)',x');
-speedHat = s.gprStruct.regressionFunction(s.gpData(1:2,:)', s.gpData(4,:)',x');
+
+    % angleHat = s.gprStruct.regressionFunction(s.gpData(1:2,:)',s.gpData(3,:)',x');
+    % speedHat = s.gprStruct.regressionFunction(s.gpData(1:2,:)', s.gpData(4,:)',x');
+    training_angle=[];
+    training_speed=[];
+    xy=[];
+    dxy=[];
+    for i=1:size(x, 2)
+        t_close = minimumDistance2Spline(x(1,i), x(2,i), s.spline(1,:));
+
+        if t_close ~= -1
+            % add comment everywhere
+            xytemp = [getPointsSplineNO(s.spline(1,1), t_close); getPointsSplineNO(s.spline(1,2), t_close)];
+            dxytemp= [getVelSplineNO(s.spline(1,1), t_close); getVelSplineNO(s.spline(1,2), t_close)];
+            xyOrgtemp = originalDynamics(xytemp);
+            a = atan2 ( dxytemp(2), dxytemp(1) ) - atan2( xyOrgtemp(2), xyOrgtemp(1) );
+            
+            if(a > pi)
+                a = -(2*pi-a);
+            elseif(a < -pi)
+                a = 2*pi+a;
+            end
+
+            training_angle = [training_angle, a];
+            training_speed = [training_speed, norm(dxytemp)/norm(xyOrgtemp)-1];
+            xy = [xy,xytemp];
+            dxy= [dxy,dxytemp];
+        end
+    end
+    
+    angleHat = s.gprStruct.regressionFunction(xy', training_angle', x');
+    speedHat = s.gprStruct.regressionFunction(xy', training_speed', x');
 speedHat = max(speedHat, -0.9);
 %speedHat = customLogistic(speedHat,-1,20);
 Xd = originalDynamics(x);
 Xd = locallyRotateV(Xd,angleHat,speedHat);
+
 end
 
 function ret = buttonClicked(h, e, args)
@@ -263,28 +294,29 @@ for i=1:size(s.spline)
 %     plot(xx, getPointsSplineNO(s.spline(i), xx), 'b-', 'LineWidth', 1.5)
 end
 
-for i=1:size(s.spline, 1)
-    %draw test points
-    drawTriangle([s.xs,s.ys],'g');
-    
-    %get closest t_point of the spline
-    tic
-    t_close = minimumDistance2Spline(s.xs,s.ys, s.spline(i,:));
-    toc
-    
-    %draw closest point
-    if (t_close ~= -1)
-        if t_close > 1
-            t = linspace(1,t_close, 100);
-            plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r:', 'lineWidth', 2)
-        elseif t_close < 0
-            t = linspace(0,t_close, 100);
-            plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r:', 'lineWidth', 2)
-        end
-        
-        drawTriangle([ getPointsSplineNO(s.spline(i,1), t_close ), getPointsSplineNO(s.spline(i,2), t_close ) ], 'k');
-    end
-end
+% % show triangle on the testing points and closest point
+% for i=1:size(s.spline, 1)
+%     %draw test points
+%     drawTriangle([s.xs,s.ys],'g');
+%     
+%     %get closest t_point of the spline
+%     tic
+%     t_close = minimumDistance2Spline(s.xs,s.ys, s.spline(i,:));
+%     toc
+%     
+%     %draw closest point
+%     if (t_close ~= -1)
+%         if t_close > 1
+%             t = linspace(1,t_close, 100);
+%             plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r:', 'lineWidth', 2)
+%         elseif t_close < 0
+%             t = linspace(0,t_close, 100);
+%             plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r:', 'lineWidth', 2)
+%         end
+%         
+%         drawTriangle([ getPointsSplineNO(s.spline(i,1), t_close ), getPointsSplineNO(s.spline(i,2), t_close ) ], 'k');
+%     end
+% end
 set(gcf,'UserData',s);
 %x=[0;0];
 %[orgVel orgJac]=originalDynamics(x);
@@ -328,6 +360,7 @@ s.spline = [s.spline ; computeTrajectory(demPos, demVel, s.smooth)];
 
 % Compute the angle and speed factor. newData is a 4xN matrix with each
 % column: [x; y; theta; velocity].
+
 newData = computeLMDSdata2D(demPos,demVel,originalDynamics(demPos));
 
 % make sure there is at least one datapoint for the gp
@@ -573,8 +606,24 @@ function yy=getPointsSplineNO(splineData, xx)
     end
 end
 
+function dyy=getVelSplineNO(splineData, xx)
+%this function coulp be optimized a bit, so NO for Not optimized
+    dyy=[];
+    for i=1:size(xx,2)
+        count=2;
+        while (count<splineData.nbPoint && xx(i) > splineData.points(1,count))
+            count = count+1;
+        end
+        dyy=[dyy getDerCoef(splineData.coef(:,count-1), xx(i))];
+    end
+end
+
 function y=getValCoef(coef, x)
     y=coef(1).*x.^3+coef(2).*x.^2+coef(3).*x+coef(4);
+end
+
+function dy=getDerCoef(coef, x)
+    dy=3.*coef(1).*x.^2+2.*coef(2).*x+coef(3);
 end
 
 % -------- distance func
