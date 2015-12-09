@@ -20,6 +20,7 @@ class Demonstration(smach.State):
         input_keys=['demo_in'])
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
+        self.soundhandle = SoundClient(blocking=False)
         self.cmd=''
 
         self._robot_interface = robot_interface
@@ -29,9 +30,11 @@ class Demonstration(smach.State):
         self.cmd=''
         rospy.loginfo('THE COMMAND IS :' + userdata.demo_in)
         while(1):
-            rospy.sleep(0.5)
-            if(self.cmd=='start'):
+            rospy.sleep(0.1)
+            if('start' in self.cmd or 'yes' in self.cmd):
+                self.soundhandle.say('Recording')
                 ret = self._robot_interface.record_command(userdata.demo_in)
+                self.soundhandle.say('Finished recording')
                 return Demonstration.outcome_demonstration
             elif(self.cmd=='reset'):
                 return Demonstration.outcome_reset
