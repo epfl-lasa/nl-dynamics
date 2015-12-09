@@ -65,6 +65,7 @@ class GetCommand(smach.State):
         end=rospy.get_rostime()
         if self.robot_interface:
             self.command_list = self.robot_interface.known_commands()
+            rospy.loginfo('Known commands: {}'.format(self.command_list))
         while (end - begin).to_sec() < 10:
             if (self.msg != ''):
                 cmd = self.command_in_dictionnary(self.msg)
