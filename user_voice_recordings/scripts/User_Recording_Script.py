@@ -17,6 +17,7 @@ def listener():
         rospy.Subscriber(topic_sub, std_msgs.msg.String, callback, queue_size=1)
         rospy.spin()
 
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print 'Provide filename'
