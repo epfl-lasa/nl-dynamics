@@ -11,6 +11,7 @@ from say_state import SayState
 from branch_changingspeed import ChangingSpeedBranch
 from branch_gettingcommand import GettingCommandBranch
 from branch_teachingcommand import TeachingCommandBranch
+from sound_play.libsoundplay import SoundClient
 #from branch_changespeed import
 
 from controller_demonstrations.robot_dialogue_interface.kuka_dialogue_interface import KukaDialogueInterface
@@ -81,9 +82,12 @@ class UserInteraction(smach.StateMachine):
         self._robot_interface = robot_interface
         rospy.loginfo('Have robot interface: {}'.format(self._robot_interface))
 
+        soundhandle = SoundClient(blocking=True)
+        soundhandle.say('Hi there, I am a robot')
+
         # Create the states and give them names here. Each state (an instance of
         # the class) has an associated name (a string), used by the transitions.
-        hw_state = SayState(message='Hello, what would you like me to do ? command, changing speed or teaching ?', blocking=True)
+        hw_state = SayState(message='What would you like me to do ? command, changing speed or teaching ?', blocking=False)
         hw_name = 'Introduction'
 
         ready_state = ReadyState()
