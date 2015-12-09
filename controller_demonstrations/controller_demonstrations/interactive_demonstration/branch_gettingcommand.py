@@ -5,8 +5,10 @@ import smach
 import std_msgs
 import time
 
-from say_state import SayState
 
+from controller_demonstrations.robot_dialogue_interface.kuka_dialogue_interface import KukaDialogueInterface
+
+from say_state import SayState
 
 class GetCommand(smach.State):
     outcome_getcommand = 'getcommand'
@@ -14,7 +16,7 @@ class GetCommand(smach.State):
     outcome_list = 'list'
     outcomes = [outcome_getcommand, outcome_unknowncommand, outcome_list]
 
-    def __init__(self, my_list):
+    def __init__(self, command_list=None, robot_interface=None):
         # specify the outcomes
         smach.State.__init__(self, outcomes=GetCommand.outcomes)
         # Subscribe to a Topic
@@ -24,9 +26,16 @@ class GetCommand(smach.State):
         self.pub = rospy.Publisher(topic_pub, std_msgs.msg.String, queue_size=5)
         # internal data
         self.msg = ''
-        self.command_list = my_list
+        self.robot_interface = robot_interface
+        self.command_list = []
+        if command_list:
+            self.command_list = command_list
+        if self.robot_interface is not None:
+            self.command_list = self.robot_interface.known_commands()
 
     def command_list_str(self):
+        if self.robot_interface:
+            self.command_list = self.robot_interface.known_commands()
         my_command_list= ' '.join(self.command_list)
         return my_command_list
 
@@ -54,12 +63,14 @@ class GetCommand(smach.State):
         self.msg=''
         begin=rospy.get_rostime()
         end=rospy.get_rostime()
+        if self.robot_interface:
+            self.command_list = self.robot_interface.known_commands()
         while (end - begin).to_sec() < 10:
             if (self.msg != ''):
                 cmd = self.command_in_dictionnary(self.msg)
                 if (cmd):
-                    rospy.loginfo('This command exist yet.')
-                    self.pub.publish(cmd)
+                    rospy.loginfo('Executing command: {}.'.format(cmd))
+                    self.robot_interface.execute_command(cmd)
                     self.msg=''
                     return GetCommand.outcome_getcommand
                 elif(self.msg=='list'):
@@ -79,7 +90,7 @@ class GettingCommandBranch(smach.StateMachine):
     outcome_failure = 'failure'
     outcomes = [outcome_success, outcome_failure]
 
-    def __init__(self):
+    def __init__(self, robot_interface):
 
         super(GettingCommandBranch, self).__init__(
             outcomes=GettingCommandBranch.outcomes)
@@ -98,7 +109,6 @@ class GettingCommandBranch(smach.StateMachine):
 
         listing_state = SayState('The list of command is :'+ getcommand_state.command_list_str(), blocking=True)
         listing_name = 'Listing Commands'
-
 
         with self:
             self.add(askcommand_name, askcommand_state,
@@ -122,4 +132,8 @@ class GettingCommandBranch(smach.StateMachine):
 if __name__ == '__main__':
     import smach_ros
     rospy.init_node('interactive_demo')
-    machine=GettingCommandBranch()
+
+    kuka_interface = KukaDialogueInterface()
+    kuka_interface.connect()
+
+    machine=GettingCommandBranch(robot_interface=kuka_interface)
