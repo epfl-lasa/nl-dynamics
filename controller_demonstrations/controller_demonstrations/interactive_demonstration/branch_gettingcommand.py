@@ -90,13 +90,13 @@ class GettingCommandBranch(smach.StateMachine):
         getcommand_state = GetCommand(['left', 'right', 'up', 'down', 'dance'])
         getcommand_name = 'Receiving Command'
 
-        commanddone_state = SayState('Okay I have done your command')
+        commanddone_state = SayState('Okay I have done your command', blocking=True)
         commanddone_name = 'Aknowledge Command Done'
 
-        unknowncommand_state = SayState('Unknown Command')
+        unknowncommand_state = SayState('Unknown Command', blocking=True)
         unknowncommand_name = 'Unknow Command'
 
-        listing_state = SayState('The list of command is :'+ getcommand_state.command_list_str())
+        listing_state = SayState('The list of command is :'+ getcommand_state.command_list_str(), blocking=True)
         listing_name = 'Listing Commands'
 
 

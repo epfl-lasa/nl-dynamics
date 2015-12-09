@@ -71,6 +71,8 @@ class ConfirmationMachine(smach.StateMachine):
         super(ConfirmationMachine, self).__init__(outcomes=ConfirmationMachine.outcomes,
          output_keys=['UsersCommand_out'])
 
+        self.userdata.command_userdata = 0
+
         listencommand_state = ListenCommand()
         listencommand_name = 'Listen Command'
 
@@ -80,16 +82,17 @@ class ConfirmationMachine(smach.StateMachine):
         listenconfirmation_state = ListenConfirmation()
         listenconfirmation_name = 'Listen Confirmation'
 
+
         with self:
             self.add(listencommand_name, listencommand_state,
                      transitions={ListenCommand.outcome_listened: askconfirmation_name,
                                   ListenCommand.outcome_reset: ConfirmationMachine.outcome_reset},
-                     remapping={'listenedcommand_out': 'command_in'})
+                     remapping={'listenedcommand_out': 'command_userdata'})
 
 
             self.add(askconfirmation_name, askconfirmation_state,
                      transitions={SayState.outcome_success: listenconfirmation_name},
-                      remapping={'command_in': 'listenedcommand_out',
+                      remapping={'command_in': 'command_userdata',
                                  'command_out':'UsersCommand_out'})
 
             self.add(listenconfirmation_name, listenconfirmation_state,
