@@ -29,15 +29,29 @@ class KukaDialogueInterface(RobotDialogueInterface):
         pass
 
     def _robot_record_command(self, command, *args, **kwargs):
-        rospy.loginfo('Recording command: {}'.format(command))
+        rospy.loginfo('KUKA recording command: {}'.format(command))
 
         # Send the request and wait for a response.
+        rospy.loginfo('Sending service request.')
         response = self.srv(command)
+        rospy.loginfo('Received service response.')
 
         if response.success:
-            return response.demonstration
+            rospy.loginfo('Received successful KUKA demonstration')
+            # The demonstration publisher expects a list of CartStateStamped,
+            # not an AnchoredDemonstration message -- extract the demonstration
+            # to get the correct type stored inside the known commands.
+            return response.demonstration.demonstration
 
         # Make sure the result is not stored.
+        return False
+
+    def execute_command(self, command):
+        # Override the default behavior -- instead of calling do_command with
+        # the stored value, use the key (the command string) itself, as this is
+        # what the publisher expects.
+        if command in self._known_commands:
+            return self._robot_do_command(command)
         return False
 
     def _robot_do_command(self, command, *args, **kwargs):
