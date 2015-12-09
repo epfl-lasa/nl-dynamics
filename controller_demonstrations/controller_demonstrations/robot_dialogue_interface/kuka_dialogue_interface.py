@@ -23,6 +23,7 @@ class KukaDialogueInterface(RobotDialogueInterface):
         self.correction_publisher._corrections = self._known_commands
 
     def connect(self):
+        rospy.loginfo('Waiting for service...')
         rospy.wait_for_service('Correction_Isolation')
         self.srv = rospy.ServiceProxy('Correction_Isolation', Demonstration)
         pass
