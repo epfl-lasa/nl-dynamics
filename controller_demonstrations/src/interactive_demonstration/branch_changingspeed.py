@@ -78,15 +78,15 @@ class ChangingSpeedBranch(smach.StateMachine):
         confirmation_name = "Confirmation"
         confirmation_machine = ConfirmationMachine()
 
-        validatespeed_state = SayState('New Velocity implemented')
+        validatespeed_state = SayState('New Velocity implemented', blocking=True)
         validatespeed_name = 'Aknowledge Speed Changed'
 
         with self:
             self.add(askingspeed_name, askingspeed_state,
-                     transitions={SayState.outcome_success: speedchanged_name})
+                     transitions={SayState.outcome_success: confirmation_name})
 
-            self.add(speedchanged_name, speedchanged_state,
-                     transitions={ChangeSpeed.outcome_speedchanged: validatespeed_name})
+            #self.add(speedchanged_name, speedchanged_state,
+            #         transitions={ChangeSpeed.outcome_speedchanged: validatespeed_name})
 
             self.add(confirmation_name,confirmation_machine,
                      transitions={ConfirmationMachine.outcome_success: validatespeed_name,

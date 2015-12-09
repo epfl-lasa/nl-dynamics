@@ -79,7 +79,7 @@ class UserInteraction(smach.StateMachine):
 
         # Create the states and give them names here. Each state (an instance of
         # the class) has an associated name (a string), used by the transitions.
-        hw_state = SayState(message='Hello, what would you like me to do ? command, changing speed or teaching ?')
+        hw_state = SayState(message='Hello, what would you like me to do ? command, changing speed or teaching ?', blocking=True)
         hw_name = 'Introduction'
 
         ready_state = ReadyState()
