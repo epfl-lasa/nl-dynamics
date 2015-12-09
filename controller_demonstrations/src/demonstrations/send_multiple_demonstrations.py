@@ -126,7 +126,8 @@ class DemonstrationPlayback(object):
                     break
 
                 rospy.loginfo('Command: {}'.format(nl_command))
-                self._demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
+                self._demo_publisher.process_command(
+                    nl_command, use_current_state_as_anchor=True)
 
         except rospy.ROSInterruptException as e:
             print e

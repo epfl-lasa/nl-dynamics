@@ -78,7 +78,7 @@ def do(demo_dir):
     marker_array = MarkerArray()
 
     # Use the correction publisher to load the demonstrations for a directory.
-    corrections = PublishCorrections.load_all_demonstrations(demo_dir)
+    corrections = PublishCorrections.load_all_demonstrations_from_directory(demo_dir)
 
     for (idx, (word, correction)) in enumerate(corrections.iteritems()):
         # Correction is a list[CartStateStamped]
