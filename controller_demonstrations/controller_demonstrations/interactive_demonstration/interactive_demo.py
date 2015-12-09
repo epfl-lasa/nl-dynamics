@@ -13,6 +13,7 @@ from branch_gettingcommand import GettingCommandBranch
 from branch_teachingcommand import TeachingCommandBranch
 #from branch_changespeed import
 
+from controller_demonstrations.robot_dialogue_interface.kuka_dialogue_interface import KukaDialogueInterface
 
 class ReadyState(smach.State):
     # This state has two possible outcomes.
@@ -95,7 +96,7 @@ class UserInteraction(smach.StateMachine):
         branchcommand_machine = GettingCommandBranch(robot_interface=self._robot_interface)
 
         branchteach_name = 'Teaching Command'
-        branchteach_machine = TeachingCommandBranch()
+        branchteach_machine = TeachingCommandBranch(robot_interface=robot_interface)
 
         finished_state = SayState("I am finished")
         finished_name = 'Finishing'
