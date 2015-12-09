@@ -42,7 +42,7 @@
 dist: trusty
 sudo: required
 language:
-  - python
+  - general
 cache:
   - apt
 
