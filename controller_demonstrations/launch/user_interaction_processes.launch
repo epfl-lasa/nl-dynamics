@@ -30,13 +30,6 @@
 
 	<node name ="sound_play" pkg="sound_play" type="soundplay_node.py"/>
 
-	<node name ="robot_receiver" pkg="controller_demonstrations" type="robot_receiver.py"/>
-
-	<node name ="turtlesim" pkg="turtlesim" type="turtlesim_node"/>
-
-	<node name ="state_machine" pkg="controller_demonstrations" type="interactive_demo.py" output="screen"
-	required="true"/>
-
 	<arg name='viewer' default="1"/>
 	<node name ="smach_viewer" pkg="smach_viewer" type="smach_viewer.py" output="screen"
 			if="$(arg viewer)">
