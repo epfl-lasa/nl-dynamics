@@ -89,7 +89,7 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
 def run():
     rospy.init_node('turtle_dialogue_interface', anonymous=False)
-    rospy.loginfo('Robot dialogue interface')
+    rospy.loginfo('Turtlebot dialogue interface')
 
     interface = TurtleDialogueInterface()
     interface.connect()
