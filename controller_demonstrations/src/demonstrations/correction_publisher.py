@@ -28,7 +28,6 @@ class PublishCorrections(object):
     channel_kuka_state = 'KUKA/CartState'  # input
 
     def __init__(self, demonstration_dir):
-        rospy.init_node('publish_corrections', anonymous=False)
         self.pub = rospy.Publisher(PublishCorrections.channel_corrections,
                                    AnchoredDemonstration, queue_size=10)
         rospy.Subscriber(PublishCorrections.channel_kuka_state,

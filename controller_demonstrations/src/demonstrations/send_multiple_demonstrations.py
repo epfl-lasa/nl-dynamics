@@ -136,9 +136,9 @@ class DemonstrationPlayback(object):
         rospy.loginfo('Goodbye.')
 
 
-
 if __name__ == '__main__':
     args = sys.argv[1:]  # argv[0] is the program name.
+    rospy.init_node('send_demonstrations', anonymous=False)
 
     playback = DemonstrationPlayback(arguments=args)
     playback.run_send_multiple_commands()

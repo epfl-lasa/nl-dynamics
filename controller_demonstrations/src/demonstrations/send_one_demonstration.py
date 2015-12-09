@@ -36,4 +36,5 @@ def run_send_one_command(arguments):
 
 if __name__ == '__main__':
     arguments = sys.argv[1:]  # argv[0] is the program name.
+    rospy.init_node('send_demonstrations', anonymous=False)
     run_send_one_command(arguments)
