@@ -22,7 +22,7 @@ from nl_msgs.msg import AnchoredDemonstration
 from nl_msgs.msg import AttractorDemonstration
 from nl_msgs.msg import Correction
 from nl_msgs.msg import SplineClass
-from nl_msgs.srv import Demonstration
+from nl_msgs.srv import Demonstration, DemonstrationResponse
 
 from geometry_msgs.msg import Point
 
@@ -140,6 +140,8 @@ class CollectDemonstration(object):
 
         self._num_velocity_points = 0
         self._velocity_vector = []
+
+        return msg
 
     def process_demonstration(self, demonstration_data):
         """Process demonstration data.
@@ -430,11 +432,18 @@ class CollectDemonstration(object):
             self._collecting_data = False
 
     def handle_service_callback(self, req):
+
+        word = req.word
+        rospy.loginfo('Collecting demonstration for word: {}'.format(word))
         self._collecting_data = True
-        self.do()
+        msg = self.do()
         self._collecting_data = False
 
-        return True
+        success = msg is not None
+        response = DemonstrationResponse(success=success, demonstration=msg)
+        rospy.loginfo('Finished collecting demonstration.')
+
+        return response
 
 
 def downsampling(list_, nb_element_to_keep):

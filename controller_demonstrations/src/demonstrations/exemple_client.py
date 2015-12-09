@@ -12,7 +12,7 @@ def run():
         isolation = rospy.ServiceProxy('Correction_Isolation', Demonstration)
         reponse = isolation('testDemonstration')
 
-        if reponse:
+        if reponse.success:
             print 'sucess'
         else:
             print 'fail'
