@@ -38,6 +38,11 @@ class TestCommandInDictionnary(unittest.TestCase):
         ret = self.in_dictionnary.command_in_dictionnary('go faster then slower')
         self.assertEqual('slower', ret)
 
+    def test_several_word_commands(self):
+        cmd = GetCommand(['go up', 'down'])
+        ret = self.in_dictionnary.command_in_dictionnary('go up')
+        self.assertTrue(ret)
+
 if __name__ == '__main__':
     unittest.main()
 
