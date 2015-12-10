@@ -1,5 +1,7 @@
 import unittest
 
+import numpy as np
+
 from controller_demonstrations.robot_dialogue_interface.kuka_dialogue_interface import \
     KukaDialogueInterface
 
