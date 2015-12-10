@@ -62,6 +62,23 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(ref_twist, mock_pub.last_published)
 
+    def test_execute_multiple_commands_mock(self):
+        mock_pub = self.MockPub()
+        self.interface.pub = mock_pub
+        duration = rospy.Duration(0)
+        self.interface._known_commands['dance'] = [
+            ('linear.x', 1, duration), ('linear.x', -1, duration),
+            ('linear.x', 1, duration), ('linear.x', -1, duration)]
+
+        ret = self.interface.execute_command('dance')
+
+        self.assertEqual(True, ret)
+        self.assertEqual(4, mock_pub.num_pub)
+        ref_twist = Twist()
+        ref_twist.linear.x = -4.0
+
+        self.assertEqual(ref_twist, mock_pub.last_published)
+
     def test_execute_known_no_publisher(self):
         # Returns false because there is no publisher.
         ret = self.interface.execute_command('right')
