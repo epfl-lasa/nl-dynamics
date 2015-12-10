@@ -1,4 +1,5 @@
 import unittest
+import rospy
 
 from controller_demonstrations.robot_dialogue_interface.turtle_dialogue_interface import \
     TurtleDialogueInterface
@@ -24,7 +25,13 @@ class TestCase(unittest.TestCase):
     def test_get_command(self):
         cmd_to_execute = self.interface._known_commands['right']
         self.assertIsNotNone(cmd_to_execute)
-        self.assertIsInstance(cmd_to_execute, Twist)
+        self.assertIsInstance(cmd_to_execute, list)
+        self.assertEqual(1, len(cmd_to_execute))
+
+        (twist_field, sign, duration) = cmd_to_execute[0]
+        self.assertIsInstance(twist_field, basestring)
+        self.assertIsInstance(sign, int)
+        self.assertIsInstance(duration, rospy.Duration)
 
     def test_do_command_no_publisher(self):
         cmd_to_execute = self.interface._known_commands['right']
@@ -34,11 +41,14 @@ class TestCase(unittest.TestCase):
     def test_do_command_mock_publisher(self):
         mock_pub = self.MockPub()
         self.interface.pub = mock_pub
-        cmd_to_execute = self.interface._known_commands['right']
+        cmd_to_execute = self.interface._known_commands['up']
         ret = self.interface._robot_do_command(cmd_to_execute)
         self.assertEqual(True, ret)
         self.assertEqual(1, mock_pub.num_pub)
-        self.assertEqual(cmd_to_execute, mock_pub.last_published)
+
+        ref_twist = Twist()
+        ref_twist.linear.x = 4.0
+        self.assertEqual(ref_twist, mock_pub.last_published)
 
     def test_execute_known_mock_publisher(self):
         mock_pub = self.MockPub()
@@ -47,8 +57,10 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual(True, ret)
         self.assertEqual(1, mock_pub.num_pub)
-        self.assertEqual(self.interface._known_commands['right'],
-                         mock_pub.last_published)
+        ref_twist = Twist()
+        ref_twist.angular.z = -4.0
+
+        self.assertEqual(ref_twist, mock_pub.last_published)
 
     def test_execute_known_no_publisher(self):
         # Returns false because there is no publisher.

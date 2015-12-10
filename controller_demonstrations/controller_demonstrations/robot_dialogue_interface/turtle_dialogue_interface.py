@@ -16,17 +16,14 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
     def fill_default_command_mappings(self):
 
-        up_twist = self.make_twist(['linear.x'], self._turtle_speed)
-        self._known_commands['up'] = up_twist
-
-        down_twist = self.make_twist(['linear.x'], -1 * self._turtle_speed)
-        self._known_commands['down'] = down_twist
-
-        right_twist = self.make_twist(['angular.z'], -1 * self._turtle_speed)
-        self._known_commands['right'] = right_twist
-
-        left_twist = self.make_twist(['angular.z'], self._turtle_speed)
-        self._known_commands['left'] = left_twist
+        duration = rospy.Duration(0)
+        # Each command is a tuple with the twist field to activate, a sign to
+        # multiply the velocity, and a duration to sleep *after* the message is
+        # published (the command goes out).
+        self._known_commands['up'] = [('linear.x', 1, duration)]
+        self._known_commands['down'] = [('linear.x', -1, duration)]
+        self._known_commands['right'] = [('angular.z', -1, duration)]
+        self._known_commands['left'] = [('angular.z', 1, duration)]
 
     @classmethod
     def make_twist(cls, fields_list, velocity):
@@ -72,12 +69,39 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
         setattr(getattr(twist, inner), outer, velocity)
 
-    def _robot_do_command(self, command, **kwargs):
+    def _robot_do_command(self, stuff_to_do, **kwargs):
+        """
+        Publish a list of time-Twist tuples out to the robot.
+
+        Each tuple is a twist field accompanied by a Duration:
+          - The twist field represents which field is active (e.g., 'linear.x')
+          - The Duration is time to sleep *after* publishing the Twist.
+
+        This creates a Twist message with the current velocity; each resulting
+        Twist only has a single element 'active'.
+
+        The final duration should be zero, but it is not ignored if it isn't.
+
+        :param stuff_to_do: [(twist_field, duration), ...]
+        :param kwargs:
+        :return:
+        """
 
         if not self.pub:
             return False
 
-        self.pub.publish(command)
+        for (field, sign, duration) in stuff_to_do:
+            rospy.loginfo('Sending a twist for {} and pausing {}'.format(
+                field, duration.to_sec()))
+
+            assert isinstance(field, basestring), 'Must get a field name (str)'
+            assert isinstance(duration, rospy.Duration), 'Must get a Duration'
+
+            twist = self.make_twist([field], sign * self._turtle_speed)
+            self.pub.publish(twist)
+
+            rospy.sleep(duration)
+
         return True
 
     def _robot_set_speed(self, speed, **kwargs):
