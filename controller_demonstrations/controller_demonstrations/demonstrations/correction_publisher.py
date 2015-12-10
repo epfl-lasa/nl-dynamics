@@ -28,14 +28,19 @@ class PublishCorrections(object):
     channel_kuka_state = 'KUKA/CartState'  # input
 
     def __init__(self, demonstration_dir):
-        rospy.init_node('publish_corrections', anonymous=True)
         self.pub = rospy.Publisher(PublishCorrections.channel_corrections,
                                    AnchoredDemonstration, queue_size=10)
         rospy.Subscriber(PublishCorrections.channel_kuka_state,
                          CartStateStamped, self.kuka_callback)
 
         # Corrections are dict word->data
-        self._corrections = self.load_all_demonstrations(demonstration_dir)
+        self._corrections = {}
+
+        if demonstration_dir is not None:
+            rospy.loginfo('Loading all demonstrations from {}'.format(
+                demonstration_dir))
+            self._corrections = self.load_all_demonstrations_from_directory(
+                demonstration_dir)
 
         # Kuka state: we store the current robot state every time it is
         # received, and when a command *begins* we copy the current state (at
@@ -55,14 +60,14 @@ class PublishCorrections(object):
         return self._corrections.items()
 
     @classmethod
-    def load_all_demonstrations(cls, demonstration_dir):
+    def load_all_demonstrations_from_directory(cls, demonstration_dir):
         ret = {}
 
         # Find all files in the directory.
         files = file_util.get_files('', demonstration_dir)
         for f in files:
             filepath = file_util.get_fpath(demonstration_dir, f)
-            anchored_demo = cls.load_demonstration(filepath)
+            anchored_demo = cls.load_demonstration_from_file(filepath)
 
             words = anchored_demo.words
             for w in words:
@@ -76,7 +81,7 @@ class PublishCorrections(object):
         return ret
 
     @classmethod
-    def load_demonstration(cls, filepath):
+    def load_demonstration_from_file(cls, filepath):
         # Loads a single demonstration from a file and returns a single
         # AnchoredDemonstration message.
         rospy.loginfo('Loading demonstration from {}.'.format(filepath))
@@ -111,7 +116,7 @@ class PublishCorrections(object):
                 corrections.append(msg)
             else:
                 rospy.loginfo('Skipping demonstration for unknown '
-                               'word: {}'.format(word))
+                              'word: {}'.format(word))
                 pass
 
         # Publish corrections here.
@@ -132,19 +137,19 @@ class PublishCorrections(object):
                 word, self._corrections.keys()))
             return None
 
-        assert isinstance(word, basestring)  # Get a string, not a list of strings.
+        # Make sure we have a string, not a list of strings.
+        assert isinstance(word, basestring)
 
         correction = AnchoredDemonstration()
         correction.header.stamp = rospy.Time.now()
         correction.words.append(word)
         correction.num_words = 1
 
-
         # Set the corrections: Transform each demonstrated point so it begins
         # from the robot anchor.
         correction.num_points = len(self._corrections[word])
-        anchor_frame = tf_conversions.fromMsg(robot_anchor.pose)  # Use PyKDL.Frame.
-        anchor_frame.M = PyKDL.Rotation()  # NO ROTATION HACK
+        anchor_frame = tf_conversions.fromMsg(robot_anchor.pose)  # PyKDL.Frame.
+        anchor_frame.M = PyKDL.Rotation()  # No rotation.
         for c in self._corrections[word]:
 
             # Convert each pose to be in the world frame, using the anchor.

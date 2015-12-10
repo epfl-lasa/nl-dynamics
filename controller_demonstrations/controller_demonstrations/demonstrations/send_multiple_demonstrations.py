@@ -126,7 +126,8 @@ class DemonstrationPlayback(object):
                     break
 
                 rospy.loginfo('Command: {}'.format(nl_command))
-                self._demo_publisher.process_command(nl_command, use_current_state_as_anchor=True)
+                self._demo_publisher.process_command(
+                    nl_command, use_current_state_as_anchor=True)
 
         except rospy.ROSInterruptException as e:
             print e
@@ -135,9 +136,9 @@ class DemonstrationPlayback(object):
         rospy.loginfo('Goodbye.')
 
 
-
 if __name__ == '__main__':
     args = sys.argv[1:]  # argv[0] is the program name.
+    rospy.init_node('send_demonstrations', anonymous=False)
 
     playback = DemonstrationPlayback(arguments=args)
     playback.run_send_multiple_commands()

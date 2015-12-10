@@ -2,7 +2,7 @@ __author__ = 'cgschmit'
 
 import unittest
 
-from interactive_demonstration.branch_gettingcommand import GetCommand
+from controller_demonstrations.interactive_demonstration.branch_gettingcommand import GetCommand
 import rospy
 
 class TestCommandInDictionnary(unittest.TestCase):

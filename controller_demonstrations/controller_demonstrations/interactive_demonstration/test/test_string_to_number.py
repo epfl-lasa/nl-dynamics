@@ -2,7 +2,7 @@ __author__ = 'felixd'
 
 import unittest
 
-from interactive_demonstration.branch_changingspeed import ChangeSpeed
+from controller_demonstrations.interactive_demonstration.branch_changingspeed import ChangeSpeed
 
 class TestStringToNum(unittest.TestCase):
 

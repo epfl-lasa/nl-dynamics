@@ -155,5 +155,6 @@ include_directories(
 # endif()
 
 ## Add folders to be run by python nosetests
-catkin_add_nosetests(src/demonstrations)
-catkin_add_nosetests(src/interactive_demonstration)
+catkin_add_nosetests(controller_demonstrations/demonstrations)
+catkin_add_nosetests(controller_demonstrations/interactive_demonstration)
+catkin_add_nosetests(controller_demonstrations/robot_dialogue_interface)
