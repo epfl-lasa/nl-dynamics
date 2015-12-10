@@ -50,9 +50,9 @@ class ListenConfirmation(smach.State):
         while(1):
             if(self.cmd=='reset'):
                 return ListenConfirmation.outcome_reset
-            elif(self.cmd=='yes'):
+            elif(self.cmd=='right'):
                 return ListenConfirmation.outcome_success
-            elif(self.cmd=='no'):
+            elif(self.cmd=='wrong'):
                 return ListenConfirmation.outcome_failure
             rospy.sleep(0.1)
 
@@ -82,7 +82,6 @@ class ConfirmationMachine(smach.StateMachine):
         listenconfirmation_state = ListenConfirmation()
         listenconfirmation_name = 'Listen Confirmation'
 
-
         with self:
             self.add(listencommand_name, listencommand_state,
                      transitions={ListenCommand.outcome_listened: askconfirmation_name,
@@ -99,6 +98,8 @@ class ConfirmationMachine(smach.StateMachine):
                      transitions={ListenConfirmation.outcome_success: ConfirmationMachine.outcome_success,
                                   ListenConfirmation.outcome_failure: ConfirmationMachine.outcome_failure,
                                   ListenConfirmation.outcome_reset: ConfirmationMachine.outcome_reset})
+                                  
+            
 
 
 if __name__ == '__main__':

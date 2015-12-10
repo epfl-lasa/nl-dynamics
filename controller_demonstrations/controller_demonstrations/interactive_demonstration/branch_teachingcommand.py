@@ -16,13 +16,15 @@ class Demonstration(smach.State):
     outcomes = [outcome_demonstration, outcome_reset]
 
     def __init__(self):
-        smach.State.__init__(self, outcomes=Demonstration.outcomes)
+        smach.State.__init__(self, outcomes=Demonstration.outcomes, 
+        input_keys=['demo_in'])
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
         self.cmd=''
 
     def execute(self, userdata):
         self.cmd=''
+        rospy.loginfo('THE COMMAND IS :' + userdata.demo_in)
         while(1):
             rospy.sleep(0.5)
             if(self.cmd=='start'):
@@ -44,7 +46,8 @@ class TeachingCommandBranch(smach.StateMachine):
     def __init__(self):
 
         super(TeachingCommandBranch, self).__init__(
-            outcomes=TeachingCommandBranch.outcomes)
+            outcomes=TeachingCommandBranch.outcomes,
+            input_keys=['UsersCommand_in'])
 
         askteachcommand_name='Which command ?'
         askteachcommand_state=SayState('Which command would you like to teach me ?')
@@ -78,7 +81,8 @@ class TeachingCommandBranch(smach.StateMachine):
 
             self.add(demonstration_name, demonstration_state,
                      transitions={Demonstration.outcome_demonstration: getconfirmationtrajectory_name,
-                                  Demonstration.outcome_reset: TeachingCommandBranch.outcome_reset})
+                                  Demonstration.outcome_reset: TeachingCommandBranch.outcome_reset},
+                                  remapping={'demo_in':'UsersCommand_out'})
 
             self.add(getconfirmationtrajectory_name, getconfirmationtrajectory_machine,
                      transitions={ConfirmationMachine.outcome_success: TeachingCommandBranch.outcome_success,
