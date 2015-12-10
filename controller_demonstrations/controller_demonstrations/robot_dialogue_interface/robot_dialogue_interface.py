@@ -1,3 +1,5 @@
+import rospy
+
 
 class RobotDialogueInterface(object):
 
@@ -22,8 +24,10 @@ class RobotDialogueInterface(object):
         """
         ret = self._robot_record_command(command)
         if ret:
+            rospy.loginfo('Adding a command for [{}]'.format(command))
             self._known_commands[command] = ret
             return True
+        rospy.loginfo('Recording command {} failed'.format(command))
         return False
 
     def execute_command(self, command):

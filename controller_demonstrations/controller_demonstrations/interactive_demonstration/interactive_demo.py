@@ -11,8 +11,10 @@ from say_state import SayState
 from branch_changingspeed import ChangingSpeedBranch
 from branch_gettingcommand import GettingCommandBranch
 from branch_teachingcommand import TeachingCommandBranch
+from sound_play.libsoundplay import SoundClient
 #from branch_changespeed import
 
+from controller_demonstrations.robot_dialogue_interface.kuka_dialogue_interface import KukaDialogueInterface
 
 class ReadyState(smach.State):
     # This state has two possible outcomes.
@@ -74,12 +76,18 @@ class UserInteraction(smach.StateMachine):
     outcome_failure = 'failure'
     outcomes = [outcome_success, outcome_failure]
 
-    def __init__(self):
+    def __init__(self, robot_interface=None):
         super(UserInteraction, self).__init__(outcomes=UserInteraction.outcomes)
+
+        self._robot_interface = robot_interface
+        rospy.loginfo('Have robot interface: {}'.format(self._robot_interface))
+
+        soundhandle = SoundClient(blocking=True)
+        soundhandle.say('Hi there, I am a robot')
 
         # Create the states and give them names here. Each state (an instance of
         # the class) has an associated name (a string), used by the transitions.
-        hw_state = SayState(message='Hello, what would you like me to do ? command, changing speed or teaching ?', blocking=True)
+        hw_state = SayState(message='What would you like me to do ? command, changing speed or teaching ?', blocking=False)
         hw_name = 'Introduction'
 
         ready_state = ReadyState()
@@ -89,10 +97,10 @@ class UserInteraction(smach.StateMachine):
         branchspeed_machine = ChangingSpeedBranch()
 
         branchcommand_name = 'Giving Command'
-        branchcommand_machine = GettingCommandBranch()
+        branchcommand_machine = GettingCommandBranch(robot_interface=self._robot_interface)
 
         branchteach_name = 'Teaching Command'
-        branchteach_machine = TeachingCommandBranch()
+        branchteach_machine = TeachingCommandBranch(robot_interface=robot_interface)
 
         finished_state = SayState("I am finished")
         finished_name = 'Finishing'
@@ -139,8 +147,11 @@ class UserInteraction(smach.StateMachine):
 def run(arguments):
     rospy.init_node('interactive_demo')
 
+    robot_interface = KukaDialogueInterface()
+    robot_interface.connect()
+
     # Define the state machine here.
-    machine = UserInteraction()
+    machine = UserInteraction(robot_interface)
 
     # Visualize the machine.
     machine_viz = smach_ros.IntrospectionServer(

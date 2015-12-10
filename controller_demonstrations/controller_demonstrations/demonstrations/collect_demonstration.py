@@ -74,7 +74,7 @@ class CollectDemonstration(object):
 
         self.MOTION_DISTANCE_THRESHOLD = 1e-3
 
-        self._collecting_data = True
+        self._collecting_data = False
 
         if len(words) > 0:
             rospy.loginfo('Collecting demonstration for words: {}'.format(words))
@@ -236,6 +236,7 @@ class CollectDemonstration(object):
             self._plot = False   # a segfault appear when ploted twice, so we turn the plot off after the first plot.
             fig = plt.figure()
             ax = fig.gca(projection='3d')
+
             # plotting new position
 
             (anchor_new, downsampled) = self.remove_anchor_pose(anchor, downsampled)
@@ -267,6 +268,20 @@ class CollectDemonstration(object):
             ax.set_ylabel('Y axis')
             ax.set_zlabel('Z axis')
             ax.axis('equal')
+
+          # setting axis to be equal
+            # (xmin, xmax) = self.get_xlim3d()
+            # (ymin, ymax) = self.get_ylim3d()
+            # (zmin, zmax) = self.get_zlim3d() 
+
+            # min_limit = min(xmin, ymin, zmin)
+            # max_limit = max(xmax, ymax, zmax)
+
+            # ax.auto_scale_xyz([min_limit, max_limit], 
+            #                   [min_limit, max_limit], 
+            #                   [min_limit, max_limit])
+
+            ax.pbaspect = [1,1,1]
 
             plt.ion()
             plt.show()

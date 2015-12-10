@@ -15,21 +15,26 @@ class Demonstration(smach.State):
     outcome_reset = 'Reset'
     outcomes = [outcome_demonstration, outcome_reset]
 
-    def __init__(self):
-        smach.State.__init__(self, outcomes=Demonstration.outcomes, 
+    def __init__(self, robot_interface):
+        smach.State.__init__(self, outcomes=Demonstration.outcomes,
         input_keys=['demo_in'])
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
+        self.soundhandle = SoundClient(blocking=False)
         self.cmd=''
 
+        self._robot_interface = robot_interface
+
     def execute(self, userdata):
+
         self.cmd=''
         rospy.loginfo('THE COMMAND IS :' + userdata.demo_in)
         while(1):
-            rospy.sleep(0.5)
-            if(self.cmd=='start'):
-                while(self.cmd!='stop'):
-                    rospy.sleep(0.5)
+            rospy.sleep(0.1)
+            if('start' in self.cmd or 'yes' in self.cmd):
+                self.soundhandle.say('Recording')
+                ret = self._robot_interface.record_command(userdata.demo_in)
+                self.soundhandle.say('Finished recording')
                 return Demonstration.outcome_demonstration
             elif(self.cmd=='reset'):
                 return Demonstration.outcome_reset
@@ -43,7 +48,7 @@ class TeachingCommandBranch(smach.StateMachine):
     outcome_reset = 'reset'
     outcomes = [outcome_success, outcome_reset]
 
-    def __init__(self):
+    def __init__(self, robot_interface):
 
         super(TeachingCommandBranch, self).__init__(
             outcomes=TeachingCommandBranch.outcomes,
@@ -62,7 +67,7 @@ class TeachingCommandBranch(smach.StateMachine):
         explanation_state=SayState('Say Yes or No please')
 
         demonstration_name='Demonstration'
-        demonstration_state=Demonstration()
+        demonstration_state=Demonstration(robot_interface)
 
         getconfirmationtrajectory_name='Get Confirmation Command Trajectory'
         getconfirmationtrajectory_machine=ConfirmationMachine()
@@ -108,5 +113,3 @@ if __name__ == '__main__':
     rospy.loginfo('Outcome: {}'.format(outcome))
 
     machine_viz.stop()
-
-
