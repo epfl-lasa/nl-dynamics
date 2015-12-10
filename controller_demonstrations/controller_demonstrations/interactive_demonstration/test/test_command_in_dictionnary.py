@@ -35,13 +35,15 @@ class TestCommandInDictionnary(unittest.TestCase):
         self.assertEqual('slower', ret)
 
     def test_both(self):
+        # Note we will return the first.
         ret = self.in_dictionnary.command_in_dictionnary('go faster then slower')
-        self.assertEqual('slower', ret)
+        self.assertEqual('faster', ret)
 
     def test_several_word_commands(self):
+        # Our algorithm should work for multi-word tokens.
         cmd = GetCommand(['go up', 'down'])
-        ret = self.in_dictionnary.command_in_dictionnary('go up')
-        self.assertTrue(ret)
+        ret = cmd.command_in_dictionnary('go up')
+        self.assertEqual('go up', ret)
 
 if __name__ == '__main__':
     unittest.main()

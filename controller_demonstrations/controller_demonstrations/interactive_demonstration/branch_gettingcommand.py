@@ -39,20 +39,10 @@ class GetCommand(smach.State):
         return my_command_list
 
     def command_in_dictionnary(self, message):
-        b = -1
-        cmd = ''
-        msg_split = message.split()  # Separe la string par mot (separateur *espace*
-        length_msg = len(msg_split)  # Retourne le nombre de mots dans la string
-        for i in range(length_msg):  # Parcoure chaque mot
-            if (msg_split[i] in self.command_list):  # Si un des mots est dans la string msg
-                b = i  # Alors il donne la place du mot dans la string
-                rospy.loginfo('The value of b is %d', b)
-
-        if (b >= 0):  # empty string is checked here and if the number is in the string also
-            cmd = msg_split[b]  # contient le mot qui est dans le dictionnaire
-            return cmd
-        else:
-            return None
+        for token in self.command_list:
+            if token in message:
+                return token
+        return None
 
     def execute(self, userdata):
         # Assumption for now: wait until the user provides *one* of the available commands. Stay in this state until this is true.
