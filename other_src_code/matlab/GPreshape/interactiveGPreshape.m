@@ -67,15 +67,7 @@ s.breakSimulation = 0;
 s.opt = opt;
 s.trianglesData = [];
 s.spline = [];
-s.smooth = 1/1; %cut every 1/smoothparam
-s.smooth2 = 5; %check that the distance between point is bigger than smooth2
-s.xs = 0;
-s.ys = 0;
-s.allAngle = [];
-s.allAngleHat = [];
-s.allVelocity=[];
-s.allt = [];
-s.allX=[];
+s.smooth = 1/1;
 
 % parameters for GP regression
 s.gprStruct.meanfunc = {@meanZero};
@@ -121,9 +113,9 @@ function setup_global_demo_figure(figureHandle, dynamics)
 end
 
 function [xd jac] = originalDynamicsGMR(x)
-global originalGMM;
-xd = GMR(originalGMM.Priors,originalGMM.Mu,originalGMM.Sigma,x,1:2,3:4 )
-jac = eye(2);
+    global originalGMM;
+    xd = GMR(originalGMM.Priors,originalGMM.Mu,originalGMM.Sigma,x,1:2,3:4 )
+    jac = eye(2);
 end
 
 function Xd = reshapedDynamics(x)
@@ -134,10 +126,9 @@ function Xd = reshapedDynamics(x)
         Xd = originalDynamics(x);
         return
     end
-
-    % angleHat = s.gprStruct.regressionFunction(s.gpData(1:2,:)',s.gpData(3,:)',x');
-    % speedHat = s.gprStruct.regressionFunction(s.gpData(1:2,:)', s.gpData(4,:)',x');
     
+    %compute the closest point (t_close), support many spline (return
+    %  i_close, is the ieme spline)
     t_close = minimumDistance2Spline(x(1,1), x(2,1), s.spline(1,:));
     i_close = 1;
     for i=2:size(s.spline,1)
@@ -153,37 +144,22 @@ function Xd = reshapedDynamics(x)
     end
     
     if t_close ~= -1 %-1 means that the closest point is not on the curve
-        
-        %add comment everywhere
         xy_close = [getPointsSplineNO(s.spline(i_close,1), t_close); getPointsSplineNO(s.spline(i_close,2), t_close)];
         xy_vel_close = [getVelSplineNO(s.spline(i_close,1), t_close); getVelSplineNO(s.spline(i_close,2), t_close)];
         xy_org_close = originalDynamics(xy_close);
+        
+        %compute training data
         training_angle = atan2 (xy_vel_close(2), xy_vel_close(1)) - atan2(xy_org_close(2), xy_org_close(1) );
-
-        if(training_angle > pi)
-            training_angle = training_angle-2*pi;
-        elseif(training_angle < -pi)
-            training_angle = training_angle+2*pi;
-        end
-
         training_speed = norm(xy_vel_close)/norm(xy_org_close)-1;
         
-        s.allAngle = [s.allAngle, training_angle]; 
-        s.allVelocity = [s.allVelocity, training_speed];
-        s.allt = [s.allt, t_close];
-        
+        %compute testing data
         angleHat = s.gprStruct.regressionFunction(xy_close, training_angle, x);
         speedHat = s.gprStruct.regressionFunction(xy_close, training_speed, x);
-
-        s.allAngleHat = [s.allAngleHat, angleHat];
-        
-        set(gcf, 'UserData', s);
         
         speedHat = max(speedHat, -0.9);
         %speedHat = customLogistic(speedHat,-1,20);
         Xd = originalDynamics(x);
         Xd = locallyRotateV(Xd,angleHat,speedHat);
-        
         
     else
         Xd = originalDynamics(x);
@@ -209,57 +185,25 @@ elseif(strcmp(get(gcf,'SelectionType'),'alt'))
 elseif(strcmp(get(gcf,'SelectionType'),'extend'))
     interactiveGPreshape(args{:});
 elseif(strcmp(get(gcf, 'SelectionType'), 'open'))
-%     x = get(gca,'Currentpoint');
-%     x = x(1,1:2)';
-%     loadStoredPoints(h, x)
     x = get(gca,'Currentpoint');
-    s.xs = x(1,1);
-    s.ys = x(1,2);
+    x = x(1,1:2)';
+    loadStoredPoints(h, x)
     set(gcf, 'UserData', s);
     updateStreamlines(h);
 end
 end
 
-%only for debugging, to be deleated...
 function plotall()
+    % plot some information about spline, uncomment whatever you want
+
      s = get(gcf, 'UserData');
      
-     t = linspace (0, 1, 1000);
-     angle = 180/pi*atan2( getVelSplineNO(s.spline(end,2), t), getVelSplineNO(s.spline(end,1), t));
-     
-     figure
-     plot( t, angle);
-%     
-%     t = linspace ( 0,1,1000);
-%     i = 1:1000;
-%     
-%     splineVel = [getVelSplineNO(s.spline(1,1), t); getVelSplineNO(s.spline(1,2), t)];
-%     
-%     a = s.spline.points;
-%     tx = [a(1,:), 1];
-%     ix = 1:size(tx,2);
-%     
-%     pointvel = [getVelSplineNO(s.spline(1,1), tx); getVelSplineNO(s.spline(1,2), tx)];
-%     
-%     figure
-%     plot (i, 180/pi.*atan2(splineVel(2,i), splineVel(1,i)));
-    %hold on
-    %plot (ix, 180/pi.*atan2(pointvel(2,ix), pointvel(1,ix)), 'ro');
-
-%     t = 1:size(s.allAngle, 2);
-%     
-%     figure
-%     plot(t, s.allAngle, 'b', t, s.allVelocity, 'r');
-%     legend('angle', 'anglehat');
-%     
-%     figure
-%     plot(t, s.allVelocity);
-%     legend('speed')
-    
-%     figure
-%     plot(t, s.allt);
-%     legend('t_close')
-
+     % plot angle along the first spline
+%      t = linspace (0, 1, 1000);
+%      angle = 180/pi*atan2( getVelSplineNO(s.spline(end,2), t), getVelSplineNO(s.spline(end,1), t));
+%      
+%      figure
+%      plot( t, angle);
 end
 
 function ret = startDemonstration()
@@ -274,8 +218,6 @@ function ret = stopDemonstration(h,e)
 
 set(gcf,'WindowButtonMotionFcn',[]);
 processNewData();
-
-
 updateStreamlines(h);
 set(gcf,'WindowButtonUpFcn',[]);
 
@@ -306,7 +248,7 @@ updateStreamlines(figureHandle);
 end
 
 function ret = recordPoint(h,e)
-s =get(gcf,'UserData');
+s = get(gcf,'UserData');
 x = get(gca,'Currentpoint');
 x = x(1,1:2)';
 s.newPosData = [s.newPosData,x];
@@ -339,96 +281,16 @@ colormap(cm);
 
 s.streamHandle = streamslice(axisHandle, s.gridData.xM,s.gridData.yM,reshape(Xd(1,:),s.gridData.nX,s.gridData.nX),reshape(Xd(2,:),s.gridData.nX,s.gridData.nX),0.5);
 
-% % plot collected points (desactivated because spline are plot now)
-% plot(axisHandle, s.allData(1,:),s.allData(2,:),'r.');
-% % plot training points
-% plot(axisHandle, s.gpData(1,:),s.gpData(2,:),'go');
-
-%drawing triangles
-% for i=1:2:size(s.trianglesData, 1)
-%     drawTriangle(s.trianglesData(i,:), 'm');
-%     drawTriangle(s.trianglesData(i+1,:), 'k');
-% end
-
-%drawing points in green
+%drawing training points in green
 plot(s.allData(1,:), s.allData(2,:), 'go')
-% t=smoothData(size(s.allData, 2), s.smooth);
-% plot(s.allData(1,t), s.allData(2,t), 'bo','LineWidth', 1.3);
 
 %drawing spline
 for i=1:size(s.spline)
-
-%     t=linspace(-0.003,1.003,s.spline(i,1).nbPoint*100);
-%     plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r-', 'LineWidth', 1.5);
-
     for j=1:s.spline(1).nbPoint
         t=linspace(s.spline(1).points(1,j),    s.spline(1).points(2,j)    ,100);
         plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r-', 'LineWidth', 1.5);
     end
-
 end
-
-% 
-%     t = linspace(0,1,s.spline(i,1).nbPoint);
-%     splineVel = [getVelSplineNO(s.spline(1,1), t); getVelSplineNO(s.spline(1,2), t)];
-%     splinePos = [getPointsSplineNO(s.spline(1,1), t); getPointsSplineNO(s.spline(1,2), t)];
-%     angle = [];
-    
-% for i=1:size(t,2)
-%     norma = norm(splineVel(:,i));
-%     
-%    splineVel(1,i) = splineVel(1,i)/norma * 20;
-%    splineVel(2,i) = splineVel(2,i)/norma * 20;
-%    
-%    %plot( [splinePos(1,i), splinePos(1,i)+splineVel(1,i)], [splinePos(2,i), splinePos(2,i)+splineVel(2,i)], 'k')
-%    
-%    a = atan2(splineVel(2,i), splineVel(1,i));
-%    angle(i) = a;
-%    a = a-pi/2;
-%    
-%    %plot( [splinePos(1,i), splinePos(1,i)+20*cos(a)], [splinePos(2,i), splinePos(2,i)+20*sin(a)], 'k')
-%    
-% end
-
-% show triangle on the testing points and closest point
-% for i=1:size(s.spline, 1)
-%     %draw test points
-%     drawTriangle([s.xs,s.ys],'g');
-%     
-%     %get closest t_point of the spline
-%     tic
-%     t_close = minimumDistance2Spline(s.xs,s.ys, s.spline(i,:))
-%     toc
-%     
-%     %draw closest point
-%     if (t_close ~= -1)
-%         if t_close > 1
-%             t = linspace(1,t_close, 100);
-%             plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r:', 'lineWidth', 2)
-%         elseif t_close < 0
-%             t = linspace(0,t_close, 100);
-%             plot(getPointsSplineNO(s.spline(i,1), t), getPointsSplineNO(s.spline(i,2), t), 'r:', 'lineWidth', 2)
-%         end
-%         
-%         drawTriangle([ getPointsSplineNO(s.spline(i,1), t_close ), getPointsSplineNO(s.spline(i,2), t_close ) ], 'k');
-%         
-%         %x = getPointsSplineNO(s.spline(i,1), t_close );
-%         %y = getPointsSplineNO(s.spline(i,2), t_close );
-%         dxytemp= [getVelSplineNO(s.spline(1,1), t_close); getVelSplineNO(s.spline(1,2), t_close)];
-%         a = atan2 (dxytemp(2), dxytemp(1));
-%             
-%         if(a > pi)
-%             a = a-2*pi;
-%         elseif(a < -pi)
-%             a = a+2*pi;
-%         end
-%         180 * a / pi;
-%         %plot([x+10, x+10+dxytemp(1)], [y, y+dxytemp(2)], 'k')
-%               
-%     end
-%     
-% end
-
 
 set(gcf,'UserData',s);
 %x=[0;0];
@@ -436,7 +298,7 @@ set(gcf,'UserData',s);
 %J=compute2dGPLMDSjacobian(s.gprStruct,s.gpData,orgVel,orgJac,x);
 %eig(J)'
 
-% plotall();
+plotall();
 end
 
 function ret= processNewData()
@@ -467,19 +329,12 @@ xi0 = [s.newPosData(1:2,1);zeros(4,1)];
 [demPos,demVel, demAcc] = EstimateVA_P(X, dt, Q, R, xi0, P0);
 
 fig = get(groot,'CurrentFigure');
+
 % analyzeError(demPos);
 % set(groot,'CurrentFigure', fig);
 % s.trianglesData = [s.trianglesData; analyzeData(demPos, demVel)];
-s.spline = [s.spline ; computeTrajectory(demPos, demVel, s.smooth, s.smooth2)];
 
-% % % % xx = [150.542531883059,148.674515182304,146.765175268026,144.788973945182,142.723948171580,140.553421122646,138.267318733695,135.862865842712,133.344562620784,130.723689056222,128.017468726738,125.247680523913,122.438866739243,119.616662542623,116.806478592317,114.032499348411,111.316715800404,108.677723033327,106.129739957343,103.682365872497,101.340972992802,99.1077239086036];
-% % % % yy = [134.684560314771,120.084961801160,105.406630901772,90.6076621522382,75.6629923754485,60.5703012506297,45.3529158678522,30.0591015034953,14.7587336286611,-0.460310308876327,-15.4958185986607,-30.2365081859360,-44.5685792094079,-58.3816097815843,-71.5730061752909,-84.0512777941971,-95.7384740170925,-106.572378340245,-116.508053104726,-125.517248556069,-133.585387795046,-140.706991904418];
-% % % % dx = [0.714386710353913,0.763413503212703,0.817227574364949,0.876878688112854,0.943492441844645,1.01810688309406,1.10143977861684,1.19359636466952,1.29376494043671,1.40001454056964,1.50933909379580,1.61803642348203,1.72235721108707,1.81914965767884,1.90624575987235,1.98250584726052,2.04758700470593,2.10161599106964,2.14491746858475,2.17775242785712,2.20006171657981,2.21121336357146];
-% % % % dy = [0.818072071765488,0.929138805740384,1.05548448981490,1.19611749290643,1.34761589479246,1.50356940409661,1.65430654520888,1.78728281424246,1.88814951040139,1.94273797089204,1.94042322385556,1.87758952808783,1.75887234421553,1.59534168620222,1.40109163451429,1.18989323853515,0.973199164907620,0.759585844934236,0.554825501647990,0.362136229923608,0.182705666031401,0.0161953355580271];
-% % % % 
-% % % % s.allData = [xx;yy;dx;dy];
-% % % % 
-% % % % s.spline = [s.spline ; computeTrajectory([xx;yy], [dx;dy], s.smooth, s.smooth2)];
+s.spline = [s.spline ; computeTrajectory(demPos, demVel, s.smooth, s.smooth2)];
 
 % Compute the angle and speed factor. newData is a 4xN matrix with each
 % column: [x; y; theta; velocity].
@@ -545,6 +400,8 @@ function ret = smoothData(nbPoint, alpha)
 end
 
 function ret=advancedSmoothData(x,y,alpha2)
+% eliminate points if they are too close to each other
+
     xx=[x(1)];
     yy=[y(1)];
     k = 1;
@@ -571,7 +428,7 @@ function ret=advancedSmoothData(x,y,alpha2)
     
 end
 
-function splinesData = computeTrajectory(pos, vel, alpha1, alpha2)
+function splinesData = computeTrajectory(pos, vel, alpha1)
     %put originalDynamic velocity on first and last points
     %vel(:,1)  = originalDynamicsLINEAR(pos(:,1));
     %vel(:,end)= originalDynamicsLINEAR(pos(:,end));
@@ -603,14 +460,6 @@ function splinesData = computeTrajectory(pos, vel, alpha1, alpha2)
     
     %spline data calculation
     splinesData=[ownSpline(t,x,xp), ownSpline(t,y,yp)];
-
-%     figure
-%     t = linspace(0,1,1000);
-%     plot(t,getPointsSplineNO(splinesData(1), t), 'r')
-%     figure
-%     plot(t,getPointsSplineNO(splinesData(2), t), 'b');
-%     
-%     pause
 end
 
 function start_stop=analyzeData (pos, vel)
@@ -690,8 +539,11 @@ while ~breakSimulation
    h = findobj(gcf,'color',[1 0 1]);
    delete(h);
 %    hm=plot(x(1),x(2),'mx','linewidth',3,'markersize',10);
+
+    %plot line that represente the direction
    g=get(gcf,'UserData'); 
-   g.allX=[g.allX, x];
+
+   
    set(gcf, 'UserData', g);
    plot(x(1),x(2),'k.');hold on
    
@@ -775,8 +627,6 @@ function coef = systemSolver(t1, t2, f1, f2, fp1, fp2)
     
     %A*coef = b
     coef = A\b;
-    %coef = inv(A)*b;
-
 end
 
 function yy=getPointsSplineNO_o(splineData, xx)
