@@ -29,13 +29,14 @@ class TurtleDialogueInterface(RobotDialogueInterface):
         if not self._recording:
             return
 
-        self._recorded_data.append(data)
+        t = rospy.Time.now()
+        self._recorded_data.append((data, t))
 
     def fill_default_command_mappings(self):
 
         duration = rospy.Duration(0)
         # Each command is a tuple with the twist field to activate, a sign to
-        # multiply the velocity, and a duration to sleep *after* the message is
+        # multiply the velocity, and a duration to sleep *before* the message is
         # published (the command goes out).
         self._known_commands['up'] = [('linear.x', 1, duration)]
         self._known_commands['down'] = [('linear.x', -1, duration)]
@@ -140,7 +141,7 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
         Each tuple is a twist field accompanied by a Duration:
           - The twist field represents which field is active (e.g., 'linear.x')
-          - The Duration is time to sleep *after* publishing the Twist.
+          - The Duration is time to sleep *before* publishing the Twist.
 
         This creates a Twist message with the current velocity; each resulting
         Twist only has a single element 'active'.
@@ -156,16 +157,16 @@ class TurtleDialogueInterface(RobotDialogueInterface):
             return False
 
         for (field, sign, duration) in stuff_to_do:
-            rospy.loginfo('Sending a twist for {} and pausing {}'.format(
-                field, duration.to_sec()))
+            rospy.loginfo('Pausing for {} and sending a twist with {} '.format(
+                duration.to_sec(), field))
 
             assert isinstance(field, basestring), 'Must get a field name (str)'
             assert isinstance(duration, rospy.Duration), 'Must get a Duration'
+            rospy.sleep(duration)
 
             twist = self.make_twist([field], sign * self._turtle_speed)
             self.pub.publish(twist)
 
-            rospy.sleep(duration)
 
         return True
 
@@ -173,8 +174,22 @@ class TurtleDialogueInterface(RobotDialogueInterface):
         self._turtle_speed = speed
         rospy.loginfo('Set turtle speed: {}'.format(self._turtle_speed))
 
+    def _robot_record_command_non_blocking_start(self, *args, **kwargs):
+        self._recorded_data = []
+        self._recording = True
+        rospy.loginfo('Command recording started!')
+        return True
+
+    def _robot_record_command_non_blocking_stop(self, *args, **kwargs):
+        self._recording = False
+        rospy.loginfo('Recorded {} commanded Twists'.format(
+            len(self._recorded_data)))
+
+
+        pass
+
     def _robot_record_command(self, *args, **kwargs):
-        # Record a single Twist.
+        # Record a single Twist (blocking).
         rospy.loginfo('Recording command consisting of a single Twist')
 
         # Clear data and start recording
@@ -183,20 +198,49 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
         while len(self._recorded_data) < 1:
             rospy.sleep(0.1)
-
         self._recording = False
-        twist = self._recorded_data[0]
 
-        assert isinstance(twist, Twist)
-
-        (field, sign) = self.extract_twist_field(twist)
-        duration = rospy.Duration(0)
-
+        demonstration = self.twist_list_to_demonstration(self._recorded_data)
+        (field, sign, duration) = demonstration[0]
         rospy.loginfo('Recorded command: {} {} {}'.format(
             field, sign, duration.to_sec()))
+        return demonstration
 
-        # Make sure to return a list of length 1.
-        return [(field, sign, duration)]
+    @classmethod
+    def twist_list_to_demonstration(cls, twist_time_list):
+        """
+        Convert a list of (Twist, Time) tuples into a demonstration:
+          - Extract the field/sign from the Twist
+          - Compute the duration to the last Time
+        Any invalid Twists (zero/multiple) are skipped.
+
+        The first Duration in the demonstration is always zero.
+
+        :param twist_time_list: List of (Twist, Time) tuples.
+        :return: List of (field, sign, Duration) tuples.
+        """
+
+        demonstration = []
+        last_time = None
+
+        for (twist, time) in twist_time_list:
+            assert isinstance(twist, Twist), 'Must get a ROS Twist message.'
+            assert isinstance(time, rospy.Time), 'Must get a ROS Time.'
+
+            (field, sign) = cls.extract_twist_field(twist)
+
+            if not field:  # Skip invalid twists.
+                continue
+
+            # Compute duration to previous Time.
+            duration = rospy.Duration(0)
+            if last_time:
+                duration = time - last_time
+
+            demonstration.append((field, sign, duration))
+            last_time = time
+
+        return demonstration
 
 
 def run():

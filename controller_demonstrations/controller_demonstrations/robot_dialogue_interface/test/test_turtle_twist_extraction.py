@@ -1,4 +1,5 @@
 import unittest
+import rospy
 from controller_demonstrations.robot_dialogue_interface.turtle_dialogue_interface import \
     TurtleDialogueInterface
 from geometry_msgs.msg import Twist
@@ -70,3 +71,55 @@ class TestTwistExtraction(unittest.TestCase):
         other_fields = ['linear.y', 'linear.z', 'angular.x', 'angular.z']
         for f in other_fields:
             self.assertEqual(0.0, ret[f])
+
+    def test_twist_list_to_demonstration(self):
+        lst = [(self.twistZ, rospy.Time(5)), (self.twistY, rospy.Time(6))]
+        ret = TurtleDialogueInterface.twist_list_to_demonstration(lst)
+        self.assertIsNotNone(ret)
+        self.assertEqual(2, len(ret))
+
+        (field, sign, duration) = ret[0]
+        self.assertEqual('angular.z', field)
+        self.assertEqual(1, sign)
+        self.assertEqual(0.0, duration.to_sec())
+
+        (field, sign, duration) = ret[1]
+        self.assertEqual('linear.y', field)
+        self.assertEqual(-1, sign)
+        self.assertEqual(1.0, duration.to_sec())
+
+    def test_twist_list_to_demonstration_singleton(self):
+        lst = [(self.twistZ, rospy.Time(3))]
+        ret = TurtleDialogueInterface.twist_list_to_demonstration(lst)
+        self.assertIsNotNone(ret)
+        self.assertEqual(1, len(ret))
+
+        (field, sign, duration) = ret[0]
+
+        self.assertEqual('angular.z', field)
+        self.assertEqual(1, sign)
+        self.assertEqual(0.0, duration.to_sec())
+
+    def test_twist_list_to_demonstration_remove_invalid_elements(self):
+        lst = [(self.twistZ, rospy.Time(3)),
+               (self.twistZero, rospy.Time(4)),
+               (self.twistY, rospy.Time(5)),
+               (self.twistMultiple, rospy.Time(7))]
+        ret = TurtleDialogueInterface.twist_list_to_demonstration(lst)
+        self.assertIsNotNone(ret)
+        self.assertEqual(2, len(ret))
+
+        (field, sign, duration) = ret[0]
+        self.assertEqual('angular.z', field)
+        self.assertEqual(1, sign)
+        self.assertEqual(0.0, duration.to_sec())
+
+        (field, sign, duration) = ret[1]
+        self.assertEqual('linear.y', field)
+        self.assertEqual(-1, sign)
+        self.assertEqual(2.0, duration.to_sec())
+
+    def test_twist_list_to_demonstration_empty(self):
+        ret = TurtleDialogueInterface.twist_list_to_demonstration([])
+        self.assertIsNotNone(ret)
+        self.assertEqual([], ret)
