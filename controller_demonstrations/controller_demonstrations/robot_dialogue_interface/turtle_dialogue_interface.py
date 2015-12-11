@@ -3,6 +3,7 @@
 from robot_dialogue_interface import RobotDialogueInterface
 from geometry_msgs.msg import Twist
 import rospy
+import genpy
 import numpy as np
 
 
@@ -139,8 +140,9 @@ class TurtleDialogueInterface(RobotDialogueInterface):
         """
         Publish a list of time-Twist tuples out to the robot.
 
-        Each tuple is a twist field accompanied by a Duration:
-          - The twist field represents which field is active (e.g., 'linear.x')
+        Each tuple is a twist field, sign, and duration:
+          - The twist field represents which field is active (e.g., 'linear.x').
+          - The sign ensures the velocity is in the correct direction.
           - The Duration is time to sleep *before* publishing the Twist.
 
         This creates a Twist message with the current velocity; each resulting
@@ -148,7 +150,7 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
         The final duration should be zero, but it is not ignored if it isn't.
 
-        :param stuff_to_do: [(twist_field, duration), ...]
+        :param stuff_to_do: [(twist_field, sign, duration), ...]
         :param kwargs:
         :return:
         """
@@ -157,17 +159,17 @@ class TurtleDialogueInterface(RobotDialogueInterface):
             return False
 
         for (field, sign, duration) in stuff_to_do:
-            rospy.loginfo('Pausing for {} and sending a twist with {} '.format(
-                duration.to_sec(), field))
+            assert isinstance(field, basestring), \
+                'Must get a field name (str), got {}'.format(field)
+            assert isinstance(duration, genpy.rostime.Duration), \
+                'Must get a Duration, got {}'.format(type(duration))
 
-            assert isinstance(field, basestring), 'Must get a field name (str)'
-            assert isinstance(duration, rospy.Duration), 'Must get a Duration'
+            rospy.loginfo('Pausing for {:.2f}s and sending {} on twist {}'.
+                format(duration.to_sec(), sign * self._turtle_speed, field))
             rospy.sleep(duration)
 
             twist = self.make_twist([field], sign * self._turtle_speed)
             self.pub.publish(twist)
-
-
         return True
 
     def _robot_set_speed(self, speed, **kwargs):
@@ -184,9 +186,8 @@ class TurtleDialogueInterface(RobotDialogueInterface):
         self._recording = False
         rospy.loginfo('Recorded {} commanded Twists'.format(
             len(self._recorded_data)))
-
-
-        pass
+        demonstration = self.twist_list_to_demonstration(self._recorded_data)
+        return demonstration
 
     def _robot_record_command(self, *args, **kwargs):
         # Record a single Twist (blocking).
@@ -237,6 +238,8 @@ class TurtleDialogueInterface(RobotDialogueInterface):
             if last_time:
                 duration = time - last_time
 
+            rospy.loginfo('  Demo is:  {} on {}, pause {:.2f}s'.format(
+                sign, field, duration.to_sec()))
             demonstration.append((field, sign, duration))
             last_time = time
 
@@ -258,11 +261,17 @@ def run():
     rospy.sleep(1)  # Wait for connections.
     #interface.execute_command('up')
 
-    interface.record_command('dance')
-    rospy.sleep(3)
-    interface.execute_command('dance')
+    # Singleton
+    #interface.record_command('dance')
+    #rospy.sleep(3)
+    #interface.execute_command('dance')
 
-    #rospy.spin()
+    interface.record_command_non_blocking_start()
+    rospy.sleep(3)
+    interface.record_command_non_blocking_stop('dance')
+
+    rospy.sleep(1)
+    interface.execute_command('dance')
 
 
 if __name__ == '__main__':
