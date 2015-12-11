@@ -3,6 +3,7 @@
 from robot_dialogue_interface import RobotDialogueInterface
 from geometry_msgs.msg import Twist
 import rospy
+import numpy as np
 
 
 class TurtleDialogueInterface(RobotDialogueInterface):
@@ -68,6 +69,54 @@ class TurtleDialogueInterface(RobotDialogueInterface):
         assert hasattr(getattr(twist, inner), outer), 'Wrong fields'
 
         setattr(getattr(twist, inner), outer, velocity)
+
+    @classmethod
+    def twist_to_dict(cls, twist):
+        """
+        Converts a twist to a dictionary of field-value mappings.
+
+        All fields will be contained in the dictionary.
+
+        :param twist: Twist message.
+        :return: Dictionary with {linear/angular}x{x/y/z} values.
+        """
+        d = {}
+        fields = ['linear.x', 'linear.y', 'linear.z',
+                  'angular.x', 'angular.y', 'angular.z']
+        for f in fields:
+            f_split = f.split('.')
+            val = getattr(getattr(twist, f_split[0]), f_split[1])
+            d[f] = val
+        return d
+
+    @classmethod
+    def extract_twist_field(cls, twist):
+        """
+        Given a Twist with exactly one active element (i.e. non-zero), returns
+        the string representation of the active field (e.g. 'linear.z') and the
+        sign of the velocity (+1, -1).
+
+        If the Twist does not have exactly one active (non-zero) field, returns
+        None as the field and 0 as the sign.
+
+        :param twist: ROS Twist message.
+        :return: (field, sign) tuple.
+        """
+        field = None
+        sign = 0
+
+        field_vals = cls.twist_to_dict(twist)
+
+        # Check for exactly one non-zero field: otherwise return (None, 0).
+        num_nonzero = np.count_nonzero(field_vals.values())
+        if num_nonzero != 1:
+            return field, sign
+
+        # Get the maximum absolute value element in the dict.
+        field = max(field_vals.iterkeys(), key=lambda k: abs(field_vals[k]))
+        sign = np.sign(field_vals[field])
+
+        return field, sign
 
     def _robot_do_command(self, stuff_to_do, **kwargs):
         """
