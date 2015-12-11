@@ -8,10 +8,11 @@ import numpy as np
 
 
 class TurtleDialogueInterface(RobotDialogueInterface):
-    def __init__(self, default_speed=3):
+    def __init__(self, default_speed=2):
         super(TurtleDialogueInterface, self).__init__()
         self._turtle_speed = default_speed
         self.pub = None
+
 
         self._recording = False
         self._recorded_data = []
@@ -254,7 +255,7 @@ def run():
     interface.connect()
 
 
-    interface.fill_default_command_mappings()
+    interface.fill_default_command_mappings()   #add some default commands
 
     rospy.loginfo('All systems running')
 
@@ -268,10 +269,10 @@ def run():
 
     interface.record_command_non_blocking_start()
     rospy.sleep(3)
-    interface.record_command_non_blocking_stop('dance')
+    interface.record_command_non_blocking_stop()
 
-    rospy.sleep(1)
-    interface.execute_command('dance')
+    #rospy.sleep(1)
+    #interface.execute_command('dance')
 
 
 if __name__ == '__main__':

@@ -12,9 +12,8 @@ from branch_changingspeed import ChangingSpeedBranch
 from branch_gettingcommand import GettingCommandBranch
 from branch_teachingcommand import TeachingCommandBranch
 from sound_play.libsoundplay import SoundClient
-#from branch_changespeed import
 
-from controller_demonstrations.robot_dialogue_interface.kuka_dialogue_interface import KukaDialogueInterface
+from controller_demonstrations.robot_dialogue_interface.turtle_dialogue_interface import TurtleDialogueInterface
 
 class ReadyState(smach.State):
     # This state has two possible outcomes.
@@ -94,7 +93,7 @@ class UserInteraction(smach.StateMachine):
         ready_name = 'Which Branch ?'
 
         branchspeed_name = 'Changing Speed'
-        branchspeed_machine = ChangingSpeedBranch()
+        branchspeed_machine = ChangingSpeedBranch(robot_interface=self._robot_interface)
 
         branchcommand_name = 'Giving Command'
         branchcommand_machine = GettingCommandBranch(robot_interface=self._robot_interface)
@@ -147,7 +146,7 @@ class UserInteraction(smach.StateMachine):
 def run(arguments):
     rospy.init_node('interactive_demo')
 
-    robot_interface = KukaDialogueInterface()
+    robot_interface = TurtleDialogueInterface()
     robot_interface.connect()
 
     # Define the state machine here.

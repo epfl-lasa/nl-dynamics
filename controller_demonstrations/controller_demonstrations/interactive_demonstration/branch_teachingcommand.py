@@ -5,6 +5,7 @@ import smach
 import std_msgs
 import time
 from sound_play.libsoundplay import SoundClient
+from controller_demonstrations.robot_dialogue_interface.turtle_dialogue_interface import TurtleDialogueInterface
 
 from say_state import SayState
 from ConfirmationMachine import ConfirmationMachine
@@ -18,6 +19,8 @@ class Demonstration(smach.State):
     def __init__(self, robot_interface):
         smach.State.__init__(self, outcomes=Demonstration.outcomes,
         input_keys=['demo_in'])
+        topic_pub = '/command_teach'
+        self.pub = rospy.Publisher(topic_pub, std_msgs.msg.String, queue_size=10)
         topic_sub = '/nl_command_parsed'
         rospy.Subscriber(topic_sub, std_msgs.msg.String, self.callback, queue_size=1)
         self.soundhandle = SoundClient(blocking=False)
@@ -33,7 +36,13 @@ class Demonstration(smach.State):
             rospy.sleep(0.1)
             if('start' in self.cmd or 'yes' in self.cmd):
                 self.soundhandle.say('Recording')
-                ret = self._robot_interface.record_command(userdata.demo_in)
+                ret = self._robot_interface.record_command_non_blocking_start()
+
+                while(self.cmd!='stop'):
+                    rospy.sleep(1)
+                # This will add the command to the robot interface's list of known commmands, for later execution.
+                ret = self._robot_interface.record_command_non_blocking_stop(userdata.demo_in)
+
                 self.soundhandle.say('Finished recording')
                 return Demonstration.outcome_demonstration
             elif(self.cmd=='reset'):

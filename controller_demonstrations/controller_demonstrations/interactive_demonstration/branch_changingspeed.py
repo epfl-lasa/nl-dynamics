@@ -12,7 +12,7 @@ class ChangeSpeed(smach.State):
     outcome_speedchanged ='speedchanged'
     outcomes = [outcome_speedchanged]
 
-    def __init__(self):
+    def __init__(self, robot_dialogue_interface=None):
         # specify the outcomes
         smach.State.__init__(self, outcomes=ChangeSpeed.outcomes)
         # Subscribe to a Topic
@@ -22,6 +22,8 @@ class ChangeSpeed(smach.State):
         self.pub = rospy.Publisher(topic_pub, std_msgs.msg.Int8, queue_size=5)
         # internal data
         self.msg = ''
+
+        self._robot_dialogue_interface = robot_dialogue_interface
 
 
         # This method does not change the class members directly.
@@ -50,6 +52,10 @@ class ChangeSpeed(smach.State):
             rospy.sleep(0.1)
         self.pub.publish(speed_integer)
         rospy.loginfo('New Speed is %s', speed_integer)
+
+        if self._robot_dialogue_interface:
+            self._robot_dialogue_interface.change_speed(speed_integer)
+
         return ChangeSpeed.outcome_speedchanged
 
     def callback(self, data):
@@ -64,7 +70,7 @@ class ChangingSpeedBranch(smach.StateMachine):
     outcome_reset = 'reset'
     outcomes = [outcome_success, outcome_failure, outcome_reset]
 
-    def __init__(self):
+    def __init__(self, robot_interface):
 
         super(ChangingSpeedBranch, self).__init__(
             outcomes=ChangingSpeedBranch.outcomes)
@@ -72,7 +78,7 @@ class ChangingSpeedBranch(smach.StateMachine):
         askingspeed_state = SayState('At which speed do you want me to go ?')
         askingspeed_name = 'Which Speed ?'
 
-        speedchanged_state = ChangeSpeed()
+        speedchanged_state = ChangeSpeed(robot_interface)
         speedchanged_name = 'Receiving Speed'
 
         confirmation_name = "Confirmation"
