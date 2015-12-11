@@ -22,7 +22,30 @@ class RobotDialogueInterface(object):
         :param command: String command.
         :return: True if command was added
         """
+        rospy.loginfo('Recording command [{}].'.format(command))
         ret = self._robot_record_command(command)
+        if ret:
+            rospy.loginfo('SUCCESS: Adding a command for [{}]'.format(command))
+            self._known_commands[command] = ret
+            return True
+        rospy.loginfo('FAILURE: Recording command {} failed'.format(command))
+        return False
+
+    def record_command_non_blocking_start(self):
+        """
+        Begin recording a command.
+        :return:
+        """
+        return self._robot_record_command_non_blocking_start()
+
+    def record_command_non_blocking_stop(self, command):
+        """
+        Stops recording the given command and store it if the recording was
+        successful.
+        :param command:
+        :return:
+        """
+        ret = self._robot_record_command_non_blocking_stop(command)
         if ret:
             rospy.loginfo('Adding a command for [{}]'.format(command))
             self._known_commands[command] = ret
@@ -69,6 +92,27 @@ class RobotDialogueInterface(object):
         :param kwargs:
         :return:
         """
+        raise NotImplementedError('Implement this in each robot interface.')
+
+    def _robot_record_command_non_blocking_start(self, *args, **kwargs):
+        """
+        Start recording the command in non-blocking mode.
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        raise NotImplementedError('Implement this in each robot interface.')
+
+    def _robot_record_command_non_blocking_stop(self, *args, **kwargs):
+        """
+        Stop recording the command in non-blocking mode and return the recorded
+        data
+        :param args:
+        :param kwargs:
+        :return:
+        """
+
         raise NotImplementedError('Implement this in each robot interface.')
 
     def _robot_set_speed(self, *args, **kwargs):
