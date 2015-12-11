@@ -5,7 +5,6 @@ from geometry_msgs.msg import Twist
 
 
 class TestTwistExtraction(unittest.TestCase):
-
     def setUp(self):
         self.twistX = Twist()
         self.twistX.linear.x = 2
@@ -48,7 +47,6 @@ class TestTwistExtraction(unittest.TestCase):
             self.twistMultiple)
         self.assertEqual(None, field)
         self.assertEqual(0, sign)
-
 
     def test_twist_to_dict(self):
         ret = TurtleDialogueInterface.twist_to_dict(self.twistX)

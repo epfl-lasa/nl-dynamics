@@ -56,17 +56,25 @@ class KukaDialogueInterface(RobotDialogueInterface):
 
     def _robot_do_command(self, command, *args, **kwargs):
 
-        rospy.loginfo('Publishing command {} to Kuka.'.format(command))
+        rospy.loginfo('Publishing command {} to KUKA.'.format(command))
         self.correction_publisher.process_command(
             nl_command=command, use_current_state_as_anchor=True)
         rospy.loginfo('Finished publishing command.')
         return True
 
     def _robot_set_speed(self, *args, **kwargs):
-        rospy.loginfo('Unable to set speed at this time.')
+        rospy.logwarn('The KUKA does not support changing the speed')
+        return False
 
+    def _robot_record_command_non_blocking_stop(self, *args, **kwargs):
+        rospy.logwarn('The KUKA does not support non-blocking recording mode.')
+        return False
+
+    def _robot_record_command_non_blocking_start(self, *args, **kwargs):
+        rospy.logwarn('The KUKA does not support non-blocking recording mode.')
+        return False
 
 if __name__ == '__main__':
-    rospy.init_node('kuka_dialogue_interface', anonymous=False)
+    rospy.init_node('KUKA_dialogue_interface', anonymous=False)
     kuka_interface = KukaDialogueInterface()
     kuka_interface.connect()

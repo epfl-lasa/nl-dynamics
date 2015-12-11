@@ -30,6 +30,28 @@ class RobotDialogueInterface(object):
         rospy.loginfo('Recording command {} failed'.format(command))
         return False
 
+    def record_command_non_blocking_start(self):
+        """
+        Begin recording a command.
+        :return:
+        """
+        return self._robot_record_command_non_blocking_start()
+
+    def record_command_non_blocking_stop(self, command):
+        """
+        Stops recording the given command and store it if the recording was
+        successful.
+        :param command:
+        :return:
+        """
+        ret = self._robot_record_command_non_blocking_stop(command)
+        if ret:
+            rospy.loginfo('Adding a command for [{}]'.format(command))
+            self._known_commands[command] = ret
+            return True
+        rospy.loginfo('Recording command {} failed'.format(command))
+        return False
+
     def execute_command(self, command):
         """
         Execute a command if it is known.
@@ -70,6 +92,28 @@ class RobotDialogueInterface(object):
         :return:
         """
         raise NotImplementedError('Implement this in each robot interface.')
+
+    def _robot_record_command_non_blocking_start(self, *args, **kwargs):
+        """
+        Start recording the command in non-blocking mode.
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        raise NotImplementedError('Implement this in each robot interface.')
+
+    def _robot_record_command_non_blocking_stop(self, *args, **kwargs):
+        """
+        Stop recording the command in non-blocking mode and return the recorded
+        data
+        :param args:
+        :param kwargs:
+        :return:
+        """
+
+        raise NotImplementedError('Implement this in each robot interface.')
+
 
     def _robot_set_speed(self, *args, **kwargs):
         """
