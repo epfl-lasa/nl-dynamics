@@ -22,12 +22,13 @@ class RobotDialogueInterface(object):
         :param command: String command.
         :return: True if command was added
         """
+        rospy.loginfo('Recording command [{}].'.format(command))
         ret = self._robot_record_command(command)
         if ret:
-            rospy.loginfo('Adding a command for [{}]'.format(command))
+            rospy.loginfo('SUCCESS: Adding a command for [{}]'.format(command))
             self._known_commands[command] = ret
             return True
-        rospy.loginfo('Recording command {} failed'.format(command))
+        rospy.loginfo('FAILURE: Recording command {} failed'.format(command))
         return False
 
     def record_command_non_blocking_start(self):
@@ -113,7 +114,6 @@ class RobotDialogueInterface(object):
         """
 
         raise NotImplementedError('Implement this in each robot interface.')
-
 
     def _robot_set_speed(self, *args, **kwargs):
         """

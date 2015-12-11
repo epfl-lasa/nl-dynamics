@@ -12,8 +12,24 @@ class TurtleDialogueInterface(RobotDialogueInterface):
         self._turtle_speed = default_speed
         self.pub = None
 
-    def connect(self, topic='turtle1/cmd_vel'):
-        self.pub = rospy.Publisher(topic, Twist, queue_size=5)
+        self._recording = False
+        self._recorded_data = []
+
+    def connect(self, velocity_topic='turtle1/cmd_vel'):
+        self.pub = rospy.Publisher(velocity_topic, Twist, queue_size=5)
+        rospy.Subscriber(velocity_topic, Twist, self.twist_callback, queue_size=1)
+
+    def twist_callback(self, data):
+        """
+        Records the received twist if the turtle is actively recording.
+        Otherwise, returns.
+        :param data: Received message.
+        :return:
+        """
+        if not self._recording:
+            return
+
+        self._recorded_data.append(data)
 
     def fill_default_command_mappings(self):
 
@@ -155,9 +171,32 @@ class TurtleDialogueInterface(RobotDialogueInterface):
 
     def _robot_set_speed(self, speed, **kwargs):
         self._turtle_speed = speed
+        rospy.loginfo('Set turtle speed: {}'.format(self._turtle_speed))
 
     def _robot_record_command(self, *args, **kwargs):
-        pass
+        # Record a single Twist.
+        rospy.loginfo('Recording command consisting of a single Twist')
+
+        # Clear data and start recording
+        self._recorded_data = []
+        self._recording = True
+
+        while len(self._recorded_data) < 1:
+            rospy.sleep(0.1)
+
+        self._recording = False
+        twist = self._recorded_data[0]
+
+        assert isinstance(twist, Twist)
+
+        (field, sign) = self.extract_twist_field(twist)
+        duration = rospy.Duration(0)
+
+        rospy.loginfo('Recorded command: {} {} {}'.format(
+            field, sign, duration.to_sec()))
+
+        # Make sure to return a list of length 1.
+        return [(field, sign, duration)]
 
 
 def run():
@@ -166,10 +205,20 @@ def run():
 
     interface = TurtleDialogueInterface()
     interface.connect()
+
+
     interface.fill_default_command_mappings()
 
     rospy.loginfo('All systems running')
-    rospy.spin()
+
+    rospy.sleep(1)  # Wait for connections.
+    #interface.execute_command('up')
+
+    interface.record_command('dance')
+    rospy.sleep(3)
+    interface.execute_command('dance')
+
+    #rospy.spin()
 
 
 if __name__ == '__main__':
