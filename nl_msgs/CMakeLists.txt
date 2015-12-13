@@ -5,11 +5,11 @@ project(nl_msgs)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  std_msgs
   geometry_msgs
-  sensor_msgs
   message_generation
   message_runtime
+  sensor_msgs
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -48,11 +48,11 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  CartStateStamped.msg
   AnchoredDemonstration.msg
-  SplineClass.msg
-  Correction.msg
   AttractorDemonstration.msg
+  CartStateStamped.msg
+  Correction.msg
+  SplineClass.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -71,9 +71,9 @@ add_service_files(
 #Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  std_msgs
   geometry_msgs
   sensor_msgs
+  std_msgs
   # Or other packages containing msgs
 )
 
@@ -89,8 +89,11 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES nl_msgs
-  CATKIN_DEPENDS  message_runtime
-#  DEPENDS system_lib
+  CATKIN_DEPENDS
+  geometry_msgs
+  message_runtime
+  sensor_msgs
+  std_msgs
 )
 
 ###########
