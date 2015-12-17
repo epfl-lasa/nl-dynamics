@@ -131,7 +131,8 @@ class UserInteraction(smach.StateMachine):
                                  ChangingSpeedBranch.outcome_reset: hw_name})
 
             self.add(branchcommand_name, branchcommand_machine,
-                    transitions={GettingCommandBranch.outcome_success: hw_name})
+                    transitions={GettingCommandBranch.outcome_success: hw_name,
+                                 GettingCommandBranch.outcome_reset: hw_name})
 
             self.add(branchteach_name, branchteach_machine,
                     transitions={TeachingCommandBranch.outcome_success: hw_name,

@@ -14,7 +14,8 @@ class GetCommand(smach.State):
     outcome_getcommand = 'getcommand'
     outcome_unknowncommand = 'unknowncommand'
     outcome_list = 'list'
-    outcomes = [outcome_getcommand, outcome_unknowncommand, outcome_list]
+    outcome_reset = 'reset'
+    outcomes = [outcome_getcommand, outcome_unknowncommand, outcome_list, outcome_reset]
 
     def __init__(self, command_list=None, robot_interface=None):
         # specify the outcomes
@@ -64,6 +65,8 @@ class GetCommand(smach.State):
                     self.robot_interface.execute_command(cmd)
                     self.msg=''
                     return GetCommand.outcome_getcommand
+                elif(self.cmd=='reset'):
+                    return GetCommand.outcome_reset
                 elif(self.msg=='list'):
                     self.soundhandle.say('The list of commands is: ' + self.command_list_str(),
                                          blocking=True)
@@ -85,7 +88,8 @@ class GetCommand(smach.State):
 class GettingCommandBranch(smach.StateMachine):
     outcome_success = 'success'
     outcome_failure = 'failure'
-    outcomes = [outcome_success, outcome_failure]
+    outcome_reset = 'reset'
+    outcomes = [outcome_success, outcome_failure, outcome_reset]
 
     def __init__(self, robot_interface):
 
@@ -114,7 +118,8 @@ class GettingCommandBranch(smach.StateMachine):
             self.add(getcommand_name, getcommand_state,
                      transitions={GetCommand.outcome_getcommand: commanddone_name,
                                 GetCommand.outcome_unknowncommand: unknowncommand_name,
-                                GetCommand.outcome_list: listing_name})
+                                GetCommand.outcome_list: listing_name,
+                                GetCommand.outcome_reset: GettingCommandBranch.outcome_reset})
 
             self.add(unknowncommand_name, unknowncommand_state,
                      transitions={SayState.outcome_success: GettingCommandBranch.outcome_success})
