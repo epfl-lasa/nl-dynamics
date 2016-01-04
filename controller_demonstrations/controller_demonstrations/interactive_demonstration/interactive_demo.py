@@ -52,11 +52,11 @@ class ReadyState(smach.State):
                 elif (msg_split[i] == "finish"):
                     rospy.loginfo('What a success')
                     return ReadyState.outcome_success
-                elif (msg_split[i] == 'askingspeed'):
+                elif (msg_split[i] == 'askingspeed' or msg_split[i] == 'speed' or msg_split[i] == 'velocity'):
                     return ReadyState.outcome_askingspeed
                 elif (msg_split[i] == 'command'):
                     return ReadyState.outcome_askcommand
-                elif (msg_split[i] == 'teach'):
+                elif (msg_split[i] == 'teach' or msg_split[i] == 'teaching'):
                     rospy.loginfo('Now we teach !')
                     return ReadyState.outcome_teach
 

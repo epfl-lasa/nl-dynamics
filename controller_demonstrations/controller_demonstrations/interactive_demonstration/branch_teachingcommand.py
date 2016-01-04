@@ -77,13 +77,13 @@ class TeachingCommandBranch(smach.StateMachine):
 
         demonstration_name='Demonstration'
         demonstration_state=Demonstration(robot_interface)
-        
+
         repeatcommand_name='Repeat Command Name'
         repeatcommand_state=SayState('Repeat the command name you want to teach')
 
         getconfirmationtrajectory_name='Get Confirmation Command Trajectory'
         getconfirmationtrajectory_machine=ConfirmationMachine()
-        
+
         commandteached_name='Command Teached'
         commandteached_state=SayState('The new command has been taught')
 
@@ -103,15 +103,15 @@ class TeachingCommandBranch(smach.StateMachine):
                      transitions={Demonstration.outcome_demonstration: repeatcommand_name,
                                   Demonstration.outcome_reset: TeachingCommandBranch.outcome_reset},
                                   remapping={'demo_in':'UsersCommand_out'})
-                                  
+
             self.add(repeatcommand_name,repeatcommand_state,
                      transitions={SayState.outcome_success: getconfirmationtrajectory_name})
 
             self.add(getconfirmationtrajectory_name, getconfirmationtrajectory_machine,
-                     transitions={ConfirmationMachine.outcome_success: commandteached_state,
+                     transitions={ConfirmationMachine.outcome_success: commandteached_name,
                                   ConfirmationMachine.outcome_reset: TeachingCommandBranch.outcome_reset,
                                   ConfirmationMachine.outcome_failure: startdemonstration_name})
-                                  
+
             self.add(commandteached_name, commandteached_state,
                      transitions={SayState.outcome_success: TeachingCommandBranch.outcome_success})
 
