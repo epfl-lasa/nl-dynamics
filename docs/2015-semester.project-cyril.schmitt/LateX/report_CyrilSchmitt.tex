@@ -1,0 +1,148 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{enumitem}
+\usepackage{multicol}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc} %inclue les charact?res dans le pdf
+\usepackage{graphicx}
+\usepackage{epsfig}
+\usepackage{url}
+\usepackage[verbose, bookmarksopen=false, hypertexnames=false,linktocpage,bookmarksnumbered,colorlinks]{hyperref}
+\usepackage{lineno}
+\usepackage{listings}
+\usepackage{hyperref}
+\hypersetup
+{
+    colorlinks  = true,
+    citecolor   = blue,
+    linkcolor   = black
+}
+
+\usepackage{afterpage}
+\newcommand\blankpage{
+    \null
+    \thispagestyle{empty}
+    %\addtocounter{page}{-1}
+    \newpage}
+
+\usepackage[justification=centering]{caption}
+\usepackage{float}
+\usepackage{titlesec}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4} %for table of content
+\titleformat{\paragraph}
+{\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}
+{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+\usepackage{fancyhdr}    
+\fancyhf{}
+\pagestyle{fancy}
+\setlength{\headheight}{15pt}
+
+\fancyheadoffset{0.1\textwidth}
+\fancyfootoffset{0.1\textwidth}
+\setlength{\footskip}{40pt}
+\lhead{\slshape \rightmark}    
+\rhead{\slshape \hyperlink{toc}{\leftmark}}
+\rfoot{\thepage}
+\lfoot{Semester Project MA-1 | Cyril Schmitt - LASA - IMT - EPFL}
+\renewcommand{\footrulewidth}{0.4pt}
+
+%Titlepage
+\thispagestyle{plain}
+\title{Semester project}
+\author{Cyril Schmitt}
+
+\geometry{ hmargin=2.5cm, vmargin=2.5cm }
+
+\renewcommand{\maketitle}{
+\begin{titlepage}
+\centering
+\includegraphics[width=5cm]{img/EPFL_LOGO.eps}\\
+\vspace*{3cm}
+\LARGE{\textbf{Simplifying user/robot interface by  \linebreak using speech commands
+\\}}
+Semester project
+%TODO : title to check again after\\
+
+\vspace*{2cm}
+\Large{Cyril Schmitt} \\
+\vspace*{2cm}
+\normalsize{\'{E}cole Polytechnique F\'{e}d\'{e}rale de Lausanne\\Learning Algorithms and Systems Laboratory\\}
+\vspace*{1cm}
+\includegraphics[width=7cm]{img/lasa-logo.jpeg}\\
+\vspace*{2cm}
+\large{Supervised by Felix Duvallet, Klas Kronander and Professor Aude Billard\\}
+\vspace*{1cm}
+\today
+\end{titlepage}
+}
+
+%###########################################################################
+\begin{document}
+% -------------- title
+\maketitle
+\thispagestyle{plain}
+
+% -------------- blankpage
+\blankpage
+
+% -------------- abstract
+\begin{abstract}
+This project is aiming to simplify the interface between user and robots by using speech. This functionality will allows the user to change the speed of the robot, give a command to execute and teach new commands.
+
+In order to develop this project we mainly used Python for coding and ROS to communicate between each node of the project. The major component of the project is the state machine which will create the path the program will follow to create the dialogue between the user and the robot.
+
+Some experiments have been made including the one to select the best keywords the program will have to recognize to do what the user want the robot to do or the final experiment of the program to get feedbacks from users.
+
+These experiments provided several insight for future improvement of the dialogue system.\\
+\\
+\underline{Catch phrase:} Implementing Dialogue using a State Machine is an adaptable, robust and easy way to interact with robots
+
+\end{abstract}
+\clearpage
+
+% ------------- table of content
+\newpage
+\thispagestyle{empty}
+\begin{tableofcontents}
+\addtocontents{toc}{\protect\hypertarget{toc}{}}
+\end{tableofcontents}
+
+
+%\thispagenumber{1}
+\clearpage
+\section{Introduction}
+\input{Introduction}
+\clearpage
+\section{Development}
+\input{Development}
+\clearpage
+\section{Experiments}
+\input{Experiments}
+\clearpage
+\section{Discussion}
+\input{Discussion}
+\clearpage
+\section{Future Work}
+\input{Improvements}
+\clearpage
+\section{Conclusion}
+\input{Conclusion}
+\section{Aknowledgements}
+\input{Thanks}
+\clearpage
+\section{Appendix}
+\input{Approach}
+
+
+\clearpage
+%%%%%\input{biblio}
+
+\end{document}

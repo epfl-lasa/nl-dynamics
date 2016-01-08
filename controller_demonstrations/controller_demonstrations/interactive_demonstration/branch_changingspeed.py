@@ -83,7 +83,7 @@ class ChangingSpeedBranch(smach.StateMachine):
 
         with self:
             self.add(askingspeed_name, askingspeed_state,
-                     transitions={SayState.outcome_success: confirmation_name})
+                     transitcions={SayState.outcome_success: confirmation_name})
 
             #self.add(speedchanged_name, speedchanged_state,
             #         transitions={ChangeSpeed.outcome_speedchanged: validatespeed_name})

@@ -1,0 +1,29 @@
+\select@language {english}
+\hypertarget {toc}{}
+\contentsline {section}{\numberline {1}Introduction}{4}{section.1}
+\contentsline {subsection}{\numberline {1.1}Motivation}{4}{subsection.2}
+\contentsline {subsection}{\numberline {1.2}Objectives}{4}{subsection.3}
+\contentsline {subsection}{\numberline {1.3}Specifications}{4}{subsection.4}
+\contentsline {subsection}{\numberline {1.4}Scenarios}{4}{subsection.5}
+\contentsline {section}{\numberline {2}Development}{8}{section.9}
+\contentsline {subsection}{\numberline {2.1}Development Methodology and Learning}{8}{subsection.10}
+\contentsline {subsection}{\numberline {2.2}Program Architecture}{8}{subsection.12}
+\contentsline {subsection}{\numberline {2.3}State Machines}{10}{subsection.14}
+\contentsline {subsubsection}{\numberline {2.3.1}Say State}{11}{subsubsection.16}
+\contentsline {subsubsection}{\numberline {2.3.2}Kernel Machine}{11}{subsubsection.17}
+\contentsline {subsubsection}{\numberline {2.3.3}Confirmation Machine}{12}{subsubsection.19}
+\contentsline {subsubsection}{\numberline {2.3.4}Changing Speed Machine}{13}{subsubsection.21}
+\contentsline {subsubsection}{\numberline {2.3.5}Giving Command Machine}{14}{subsubsection.23}
+\contentsline {subsubsection}{\numberline {2.3.6}Teaching Command Machine}{16}{subsubsection.25}
+\contentsline {subsubsection}{\numberline {2.3.7}Summary of major functions}{18}{subsubsection.27}
+\contentsline {section}{\numberline {3}Experiments}{19}{section.28}
+\contentsline {subsection}{\numberline {3.1}Confusion Matrix}{19}{subsection.29}
+\contentsline {subsection}{\numberline {3.2}System Usability Scale}{22}{subsection.63}
+\contentsline {section}{\numberline {4}Discussion}{25}{section.73}
+\contentsline {subsection}{\numberline {4.1}General Discussion}{25}{subsection.74}
+\contentsline {subsection}{\numberline {4.2}Kuka Implementation}{25}{subsection.75}
+\contentsline {section}{\numberline {5}Future Work}{26}{section.76}
+\contentsline {section}{\numberline {6}Conclusion}{27}{section.77}
+\contentsline {section}{\numberline {7}Aknowledgements}{27}{section.78}
+\contentsline {section}{\numberline {8}Appendix}{28}{section.79}
+\contentsline {subsection}{\numberline {8.1}Tools used for the main project}{28}{subsection.80}

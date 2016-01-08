@@ -1,0 +1,203 @@
+\subsection{Development Methodology and Learning}
+
+We used two development tools, the first one is Python and the second one is ROS. 
+
+ROS is in charge here of the communication between each part of the program, and we call each part of it: node. It is by this way that information is passed one node to another. We call this information: topic. 
+
+Python was used to develop each node of the program in order to make them do what was needed.
+
+In order to go further into the project we develop the general structure of the program with the different functions the robot should be able to do. In order to improve the project we decided to use robot feedback, and ideally speech feedback in order to create a dialogue between the user and the robot. So we used the client sound\_play. This client can reproduce the sound of the sentence we gave it in argument. My first step for learning was to develop a small program talking back.
+
+In order to structure the code and to lightweight it the more we can and also to make it easier to read we decided to use a state machine. In fact the structure of a state machine allows us to assembly and reuse part of the code easily as if we were imbricating one state after another. We could have also developed the code without state machine, but it would have been more difficult and annoying to develop.
+
+Regarding the structure of the project we decided to develop State Machine by State Machine beginning with the Kernel Machine, the one that will be at the centre of the program. Once done we just had to complete this machine with machine within (see Figure 4: Schema of the program).
+
+ \begin{figure}
+ \center
+ \includegraphics[width=15cm]{img/SimplificationMachineProgram.pdf}
+ \caption{Schema of the program}
+ \end{figure}
+
+As seen on the Specifications we considered three branches (changing speed, giving command and teaching command) that we developed and structured with the same process for each of them. First part was to develop one branch, state by state by continuously testing the code. Once all the branches were developed, we tested it all together and took the place of a random user to see which improvement can be made to make the experience even easier. Finally small modifications were added. This process was repeated the three times for each branch. It also happened to come back to branches already developed to make some new changes after realizing some changes could be made to make it easier to use.
+
+In parallel to the development of the state machine we used the testing of some functions using unit tests, which is a simple way to test quickly a function.
+
+\subsection{Program Architecture}
+The architecture of the program is mainly composed of a speech-to-text algorithm, a state machine, a robot interface, a robot and some development tools. In order to understand well the architecture of the program we will use the tool rqt\_graph which shows all the nodes and topics that are part of the project (see Figure 5).\\
+\\
+For the understanding of the lecture of the diagram:
+\begin{itemize}
+  \item Square shapes are representing Nodes
+  \item Arrow  shapes are representing Topics
+\end{itemize} \hfill \linebreak
+For the understanding of the terms "publishing" and "subscribing":
+\begin{itemize}
+  \item "recognizer" is publishing into "state\_machine"
+  \item "recognizer" is subscribing to "microphone\_capture"
+\end{itemize}\hfill \linebreak
+The algorithm Pocketsphinx ("Recognizer" on Figure 5) is the \underline{speech-to-text algorithm}. The node "recognizer" is subscribing to the microphone of the computer \linebreak ("microphone\_capture") and publishing into the State Machine ("state\_machine") to give text (string) corresponding to the audio we received in input in the microphone. This part is an essential part to develop a dialogue.
+
+Since a \underline{dialogue} would not be possible with a one way communication we needed to use a robot speech feedback. This is the reason why we added the "sound\_play" client into the program. This node allows the robot to create sound and in particularly to talk and pronounce the sentence we give it into arguments. 
+
+The State Machine will create the \underline{dialogue structure} which will be exploited to control the robot. This machine is in the middle of the project as we can easily see in the Figure 5. Three main branches are created into this State Machine which represents the three main functionalities: changing speed, giving command and teaching command. 
+
+This State Machine will publish into the robot converter ("robot\_receiver") which is also called the \underline{robot interface}. This converter will subscribe to the State Machine. The State Machine will give to the converter some string, via the topics, that the converter will interpret. Thanks to this interface our program allows us to use the project on every robot by the simple change of the converter, in fact the only thing to change is the topic getting out of the converter which should match to the robot type we want to use. Since the State Machine is separated by the converter to the robot we can call this interface a \underline{robot-agnostic interface}.\hfill \linebreak
+\\
+As a fact we used the same program with the Turtlesim simulator and the Kuka.\hfill \linebreak
+\\
+Finally some very useful tools were used during the development but could also be used as an user/robot interface: 
+\begin{itemize}
+  \item A State Machine Viewer: "smach\_viewer"
+  \item A robot simulator: "turtlesim" 
+\end{itemize}
+
+\begin{figure}
+\center
+\includegraphics[width=16cm]{img_SM/rqt_graph_ALL_FINAL.png}
+\caption{Diagram with the nodes and topics of the program using "rqt\_graph"}
+\end{figure}
+
+\subsection{State Machines}
+
+In order any user can dialogue with the robot we needed to develop a state machine which will create the structure of a dialogue by following the path of a discussion developed for any possibility (see Figure 6 of the State Machine of the program).
+
+A State Machine is a machine that stores a state in which the program is at the present time. A Machine is made of many States and each state represents an action or a step to the right proceeding of the program. Each state has inputs and outputs, those links with the state create a path and we also call this paths branches in this document.
+
+ \begin{figure}
+ \center
+ \includegraphics[width=15cm]{img_SM/StateMachine.png}
+ \caption{State Machine of the program}
+ \end{figure}
+
+Regarding the specifications the robot should at least achieve three main functions. We should be able to change the speed of the robot, give a command to execute ,and teach a command. Those three functions were developed into branches. Those branches are like paths the code will have to follow to achieve what the user is asking it to do. These three branches are contained into one bigger machine called User Interface, which is the Kernel Machine. In order to simplify the code even more we also created another machine which is a Confirmation Machine, we will explain just below what it is aimed to do. Finally a State (Say State) was also independently created for the simple reason that it is a lot used throughout the project. It gives us the possibility to call this state wherever in the code.
+
+\subsubsection{Say State}
+In order to enable the robot to give speech feedback to the user we developed a state which will speak back to the user.
+
+This state is a simple state, which is used in every machine requiring speech feedback to the user. This state publishes to the audio of the computer so then we can hear what we wanted it to say.
+The main function is as explained to reproduce the sound of the string put in argument. One functionality also developed in this state is the possibility to use the user data if there is one. It will help us asking the user if the robot understood well what the user said. 
+This state can then be used for everything requiring speech feedback.
+
+\subsubsection{Kernel Machine}
+The introduction is the important part where the user will be facing the possibilities the user can choose. This Introduction has been developed within the Kernel Machine.
+
+The Kernel Machine is the central and main machine, this machine will introduce the possibility the program can do to the user by speech. This machine is composed of three states. Two Say State and one singular state (see Figure 7).
+
+The first state cited above, the introduction one simply welcome the user and let him know what he could do with the robot. This state simply uses the sound\_play client we just learned in the first step.
+
+The second state will listen to what the user is saying. This state was more difficult to create; in fact it has five outputs. Three of them concerned the three branches (changing speed, getting command and teaching command), one other was to quit the program and the last one was to re-branch to the introduction. 
+
+The last state is simply a Say State which will be covered if the user want to exit the program. This state will then say "I am finished" in our case.
+
+The general idea here was to subscribe to the topic that has transformed the speech of the user into text so then we could analyse the saying of the user. In order to make the robot act like the user wanted it to act. To do so, we had to select some keywords. For example, at the beginning we selected the keywords "speed" and "velocity" to go into the changing speed branch. Concerning the branches getting command and teaching command we choose "command" or "commanding" and "teach" or "teaching" respectively. Finally if the user said "quit", "done" or "finished" the robot will quit the program. For all the other word non-recognized we used the branch that was linked to the introduction.
+In order to make the robot more interactive we developed a module, which is finding for the keywords into the text the user is saying. 
+
+Once the base was built we could begin to develop the branches, which will allow the user to make the robot do something.  The first branch we had developed was the changing speed branch, which was the easier to begin to develop. 
+
+
+ \begin{figure}
+ \center
+ \includegraphics[width=14cm]{img_SM/KernelMachine.png}
+ \caption{State Machine of the Kernel Machine}
+ \end{figure}
+
+\subsubsection{Confirmation Machine}
+Sometimes the user will face some problem or will not get really well understood by the program. For this reason we developed a Confirmation Machine which will allows the user to confirm or not its saying.
+
+This machine is aimed to ask for a confirmation and to receive an acknowledgment from the user so then the program can make sure the program understood well what the user said.
+
+In order to take the most out of the oriented object programming we developed a machine: the Confirmation Machine which aim to ask if the word understood by the robot is the one that the user want it to understand. In fact, in order to make the user experience the best we can, we want to make sure the robot is doing what the user is asking it to do (see Figure 8).
+
+The Confirmation Machine is made out of three states. The first and last one are considered as listener, in fact they will catch via the microphone what the user is saying and will react regarding what the user said. The second one is a simple Say State as explained above. 
+
+The first state will simply catch what the user said by subscribing to the right topic which is the topic getting just out of the Pocketsphinx algorithm, the type of this topic is string. This data will be put as a user data in order to be accessible from another state. In fact we will need it on the state just after. There is two outputs, the regular one which goes to the second state and the one recognized by the word "reset" which will branch to the beginning of the program in case the user didn't want to go in this machine. 
+
+The second state, which is a Say State will get the data from the state just before and as explained before in the Say State part will also say this data. This state is mainly to ask the user if the robot understood well what he said in the first state. An example of a sentence we could here there is: "Would you really like to teach the command \underline{dance}?" (the part underline correspond to the user data). There is only one output to the third state. 
+
+Finally the third state will analyse what the user will respond to the question just ask in the second state. Regarding the keywords there will be three different outputs. In our case, we fixed "yes" and "right" for one which will branch to the end of the machine and get to the next state were this machine was called, "no" and "wrong" for a the second one which will branch to the state just before the call of the Confirmation Machine in order to re-ask the question and "reset" in order to get back to the beginning of the program.
+
+ \begin{figure}
+ \center
+ \includegraphics[width=8cm]{img_SM/ConfirmationMachine.png}
+ \caption{State Machine of the Confirmation Machine}
+ \end{figure}
+
+\subsubsection{Changing Speed Machine}
+The user should be able to change the speed of the robot and in order to stick to a good dialogue the user will want to hear a feedback if the speed was implemented. The user also want the possibility to correct its saying if it was misunderstood by the program.
+
+This machine can be used to change the speed of the robot and is composed of one machine and some states: the Confirmation Machine, two Say State and one singular state (see Figure 9). 
+
+First the machine will begin with a simple Say State, which will asks the user at which speed he wants it to move. This first state has only one outcome, which will be linked to the input of the Confirmation Machine.
+
+The Confirmation Machine will gets in its first state the value of the speed the user wants the robot to go at. The second state will asks for acknowledgement of its understanding. The third will listen if it was well understood or not as explained in the paragraph just above. 
+
+Once the user gets understood with the right speed by the robot it will be linked to the next state. This state serves as a converter and as a publisher. In fact the current type of the speed given by the user is string as far as we know that the Pocketsphinx algorithm will gives us strings and robots are mainly using numbers so we had to convert the strings into numbers. Once this part done we will have to publish the number corresponding of the speed given by the user to the robot converter. This state has only one output.
+
+The final state of this machine is a simple Say State that will acknowledge to the user that the speed is changed.
+
+ \begin{figure}
+ \center
+ \includegraphics[width=10cm]{img_SM/ChangingSpeedBranch.png}
+ \caption{State Machine of the Changing Speed Machine}
+ \end{figure}
+
+\subsubsection{Giving Command Machine}
+The user should be able to give a command to execute to the robot. For this the robot needs to know all the available commands so then the user can directly pick one command from this dictionary. If the user doesn't remember all the available commands, the user should be able to access this dictionary.
+
+This machine can be used to give a command to execute to the robot and is composed of five states four Say State and one singular (see Figure 10).
+
+First a Say State will asks the user which command he wants it to execute. This state only has one outcome, which is linked to the second state.
+
+The second state will be the listener; it will listen to what the user wants the robot to execute. In order to listen to what the user is saying this state is subscribing at the right topic, which is the topic getting just out of the Pocketsphinx algorithm. This state is also composed of one dictionary, which will store the possible actions the robot currently knows. Finally this state can publish the value of the command it has been taught to the robot converter. In order to treat as well as possible the wishes of the user this state has three outcomes.
+
+The first one is linked to the third step if the command the user is saying is in the commands dictionary. This state will then acknowledge to the user that the command has been done.
+
+The second one is called "Unknown Command" and happens if the user is waiting for more than 10 seconds or if the user says a command which is not in the dictionary. This state will branch to the output of the Giving Command Machine so then it will goes back to the beginning of the program. 
+
+Finally the third outcome can be reached if the user is saying, in our case, the keyword "list" which will let the user knows every available commands in the current dictionary. This state is a Say State, which will use the user data to say to the user the available commands. This state will branch back the first state of the machine, which is asking which command the user wants it to do. 
+
+ \begin{figure}
+ \center
+ \includegraphics[width=15cm]{img_SM/GivingCommandBranch.png}
+ \caption{State Machine of the Giving Command Machine}
+ \end{figure}
+
+\subsubsection{Teaching Command Machine}
+The user should be able to teach a command to the robot and should be able to correct the name of the command or the trajectory the user is showing without starting from the beginning every time a mistake is made. The time of the demonstration should be clear to the user so then the user can know when to do this demonstration.
+
+Finally the last machine developed was the Teaching Command Branch. This branch allows the user to teach a command to the robot by showing it what the user wants it to learn. This state is composed of two Confirmation Machine, four Say State and one singular (see Figure 11).
+
+The first state is a Say State, which is asking which command the user wants to teach to the robot. This state has only one output to the second state, which is the first state of a Confirmation Machine.
+
+At the end of the Confirmation Machine we have another Say State that gives the instructions to the user about how to record the command the user wants to teach. This state has only one output which is the demonstration state.
+
+The demonstration state will record the movement the user is showing starting from the moment the user says: "Start" and finish recording when the user says: "Stop".
+  
+Then there is the third Say State which is introducing the last Confirmation Machine. This Confirmation Machine is used in order that the user could re-do the demonstration if not happy by what the user did. 
+
+Then if the Machine is ending by a success, the dictionary of the Giving Command Branch will be implemented.
+
+The last state will acknowledge that a new command has just been taught.
+
+ \begin{figure}
+ \center
+ \includegraphics[width=16cm]{img_SM/TeachingCommandBranch.png}
+ \caption{State Machine of the Teaching Command Machine}
+ \end{figure}
+
+\newpage
+\subsubsection{Summary of major functions}
+In order to sum-up the main functionality implemented in this program here is the list with a small reminder of what does each :
+
+\begin{itemize}
+  \item user-data: using this functionality of state machines allows us to access data from one state to another which will be mainly used int this program to ask for acknowledgement of the user if the robot understood well.
+  \item find substring into string: this function is useful in order to let a regular discussion happens between the user and a robot. In fact this function allows to find keywords. 
+  \item reset: this functionality will allow the user to get back to the beginning of the program every time the state machine is in a state called "listener" which means a state which subscribe to the output topic of the algorithm Pocketsphinx and so will listen to what the user is saying.
+  \item string into numbers : in order to control the robot we need to transform the string which get out of the algorithm Pocketsphinx into numbers. This function was developed only at this effect. Once used we can publish to the converter. This function allows the user to convert only the numbers from 1 to 11. This list can be easily developed to a bigger number.
+  \item time limit: this function is used in the Giving Command Branch Machine and aims to help the user if lost. In fact at the end of the state using this function, the program will branch back at the beginning.
+  \item consulting the commands dictionary: again this function was developed to help the user in his experience. If the user is lost or simply forgot what he taught to the robot he can simply ask by saying the keyword "list"
+  \item dynamic dictionary: this function will allows the program to implement the command dictionary every time the user teach a new command. 
+  \item sound\_play wait : this function gave the possibility of waiting into the Say State until the sentence was completely read. By using an argument, we could use it or not whether it was needed in every Say State or not.
+\end{itemize}
+
+
