@@ -1,0 +1,109 @@
+\documentclass[]{article}
+\usepackage{amsmath,amssymb,amstext,amsthm}
+\input{klasdefines}
+\author{Klas Kronander}
+\title{Gaussian Process Regression on Curves}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+\label{sec:intro}
+
+Gaussian Process Regression has become one of the most popular tools for nonlinear regression problems. Ease of use and intuitive tuning of the open parameters are likely important reasons for its popularity. GPR is however not free from problems. The biggest drawback of GPR when compared with methods such as LWPR or SVR is computational complexity. GPR involves inversion of an $N \times N$ matrix, with $N$ the number of training points provided to the algorithm. This disqualifies GPR from use in realtime applications such as control problems as soon as the number of data points exceed a few thousand. 
+
+In this document, we propose a new form for GPR, which exploits a parameterized, continuous representation of the training inputs to drastically reduce the computation time of GPR. This is done by a particular choice of covariance function, which annihilates influence from all but one point on the input curve, and thereby getting rid of the matrix inversion. 
+
+
+\section{Background}
+\label{sec:bkg}
+Let $\{\vec x_i\}_{i=1}^N$ be a set of $N$ $D$-dimensional training input vectors $\vec x_i \in \real^D$. Let a set of $N$ associated observed outputs $\{y_i\}_{i=1}^N$ with $y_i \in \real$ for all $i=1\hdots N$. In GPR, it is assumed that any collection of outputs have a joint Gaussian distribution, i.e. it is assumed that the $y_i$, $i=1\hdots N$ are samples from a Gaussian Process. The covariance between $y_i$ and $y_j$ is modeled as a function $k(\vec x_i, \vec x_j)$ and and the covariance matrix of all observed outputs is denoted $\mat K$ and defined by:
+\begin{equation}
+  \label{eq:covariancetrainingdata}
+  \mat K =
+  \begin{bmatrix}
+    k(\vec x_1, \vec x_1) & \hdots & k(\vec x_1, \vec x_N) \\ 
+    \vdots & \ddots & \vdots \\ 
+    k(\vec x_N, \vec x_1) & \hdots & k(\vec x_N, \vec x_N) \\ 
+  \end{bmatrix}
+\end{equation}
+Assuming furthermore a zero mean for the outputs, we can write the joint distribution for the observed output data:
+\begin{equation}
+  \label{eq:probdist}
+  p(\vec y) = \mathcal{N}(\vec 0, \mat K + \sigma_n^2 \mat I)
+\end{equation}
+where $\vec y = [y_1,\hdots, y_N]^T$ has been introduced, and where i.i.d Gaussian observation noise with variance $\sigma_n^2$ is assumed. Note that so far all that has been done is pure assumptions. We have made an assumption on how the outputs are correlated that is completely independent on their observed values (the covariance function only depends on the inputs). 
+
+We can expand the distribution with a new training point $\vec x^*$ with an unknown output value $y^*$:
+\begin{equation}
+  \label{eq:probdist2}
+  p\left(
+    \begin{bmatrix}
+      \vec y \\ y^*
+    \end{bmatrix}
+\right) = \mathcal{N}\left(\vec 0,
+\begin{bmatrix}
+  \mat K & \vec k^* \\ \vec k^{*T} & k(x^*, x^*)
+\end{bmatrix}
++ \sigma_n^2 \mat I\right)
+\end{equation}
+where $\vec k^* = [k(x_1, x^*, \hdots, k(x_N, x^*))]^T$. Gaussian Process Regression predicts the value of $y^*$ by conditioning Eq. (\ref{eq:probdist2}) to end up with an expression that describes the distribution of $y^*$ given $y_1 \hdots y_N$. Standard Gaussian conditioning yields:
+\begin{equation}
+  \label{eq:GPR}
+  p(y^* | \vec y) =  \mathcal{N}(\mu^*, c^*)
+\end{equation}
+with known forms of $\mu^*$ and $c^*$. For brevity, we only write the form for $ \mu^*$:
+\begin{equation}
+  \label{eq:mustrar}
+  \mu^* = \vec k^{*T}(\mat K + \sigma_n^2 \mat I)^{-1}\vec y
+\end{equation}
+As can be seen, whenever the training set is expanded, a new inversion is necessary. This is the main problem of GPR, limiting its use to data sets of small sizes.
+
+\section{Continous Input curve}
+\label{sec:manifold}
+The main difference of classical GPR and C-GPR proposed in this document is that the former is point-based whereas the latter is based on a continuous representation of the input space. Specifically, we will consider curves as input but the concept generalizes to other manifolds as well. 
+
+Assume that the inputs lie on a curve $C$. Furthermore, assume that we can find the coordinates of any point on C by varying the parameter $\vec c(t) \in \real^D$. The coordinates of all points on the curve can be found by varying $t$ from $0$ to $1$. Interpolation techniques such as cubic splines or polynomial fitting are examples of such representations. 
+
+\section{Curve-based covariance function}
+\label{sec:covariancefunction}
+
+The key of our regression technique is a particular choice of covariance function, which is based on the geometry of the input curve. Let $\vec x \in \real^D$ be an arbitrary input point and let $\vec x' \in C$  be a point on the input curve. We define the covariance function to as:
+\begin{equation}
+  \label{eq:covardef}
+  k(\vec x', \vec x) = exp(-(\vec x - \vec x')^T\mat \Lambda(\vec x') (\vec x - \vec x'))
+\end{equation}
+where $\mat \Lambda(\vec x') \in \real^{D \times D}$ is a metric that depends on the curve $C$ and the point $\vec x'$. Let $\vec e_t'$ denote the tangent vector of $C$ at $\vec x'$. Then, $\mat \Lambda$ is defined as:
+\begin{equation}
+  \label{eq:lambdadefinition}
+  \mat \Lambda(\vec x') =
+  \begin{bmatrix}
+    \vec e_t' & \hdots & \vec e_D
+  \end{bmatrix}
+  \text{diag}([\lambda_1,\hdots, \lambda_D])
+  \begin{bmatrix}
+    \vec e_t' & \hdots & \vec e_D
+  \end{bmatrix}^T
+\end{equation}
+where the vectors $\vec e_t', \hdots, \vec e_D$ constitute an othonormal basis for $\real^D$. 
+
+\section{Continuous GPR}
+With the structure in place, note that if $\lambda_1$ increases toward infinity, the covariance function $k(\vec x', \vec x)$ goes to zero for any $x$ satisfying $(\vec x - \vec x')^T\vec e'_t \neq 0$, i.e. any point which does not lie in the orthogonal plane of $C$ at $\x'$. Specifically, under the assumption that $C$ is reasonably flat\footnote{This can be further specified.}, the matrix $\mat K$ in Eq. (\ref{eq:covariancetrainingdata}) will become diagonal. This means that Eq. (\ref{eq:mustrar}) reduces to:
+\begin{equation}
+  \label{eq:mustartreduce}
+    \vec \mu^* = \vec k^{*T} \text{diag}\left(\left[\frac{1}{k(\vec x_1,\vec x_1)+\sigma_n^2},\hdots,\frac{1}{k(\vec x_N,\vec x_N)+\sigma_n^2}\right]\right)\vec y
+\end{equation}
+
+Let us now examine what happens with the vector $\vec k^*$ for large $\lambda_1$. Let's assume that a query point $x^*$ lies in a plane orthogonal to the tangent of $C$ at some $\vec x' \in C$. Since $C$ is sufficiently flat, there is only point along $C$ that has $x^*$ in its orthogonal plane. Hence, \emph{there is one and only one non-zero element in } $\vec k^*$. With this observation, Eq. (\ref{eq:mustartreduce}) can be further simplified to:
+\begin{equation}
+  \label{eq:mustartreduce}
+    \vec \mu^* = \frac{k(\vec x',\vec x^*)}{k(\vec x',\vec x') + \sigma_n^2} y'
+\end{equation}
+Hence, there is no matrix inversion but an extremely simple expression to compute. 
+
+There are, however, a few caveats. First, our approach requires for each query point $\vec x^*$ to find the associated $\vec x' \in C$. In practice, this is done by finding the closest point to $x^*$ on $C$, which is a relatively quick operation since $C$ is a curve and can be scanned efficiently by varying $t$ in $[0,1]$. Second, we need a continuous representations of the inputs but also of the outputs, since Eq. (\ref{eq:mustartreduce}) requires $y'$. 
+
+A more general remark is that a lot of the flexibility of GPR has been lost, since we restrict ourselves to one specific covariance function. The price we pay is that we can not tune the covariance function to suit the need of the application as flexibly as in the standard GPR framework. We gain instead in terms of ducking the trade-off between a sparse training set and accurate predictions which is typical in GPR\footnote{In general, few data points are preferable. This in turn requires a large lengthscale to ensure non-zero interpolation between the training data. The long lengthscale in turn decreases the accuracy of the predictions near the training points.}. 
+
+
+\end{document}

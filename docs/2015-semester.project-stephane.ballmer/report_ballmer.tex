@@ -1,0 +1,175 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc} %inclue les charact�res dans le pdf
+\usepackage{graphicx}
+\usepackage{epsfig}
+\usepackage{url}
+\usepackage[verbose, bookmarksopen=false, hypertexnames=false,linktocpage,bookmarksnumbered,colorlinks]{hyperref}
+\usepackage{lineno}
+\usepackage{listings}
+\usepackage{datetime}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amsmath,amssymb,amstext,amsthm}
+\usepackage{mathtools}
+\usepackage{esvect}
+
+\usepackage{eqparbox}
+\renewcommand\algorithmiccomment[1]{
+  \hfill\#\ \eqparbox{COMMENT}{#1}
+}
+
+\usepackage{hyperref}
+\hypersetup
+{
+    colorlinks  = true,
+    citecolor   = blue,
+    linkcolor   = black
+}
+
+\usepackage{afterpage}
+\newcommand\blankpage{
+    \null
+    \thispagestyle{empty}
+    %\addtocounter{page}{-1}
+    \newpage}
+
+\usepackage[justification=centering]{caption}
+\usepackage{float}
+\usepackage{titlesec}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4} %for table of content
+\titleformat{\paragraph}
+{\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}
+{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+\usepackage{fancyhdr}    
+\fancyhf{}
+\pagestyle{fancy}
+\setlength{\headheight}{15pt}
+
+\fancyheadoffset{0.1\textwidth}
+\fancyfootoffset{0.1\textwidth}
+\setlength{\footskip}{40pt}
+\lhead{\slshape \rightmark}    
+\rhead{\slshape \hyperlink{toc}{\leftmark}}
+\rfoot{\thepage}
+\lfoot{Semester Project MA-1 | St\'{e}phane Ballmer - LASA - IMT - EPFL}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\input{command}
+
+%Titlepage
+\thispagestyle{plain}
+\title{Semester project}
+\author{St\'{e}phane Ballmer}
+
+\geometry{ hmargin=2.5cm, vmargin=2.5cm }
+
+\renewcommand{\maketitle}{
+\begin{titlepage}
+\centering
+\includegraphics[width=5cm]{img/EPFL_LOGO.png}\\
+\vspace*{3cm}
+\LARGE{\textbf{Trajectory representation for\\incremental robot skill learning\\}}
+Semester project\\
+\normalsize{September 2015 - January 2016}
+
+
+% \newdate{project_start}{14}{09}{2015}
+% \newdate{project_end}{08}{01}{2016}
+% \displaydate{project_start} - \displaydate{project_end}
+
+\vspace*{2cm}
+\Large{St\'{e}phane Ballmer} \\
+\vspace*{2cm}
+\normalsize{\'{E}cole Polytechnique F\'{e}d\'{e}rale de Lausanne\\Learning Algorithms and Systems Laboratory\\}
+\vspace*{1cm}
+\includegraphics[width=7cm]{img/lasa-logo.jpg}\\
+\vspace*{2cm}
+\large{Supervised by Felix Duvallet, Klas Kronander and Professor Aude Billard\\}
+\vspace*{1cm}
+\today
+\end{titlepage}
+}
+
+%###########################################################################
+\begin{document}
+% -------------- title
+\maketitle
+\thispagestyle{plain}
+
+% -------------- blankpage
+\blankpage
+\addtocounter{page}{-1}
+\thispagestyle{empty}
+
+% -------------- abstract
+\begin{abstract}
+\thispagestyle{empty}
+
+This report presents the trajectory processing component, which is the transformation of a demonstration to simple commands on how the robot needs to adapt its trajectory.\\
+
+The vocal order is attributed to a specific movement. The operator shows the robot by applying a kinesthetic correction in order to teach it how to move. To record a demonstration, here is the process: the robot starts somewhere while executing a behavior, user then provides a correction interactively, the robot reaches the attractor and must isolate the correction applied with the demonstration data, then it transforms it into a continuous curve and finally, to add the possibility of avoiding zones when moving, a Gaussian Process Regression has been used, and improved to take as an input a continuous curve.\\
+
+To isolate the correction, we developed a specific algorithm based on the instant velocity of the robot and the original direction.\\ 
+\hspace*{0.6cm}Then to convert the extracted correction into a continuous mathematical function, we will discuss on some interpolation processes and one is chosen: Cubic Spline Process, with benefits from a low computational cost and the best fitting possible.\\
+\hspace*{0.6cm}Finally, we use Gaussian Process Regression to compute the trajectory of the robot in order to align it to the corrections. We will see that this GPR needs to be improved to work with continuous curves (splines), and to do so, an analytic algorithm is developed in order to get the closest point on a continuous curve to another point in the space. The continuous GPR is much faster to execute and also the most accurate for this application.\\
+
+Some tests were done on the real robot and gave good results, the robot moves well to the order. We were confirmed that the continuous GPR works and gives much better results than the standard one, indeed the robot didn't move all the time as requested with the standard GPR.\\
+
+There could be some improvements such as optimization of the algorithms (the research of the closest point on many cubic splines can be improved) or developping a concept of showing many times the same correction to the robot to have a better learning, algorithms like putting together many corrections in a 3D space would be developed. However the project is working and the only future work would concern optimization.
+
+\end{abstract}
+\clearpage
+
+% ------------- table of content
+\newpage
+\thispagestyle{empty}
+\begin{tableofcontents}
+\addtocontents{toc}{\protect\hypertarget{toc}{}}
+\end{tableofcontents}
+
+\clearpage
+\setcounter{page}{1}
+\pagenumbering{arabic}
+
+\section{Introduction}
+\input{introduction}
+\clearpage
+
+\blankpage
+\begin{section}{Correction Detection}
+\label{section_2}
+\end{section}
+
+\input{correction_detection}
+\clearpage
+
+\begin{section}{Continuous Correction Computation}
+\label{section_3}
+\end{section}
+
+\input{splines}
+\clearpage
+
+\blankpage
+\section{Continuous Gaussian Process Regression}
+\input{gpr}
+\clearpage
+\section{Conclusions}
+\input{conclusion}
+\section{Acknowledgments}
+\input{thanks}
+
+\clearpage
+\input{biblio}
+
+\end{document}
