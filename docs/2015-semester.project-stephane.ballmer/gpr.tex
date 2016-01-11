@@ -34,18 +34,18 @@ with more than a few thousand of training points in real time.\\
 
 \subsubsection{Definition}
 
-The Gaussian Process Regression works by computing estimated data in a defined space. It takes as an input training points and observed value (the training points represent the location of the observed value, there are as many training points as estimated value), and testing points. It returns estimated value at the location of the testing points. Let 
+The Gaussian Process Regression works by computing estimated data in a defined space. It takes as an input training points and observed value (the training points represent the location of the observed value, there are as many training points as estimated value), and testing points. It returns estimated value at the location of the testing points. Let
 $\{\vecc{x_i}\}_{i=1}^N$ be a set of $N\ D$-dimensional training input vectors $\vecc{x_i} \in \real^D$ and its associated observed value $\{y_i\}_{i=1}^N$ with $y_i \in \real$ for all $i=1\hdots N$.\\
-The GPR works using a covariance function 
+The GPR works using a covariance function
 $f(x_i, x_j)$ and a covariance matrix $\mat K$ defined as:
 
 \begin{equation}
   \label{equ_covariancetrainingdata}
   \mat K =
   \begin{bmatrix}
-    k(\vecc x_1, \vecc x_1) & \hdots & k(\vecc x_1, \vecc x_N) \\ 
-    \vdots & \ddots & \vdots \\ 
-    k(\vecc x_N, \vecc x_1) & \hdots & k(\vecc x_N, \vecc x_N) \\ 
+    k(\vecc x_1, \vecc x_1) & \hdots & k(\vecc x_1, \vecc x_N) \\
+    \vdots & \ddots & \vdots \\
+    k(\vecc x_N, \vecc x_1) & \hdots & k(\vecc x_N, \vecc x_N) \\
   \end{bmatrix}
 \end{equation}
 
@@ -157,7 +157,7 @@ where $\mat \Lambda(\vecc x') \in \real^{D \times D}$ is a metric that depends o
     \vecc e_t' & \hdots & \vecc e_D
   \end{bmatrix}^T
 \end{equation}
-where the vectors $[\vecc e_t', \hdots, \vecc e_D]$ constitute an orthonormal basis for $\real^D$. 
+where the vectors $[\vecc e_t', \hdots, \vecc e_D]$ constitute an orthonormal basis for $\real^D$.
 
 \subsubsection{Continuous GPR}
 
@@ -380,7 +380,7 @@ To compare the influence of the continuous and discrete GPR, we took a correctio
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=10cm]{img/gp_test.JPG}
+\includegraphics[width=10cm]{img/gp_test.jpg}
 \caption{Test for continuous and discrete GPR.}
 \label{quan_gpr_1}
 \end{figure}
@@ -395,7 +395,7 @@ For this test (see \autoref{quan_gpr_1}), 3 training discrete points were taken 
         \label{discrete_gp_test}
     \end{minipage}
     \begin{minipage}[b]{0.5\linewidth}
-        \centering 
+        \centering
         \includegraphics[width=0.90\textwidth]{img/continuous_gp_norm.jpg}
         \caption{Graph of the normalized influence of the continuous Gaussian process on the test points.}
         \label{continuous_gp_test}
@@ -473,4 +473,3 @@ The general shape of the curves of the continuous algorithm on \autoref{gp_test_
 All those tests were done on a computer, the computational time is not a perfectly linear, quadratic or constant signal because there are always many tasks running at the same time which affects randomly the time values (indeed, we are measuring in milliseconds scale, it is very sensitive). Tests were done in the best possible conditions with the least amount of parallel tasks possible to minimize the problem.\\
 
 Those analyses show that the continuous GPR gives better result for high number of training points, but the standard GPR is better with a low number of training points. This is directly linked to the inversion of the $N \times N$ matrix (if N is low the inversion will be fast) and the constant computationnal cost of the analytic distance algorithm.
-
